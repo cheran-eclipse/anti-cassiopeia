@@ -22,6 +22,10 @@ class DomainAdapter(ABC):
     #: Must match Claim.domain for claims this adapter accepts.
     domain_name: str
 
+    #: False until gather_evidence() is wired to a real evidence source.
+    #: Set True explicitly in the subclass once it is — never inferred.
+    implemented: bool = False
+
     @abstractmethod
     async def gather_evidence(self, claim: Claim) -> list[Evidence]:
         """Return every piece of evidence this domain's sources can produce for `claim`.

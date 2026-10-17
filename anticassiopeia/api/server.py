@@ -38,6 +38,18 @@ async def health() -> dict:
     return {"status": "ok", "domains": sorted(engine._domains)}
 
 
+@app.get("/domains")
+async def domains() -> dict:
+    """Lists registered domains and whether each is wired to a real evidence
+    source yet, so a caller can check before trusting a verdict from a
+    domain that's still a stub. Reads DomainAdapter.implemented — each
+    adapter sets this explicitly, no heuristic guessing."""
+    return {
+        name: {"adapter": adapter.__class__.__name__, "implemented": adapter.implemented}
+        for name, adapter in engine._domains.items()
+    }
+
+
 @app.post("/verify")
 async def verify(req: VerifyRequest) -> dict:
     claim = Claim(text=req.text, domain=req.domain, context=req.context)
