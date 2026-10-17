@@ -5,7 +5,8 @@ import httpx
 import pytest
 
 from anticassiopeia.core import Claim
-from anticassiopeia.domains.research_web import ResearchWebAdapter
+from anticassiopeia.core.verdict import Evidence
+from anticassiopeia.domains.research_web import ResearchWebAdapter, _is_near_duplicate_evidence
 from anticassiopeia.llm.nebius_client import NebiusClientError
 from evals.fixture_server import serve_fixtures
 
@@ -72,15 +73,31 @@ async def test_non_block_page_without_quote_is_real_contradiction(monkeypatch):
 class _FakeClient:
     """Test double for NebiusTokenFactoryClient covering BOTH prompt shapes this
     adapter sends: a propose() JSON-extraction prompt (starts "Question: ") and a
-    _judge_stance() one-word prompt (starts "CLAIM: ")."""
+    _judge_stance() one-word prompt (starts "CLAIM: ").
 
-    def __init__(self, propose_response: str | Exception, stance_response: str = "supports"):
+    `propose_response` is the default answer for any propose() prompt.
+    `propose_by_marker`, if given, picks a DIFFERENT answer per source when the
+    prompt contains a given substring (e.g. a chunk_id prefix unique to one
+    fetched page) — needed for tests with more than one distinct source."""
+
+    def __init__(
+        self,
+        propose_response: str | Exception = "",
+        stance_response: str = "supports",
+        propose_by_marker: dict[str, str | Exception] | None = None,
+    ):
         self._propose_response = propose_response
         self._stance_response = stance_response
+        self._propose_by_marker = propose_by_marker or {}
 
     async def complete(self, prompt: str, *, system: str | None = None, temperature: float = 0.0) -> str:
         if prompt.startswith("CLAIM:"):
             return self._stance_response
+        for marker, response in self._propose_by_marker.items():
+            if marker in prompt:
+                if isinstance(response, Exception):
+                    raise response
+                return response
         if isinstance(self._propose_response, Exception):
             raise self._propose_response
         return self._propose_response
@@ -270,3 +287,91 @@ async def test_live_multi_candidate_undetermined_when_no_real_source_settles_it(
     assert ev == [], f"expected no evidence (honest gap), got: {ev}"
     gap = adapter.describe_gap(claim, ev)
     assert "no live candidate pages found" in gap[0].lower()
+
+
+# --- near-duplicate evidence guard: two near-identical sources (a mirror, or a
+# page that copy-pasted the same sentence) must not both count as independent
+# confirmation; two genuinely different sources confirming the same real-world
+# fact must still both count, since that's real corroboration, not redundancy. ---
+
+
+def test_is_near_duplicate_evidence_true_for_near_identical_quotes():
+    a = Evidence(source="https://mirror-a.example/page", snippet=_FIXTURE_QUOTE, stance="supports", trust=0.75)
+    b = Evidence(source="https://mirror-b.example/page", snippet=_FIXTURE_QUOTE, stance="supports", trust=0.75)
+    assert _is_near_duplicate_evidence(a, b)
+
+
+def test_is_near_duplicate_evidence_false_for_genuinely_different_quotes():
+    a = Evidence(source="https://site-a.example/page", snippet=_FIXTURE_QUOTE, stance="supports", trust=0.75)
+    b = Evidence(
+        source="https://site-b.example/page",
+        snippet="An independent test report confirmed the reference pump operates safely up to 12 bar without failure.",
+        stance="supports",
+        trust=0.75,
+    )
+    assert not _is_near_duplicate_evidence(a, b)
+
+
+def test_is_near_duplicate_evidence_false_for_empty_text():
+    a = Evidence(source="https://a.example", snippet="", stance="supports", trust=0.75)
+    b = Evidence(source="https://b.example", snippet="", stance="supports", trust=0.75)
+    assert not _is_near_duplicate_evidence(a, b)
+
+
+async def test_multi_candidate_mirror_sources_count_as_one_not_two():
+    """PROVES the fix matters: two different URLs serving byte-identical content
+    (a mirror site, simulated here via a harmless query-string variant of the
+    same real fixture page) must resolve to exactly ONE piece of Evidence, not
+    two — engine.py's trust-weighted sum must not see this as double the real
+    confirmation it actually has."""
+    with serve_fixtures() as base_url:
+        url_a = f"{base_url}/stable_page.html?mirror=1"
+        url_b = f"{base_url}/stable_page.html?mirror=2"
+
+        async def fake_search(_query: str, _max: int) -> list[str]:
+            return [url_a, url_b]
+
+        client = _FakeClient(
+            propose_by_marker={
+                f"{url_a}#0": _found_json(f"{url_a}#0", _FIXTURE_QUOTE),
+                f"{url_b}#0": _found_json(f"{url_b}#0", _FIXTURE_QUOTE),
+            }
+        )
+        adapter = ResearchWebAdapter(client=client, search=fake_search)
+        claim = Claim(
+            text="the reference pump is rated for a maximum operating pressure of 12 bar", domain="research_web"
+        )
+        ev = await adapter.gather_evidence(claim)
+
+    assert len(ev) == 1, f"two near-identical mirror sources must count as ONE confirmation, got {len(ev)}"
+    assert ev[0].stance == "supports"
+
+
+async def test_multi_candidate_genuinely_different_sources_both_count():
+    """Negative case for the same fix: two sources that are REALLY different
+    text (different fixture pages, independently worded) confirming the same
+    underlying fact must both be kept — that's real independent corroboration,
+    which the near-duplicate guard must not throw away."""
+    with serve_fixtures() as base_url:
+        url_a = f"{base_url}/stable_page.html"
+        url_b = f"{base_url}/stable_page_rephrased.html"
+        rephrased_quote = "An independent test report confirmed the reference pump operates safely up to 12 bar without failure."
+
+        async def fake_search(_query: str, _max: int) -> list[str]:
+            return [url_a, url_b]
+
+        client = _FakeClient(
+            propose_by_marker={
+                f"{url_a}#0": _found_json(f"{url_a}#0", _FIXTURE_QUOTE),
+                f"{url_b}#0": _found_json(f"{url_b}#0", rephrased_quote),
+            }
+        )
+        adapter = ResearchWebAdapter(client=client, search=fake_search)
+        claim = Claim(
+            text="the reference pump is rated for a maximum operating pressure of 12 bar", domain="research_web"
+        )
+        ev = await adapter.gather_evidence(claim)
+
+    assert len(ev) == 2, f"two genuinely different confirming sources should BOTH count, got {len(ev)}"
+    assert {e.source for e in ev} == {url_a, url_b}
+    assert all(e.stance == "supports" for e in ev)

@@ -17,11 +17,16 @@ TWO modes, selected by `Claim.context`:
    Runs the SAME real retrieve->propose->verify pipeline robotics.py uses:
        _search_candidate_urls() -> chunk_document() -> BM25Index.search()
        -> extract.propose() -> verify.verify_proposal()
-   over chunks pooled from ALL successfully fetched candidate pages (one
-   combined BM25 index, not one per page — there's no "the right doc" to
-   pick ahead of time here, unlike robotics' per-part corpus). Three-way
-   outcome, genuinely distinguished (an improvement over mode 1's
-   found/not-found binary):
+   Chunks from ALL successfully fetched candidate pages are pooled into one
+   combined BM25 index (there's no "the right doc" to pick ahead of time
+   here, unlike robotics' per-part corpus), but the resulting hits are then
+   GROUPED BY SOURCE PAGE — propose()/verify()/_judge_stance() run once per
+   distinct source (up to `_MAX_SOURCES_TO_CHECK`), so a claim can collect
+   independent Evidence from SEVERAL real sources, not just the single
+   best-ranked chunk. This is what makes "multi-candidate" actually mean
+   checking multiple candidates, not just picking one and discarding the
+   rest. Three-way outcome per source, genuinely distinguished (an
+   improvement over mode 1's found/not-found binary):
      - CONFIRMED-worthy ("supports"): a real, independently-verified quote
        from a real fetched page actually matches what the claim says.
      - CONTRADICTED-worthy ("contradicts"): a real, verified quote was
@@ -32,6 +37,18 @@ TWO modes, selected by `Claim.context`:
        found at all; all candidates failed to fetch; nothing retrieved
        matched the claim's terms; or the model honestly reported the fact
        isn't stated in what it was shown. Never collapsed into a guess.
+
+   NEAR-DUPLICATE GUARD: checking several real sources means two of them
+   can be the same source in disguise — a mirror site, or a page that
+   copy-pasted the same sentence. Before being added to the final list,
+   each newly-accepted Evidence is checked with `_is_near_duplicate_evidence()`
+   against every Evidence already accepted FOR THIS CLAIM; a near-verbatim
+   match (Jaccard token overlap >= 0.8 — see that function for why that
+   threshold, not a lower one) is dropped as not-independent rather than
+   counted as a second confirmation. core/engine.py's trust-weighted sum has
+   no way to know two Evidence items came from the same underlying source
+   text, so this has to happen here, before the list ever reaches it —
+   engine.py itself is untouched.
 
    Candidate discovery (`_search_candidate_urls`) is real, live, and
    keyless — no API key, so it works the same way for anyone cloning this
@@ -75,7 +92,13 @@ evals/cases/research_web/live_multi_candidate_*.json) — a real CONFIRMED,
 a real CONTRADICTED, and two differently-shaped real UNDETERMINED
 outcomes (no candidates found at all vs. candidates found but the fact
 genuinely absent from them) were each independently confirmed live before
-being written down as eval cases, not assumed.
+being written down as eval cases, not assumed. Multi-source evidence
+gathering and the near-duplicate guard are tested offline and
+deterministically (`test_multi_candidate_mirror_sources_count_as_one_not_two`,
+`test_multi_candidate_genuinely_different_sources_both_count`) against two
+real local fixture pages — one byte-identical "mirror", one genuinely
+independently-worded — proving the dedup actually changes the outcome in
+the case it exists for, and does NOT wrongly collapse real corroboration.
 """
 
 from __future__ import annotations
@@ -91,12 +114,20 @@ import httpx
 from anticassiopeia.core.domain import DomainAdapter
 from anticassiopeia.core.verdict import Claim, Evidence
 from anticassiopeia.llm.nebius_client import NebiusClientError, NebiusTokenFactoryClient
-from anticassiopeia.retrieval import BM25Index, Chunk, chunk_document, verify_proposal
+from anticassiopeia.retrieval import BM25Index, Chunk, ScoredChunk, chunk_document, verify_proposal
+from anticassiopeia.retrieval.bm25 import tokenize
 from anticassiopeia.retrieval.extract import propose
 
 _TAG_RE = re.compile(r"<[^>]+>")
 _WS_RE = re.compile(r"\s+")
 _FETCH_TIMEOUT = 15.0
+#: How many distinct source pages to actually run propose()/verify/judge_stance
+#: against, out of however many matched the pooled BM25 search. Bounded so a
+#: claim that matches many candidates doesn't trigger an unbounded number of
+#: live LLM calls — 3 is enough to demonstrate real multi-source corroboration
+#: (the point of this mode) without multiplying live-call cost much past the
+#: original single-source design.
+_MAX_SOURCES_TO_CHECK = 3
 _BLOCK_PAGE_MARKERS = (
     "access denied",
     "request blocked",
@@ -341,7 +372,7 @@ class ResearchWebAdapter(DomainAdapter):
             return []
 
         index = BM25Index(all_chunks)
-        hits = index.search(question, top_k=5)
+        hits = index.search(question, top_k=10)
         if not hits:
             self._last_web_gap = (
                 f"Fetched {len(chunks_by_id)} chunk(s) across {len(candidate_urls)} live candidate page(s), "
@@ -352,6 +383,17 @@ class ResearchWebAdapter(DomainAdapter):
         if self._client is None:
             self._last_web_gap = f"Live candidates and matching passages were found, but the LLM propose step can't run: {self._client_error}"
             return []
+
+        # Grouped by SOURCE PAGE (not one pooled top-hit) — checking only the single
+        # best-ranked chunk across all candidates would mean "multi-candidate search"
+        # only ever actually asks about one source, defeating the point of finding
+        # out whether ANY real source confirms a claim. Order preserved from the
+        # pooled BM25 ranking (best-matching source first); capped at
+        # _MAX_SOURCES_TO_CHECK so a claim that matches many candidates doesn't
+        # trigger an unbounded number of live LLM calls.
+        hits_by_source: dict[str, list[ScoredChunk]] = {}
+        for hit in hits:
+            hits_by_source.setdefault(hit.chunk.doc_id, []).append(hit)
 
         # Phrased so the model reports the REAL stated fact even when it
         # conflicts with the claim, not just whether the claim's exact
@@ -366,50 +408,57 @@ class ResearchWebAdapter(DomainAdapter):
             f"{question} -- quote the passage that states the actual relevant fact, "
             "even if it states a different value than this claim asserts."
         )
-        try:
-            proposal = await propose(model_question, hits, self._client)
-        except (NebiusClientError, httpx.HTTPError) as exc:
-            self._last_web_gap = f"Live candidates and matching passages were found, but the LLM propose call failed: {exc}"
-            return []
 
-        if proposal is None:
+        evidence: list[Evidence] = []
+        problems: list[str] = []
+        for source_url, source_hits in list(hits_by_source.items())[:_MAX_SOURCES_TO_CHECK]:
+            try:
+                proposal = await propose(model_question, source_hits, self._client)
+            except (NebiusClientError, httpx.HTTPError) as exc:
+                problems.append(f"{source_url}: LLM propose call failed: {exc}")
+                continue
+            if proposal is None:
+                problems.append(f"{source_url}: model honestly reported the claim isn't stated here")
+                continue
+
+            cited_chunk = chunks_by_id.get(proposal.chunk_id)
+            if cited_chunk is None:
+                problems.append(f"{source_url}: model cited an unknown chunk_id {proposal.chunk_id!r} — dropped")
+                continue
+
+            # Placeholder stance here — verify_proposal() only needs *some* string to
+            # attach to the Evidence it builds; the real stance is decided below, AFTER
+            # the quote's existence is independently confirmed, and never trusted from
+            # the proposer itself either way.
+            result = verify_proposal(proposal, chunks_by_id, source=cited_chunk.doc_id, stance="supports", trust=0.75)
+            if not result.accepted or result.evidence is None:
+                problems.append(f"{source_url}: cited quote not actually verbatim on the page ({result.reason})")
+                continue
+
+            try:
+                stance = await _judge_stance(self._client, claim.text, proposal.quote)
+            except (NebiusClientError, httpx.HTTPError) as exc:
+                problems.append(f"{source_url}: stance-judging call failed: {exc}")
+                continue
+            if stance == "unrelated":
+                problems.append(f"{source_url}: real verified quote found, but doesn't address this specific claim")
+                continue
+
+            candidate_evidence = replace(result.evidence, stance=stance)
+            # Near-duplicate guard: a mirror site or a page that copy-pasted the
+            # same sentence must not count as a SECOND independent confirmation —
+            # see _is_near_duplicate_evidence() for the threshold and why.
+            if any(_is_near_duplicate_evidence(candidate_evidence, existing) for existing in evidence):
+                problems.append(f"{source_url}: near-duplicate of an already-counted source — not independent")
+                continue
+            evidence.append(candidate_evidence)
+
+        if not evidence:
             self._last_web_gap = (
-                f"Fetched {len(candidate_urls)} live candidate page(s) and found passages matching this "
-                "claim's search terms, but the model honestly reported the claim isn't actually stated in "
-                "any of them — a plausible-sounding citation is not evidence until it's retrieved and confirmed."
+                f"Checked {len(hits_by_source)} distinct live source(s) with matching passages, but none "
+                "produced usable evidence: " + "; ".join(problems)
             )
-            return []
-
-        cited_chunk = chunks_by_id.get(proposal.chunk_id)
-        if cited_chunk is None:
-            self._last_web_gap = f"Model cited an unknown chunk_id {proposal.chunk_id!r} — dropped, not trusted."
-            return []
-
-        # Placeholder stance here — verify_proposal() only needs *some* string to
-        # attach to the Evidence it builds; the real stance is decided below, AFTER
-        # the quote's existence is independently confirmed, and never trusted from
-        # the proposer itself either way.
-        result = verify_proposal(proposal, chunks_by_id, source=cited_chunk.doc_id, stance="supports", trust=0.75)
-        if not result.accepted or result.evidence is None:
-            self._last_web_gap = (
-                f"The model cited a quote from a live fetched page, but it does not actually appear there "
-                f"verbatim: {result.reason}"
-            )
-            return []
-
-        try:
-            stance = await _judge_stance(self._client, claim.text, proposal.quote)
-        except (NebiusClientError, httpx.HTTPError) as exc:
-            self._last_web_gap = f"A real quote was verified, but the stance-judging call failed: {exc}"
-            return []
-        if stance == "unrelated":
-            self._last_web_gap = (
-                f"A real, verified quote was found on the same general topic, but it does not actually "
-                f"address this claim's specific assertion: {proposal.quote!r}"
-            )
-            return []
-
-        return [replace(result.evidence, stance=stance)]
+        return evidence
 
     def describe_gap(self, claim: Claim, evidence: list[Evidence]) -> list[str]:
         if evidence:
@@ -481,3 +530,37 @@ async def _judge_stance(client: NebiusTokenFactoryClient, claim_text: str, verif
     if "support" in word:
         return "supports"
     return "unrelated"
+
+
+#: Jaccard token-overlap threshold above which two accepted Evidence quotes
+#: count as the SAME source (a mirror site, or a page that copy-pasted the
+#: same sentence) rather than independent corroboration. Deliberately set
+#: HIGH (0.8, not the 0.6 tried and explicitly rejected for stance-judgment
+#: above in this same file) because this check answers a narrower question:
+#: not "are these about the same fact" (0.6 was already shown, on a real
+#: live test, to call two DIFFERENT facts a match just because common words
+#: dominated the ratio) but "are these nearly the same TEXT" — true mirrors
+#: and copy-pastes are near-verbatim, typically >0.9 overlap once whitespace
+#: and incidental citation markers are tokenized away; two independently
+#: written sentences stating the same real-world fact in different words
+#: (genuine corroboration, which must still count) land well below 0.8 in
+#: practice. Erring toward UNDER-deduplicating at the boundary is the safer
+#: direction: wrongly keeping a true duplicate only inflates one claim's
+#: confidence slightly, while wrongly discarding real independent
+#: corroboration throws away evidence this project exists to surface.
+_NEAR_DUPLICATE_JACCARD_THRESHOLD = 0.8
+
+
+def _is_near_duplicate_evidence(a: Evidence, b: Evidence) -> bool:
+    """True if two ALREADY-accepted Evidence items' quotes are near-identical
+    text — the mirror-site / copy-pasted-sentence case — and so must not both
+    count as independent confirmation of the same claim, even though they
+    came from different source URLs. Compares `.snippet` (the verified quote
+    text engine.py actually sees), not the source URL — a mirror has a
+    DIFFERENT url by definition, so comparing urls would never catch it."""
+    a_words = set(tokenize(a.snippet))
+    b_words = set(tokenize(b.snippet))
+    if not a_words or not b_words:
+        return False
+    jaccard = len(a_words & b_words) / len(a_words | b_words)
+    return jaccard >= _NEAR_DUPLICATE_JACCARD_THRESHOLD
