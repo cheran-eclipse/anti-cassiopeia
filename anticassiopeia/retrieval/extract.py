@@ -31,6 +31,17 @@ Respond with ONLY a JSON object, no other text, in this exact shape:
 or, if the passages do not state the requested fact:
 {"found": false, "reason": "<short reason>"}
 
+"kind" distinguishes two DIFFERENT things a number can mean, and matters: \
+"rated" = a manufacturer's stated maximum/rating or spec limit (e.g. "Maximum \
+Rated Depth: 300 m", "Operating Pressure Range: 0 to 30 bar" — a datasheet limit, \
+not something that was necessarily ever tried). "tested" = an actual measured/tested \
+result (e.g. "Maximum Tested Depth (so far): 130 m" — something that was empirically \
+observed, which may be well below the rated limit). Set "kind" from the quote's own \
+wording — a rating and a test result for the same quantity are NOT interchangeable, \
+and conflating them is wrong even if the number looks plausible. Use null ONLY if the \
+quote states a number but its own wording gives no indication of which one it is — \
+not as a default when you're simply unsure which literal string to type.
+
 The "quote" field MUST be copied character-for-character from the passage you cite — \
 do not paraphrase, do not round, do not reformat. It will be checked against the original \
 text and rejected if it does not match exactly."""

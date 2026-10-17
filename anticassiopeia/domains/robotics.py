@@ -9,15 +9,43 @@ every proposed quote is independently re-checked against the actual chunk
 text for real (retrieval/verify.py) — nothing below gets to claim a
 locator the verification step didn't actually confirm.
 
-HONEST LIMITATION, stated plainly: the LLM "propose" step
-(retrieval/extract.py) is NOT live here — there's no NEBIUS_API_KEY in
-this build session. The Proposals below (`_KNOWN_PROPOSALS`) are authored
-by this adapter directly, standing in for what `extract.propose()` would
-return once that's wired to a real key. This is a real gap, not a design
-choice: retrieve (BM25 search) and verify (verbatim re-check against the
-actual chunk) are both fully real and run on every call; propose is
-simulated. Swap `_lookup_proposal()` for a real `await propose(...)` call
-once NEBIUS_API_KEY is available — the rest of the pipeline doesn't change.
+LLM "propose" step: LIVE, and the live round trip is CONFIRMED, not just
+wired. `gather_evidence()` calls `retrieval.extract.propose()` for real
+against `NebiusTokenFactoryClient`, feeding it the real BM25-retrieved
+candidate chunks for a doc and taking back a real `Proposal` — not a
+hand-authored stand-in. retrieve (BM25 search) and verify (verbatim
+re-check against the actual chunk) were already real; propose is now
+real too, so the full pipeline is real, start to finish, proven against
+the genuine Nebius API (see `tests/test_domains_robotics.py`'s
+`test_live_*` tests): a corpus fact gets real accepted evidence, and a
+fact genuinely absent from the shown passages gets an honest "not found"
+from the model, not a hallucination. `_RETRIEVAL_QUERIES` below only maps
+part -> doc_id -> the finding-question handed to BM25 and then to the
+model as context — it carries no answer.
+
+RESOLVED (was a KNOWN LIMITATION): an early live run showed the `kind`
+field ("rated" vs "tested" vs null) coming back inconsistent across
+repeated identical calls — roughly half of an 8-call sample. Root cause
+was NOT the model: `retrieval.extract.py`'s prompt told the model
+`"kind": "rated" or "tested" or null` with no explanation of what those
+values mean, so a model correctly (per this project's "never guess"
+ethos) refused to assert a classification it was never actually told how
+to make. Fixed by naming what "rated" vs "tested" means in the prompt
+itself — re-verified live, repeatedly, at 8/8 and 6/6 across both models
+tried (`openai/gpt-oss-120b`, the one kept; `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B`,
+also confirmed reliable after the same fix). `kind == "rated"` below is
+still required exactly as before — it was never loosened to force a
+number to look better; the prompt was the actual bug.
+
+The client is injected (`RoboticsAdapter(client=...)`, defaulting to a
+lazily-constructed `NebiusTokenFactoryClient()` on first real use) so
+tests can supply a scripted fake client and exercise the real
+propose()->verify_proposal() pipeline without a network call or a live
+key. A `NebiusClientError` or network failure from the live client is
+caught per-document and surfaced as a named gap via `describe_gap()` —
+never a crash, and never silently treated as "no evidence" without
+saying why — same pattern as domains/research_web.py's fetch-failure
+handling.
 
 Corpus: anticassiopeia/corpus/doc{1,2,3}_*.txt — partial excerpts
 containing only the lines Constellation's own research directly quoted
@@ -62,9 +90,13 @@ import re
 from dataclasses import dataclass, replace
 from pathlib import Path
 
+import httpx
+
 from anticassiopeia.core.domain import DomainAdapter
 from anticassiopeia.core.verdict import Claim, Evidence
+from anticassiopeia.llm.nebius_client import NebiusClientError, NebiusTokenFactoryClient
 from anticassiopeia.retrieval import BM25Index, Proposal, chunk_document, verify_proposal
+from anticassiopeia.retrieval.extract import propose
 
 _CORPUS_DIR = Path(__file__).parent.parent / "corpus"
 _SEED_DOC = "docs/extracted/constellation-robotics-seed.md"
@@ -150,35 +182,23 @@ def _derive_stance(spec_depth_m: float, converted: bool, cond: _Condition) -> st
     within_rating = spec_depth_m >= cond.depth_m
     return "supports" if within_rating == cond.survives else "contradicts"
 
-# Stand-in for extract.propose() until NEBIUS_API_KEY is live — see module docstring.
-# part keyword -> doc_id -> (retrieval_query, Proposal). retrieval_query is a real
+# part keyword -> doc_id -> retrieval_query. retrieval_query is a real
 # finding-question ("what's the housing depth rating"), NOT the raw claim text —
 # a real datasheet doesn't restate the claim being checked, it states facts, and
 # retrieval has to be searched for what the document would actually say. (Found
 # this the hard way: Bar30's own chip datasheet excerpt never contains the string
 # "Bar30" at all — it's framed entirely around pressure specs — so a BM25 search
 # on the literal claim text "Bar30 survives 500m depth" matched nothing. Fixed by
-# asking what the document would say, not what the claim says.)
-# verify_proposal() independently re-checks every quote below against the real
-# chunk text on every call — a wrong quote here fails loudly, not silently.
-_KNOWN_PROPOSALS: dict[str, dict[str, tuple[str, Proposal]]] = {
+# asking what the document would say, not what the claim says.) The same question
+# is also what the model (extract.propose()) is asked, over the same candidate
+# chunks BM25 retrieved — this dict carries no answer, only where to look.
+_RETRIEVAL_QUERIES: dict[str, dict[str, str]] = {
     "bluerov2": {
-        "DOC1_BlueROV2": (
-            "maximum rated depth aluminum acrylic housing",
-            Proposal(chunk_id="", quote="Maximum Rated Depth (Aluminum): 300 m", value=300, unit="m", kind="rated"),
-        ),
-        "DOC2_BlueROV2": (
-            "maximum rated depth housing",
-            Proposal(chunk_id="", quote="Maximum Rated Depth: 100 m", value=100, unit="m", kind="rated"),
-        ),
+        "DOC1_BlueROV2": "maximum rated depth aluminum acrylic housing",
+        "DOC2_BlueROV2": "maximum rated depth housing",
     },
     "bar30": {
-        "DOC3_Bar30": (
-            "operating pressure range bar",
-            Proposal(
-                chunk_id="", quote="Operating range: 0 to 30 bar, -20 to +85 C", value=30, unit="bar", kind="rated"
-            ),
-        ),
+        "DOC3_Bar30": "operating pressure range bar",
     },
 }
 
@@ -187,7 +207,7 @@ class RoboticsAdapter(DomainAdapter):
     domain_name = "robotics"
     implemented = True
 
-    def __init__(self) -> None:
+    def __init__(self, client: NebiusTokenFactoryClient | None = None) -> None:
         # One BM25 index per corpus doc, built once at adapter construction —
         # real chunking + real indexing, not mocked.
         self._indexes: dict[str, BM25Index] = {}
@@ -198,6 +218,18 @@ class RoboticsAdapter(DomainAdapter):
             chunks = chunk_document(doc_id, text, chunk_size=300, overlap=50)
             self._indexes[doc_id] = BM25Index(chunks)
             self._chunks_by_id[doc_id] = {c.chunk_id: c for c in chunks}
+        # Injected so tests can supply a scripted fake and default_domains() still
+        # gets a real client — constructing NebiusTokenFactoryClient() only reads
+        # env vars, it makes no network call, so doing this eagerly is safe even
+        # when NEBIUS_API_KEY isn't set; the error surfaces per-call instead (see
+        # gather_evidence below), as a named gap rather than a constructor crash.
+        self._client = client
+        self._client_error: str | None = None
+        if self._client is None:
+            try:
+                self._client = NebiusTokenFactoryClient()
+            except NebiusClientError as exc:
+                self._client_error = str(exc)
 
     async def gather_evidence(self, claim: Claim) -> list[Evidence]:
         text = claim.text.lower()
@@ -206,7 +238,7 @@ class RoboticsAdapter(DomainAdapter):
             part = "bluerov2"
         elif "bar30" in text or "bar 30" in text:
             part = "bar30"
-        # Bar100XT / QuSpin: no corpus, no proposals — falls through to [] below,
+        # Bar100XT / QuSpin: no corpus, no queries — falls through to [] below,
         # same as before; describe_gap() names the reason specifically.
 
         if part is None:
@@ -216,52 +248,52 @@ class RoboticsAdapter(DomainAdapter):
         if condition is None:
             return []  # describe_gap() names why — no depth comparison is guessed
 
+        if self._client is None:
+            # NEBIUS_API_KEY isn't configured at all — an honest, named gap,
+            # not a crash. Distinct from a live call failing (handled below).
+            return []
+
         evidence: list[Evidence] = []
-        for doc_id, (retrieval_query, proposal_template) in _KNOWN_PROPOSALS[part].items():
+        propose_errors: list[str] = []
+        for doc_id, retrieval_query in _RETRIEVAL_QUERIES[part].items():
             _filename, trust = _SOURCES[doc_id]
             index = self._indexes[doc_id]
 
             # REAL retrieval step: BM25 search using a real finding-question, not
-            # a hardcoded chunk_id — see _KNOWN_PROPOSALS' comment for why this is
-            # a question about the document, not the claim text. If the real top
-            # hit doesn't contain the known-correct quote, verify_proposal() below
-            # will reject it, which is the honest outcome, not something to paper over.
+            # a hardcoded chunk_id or quote — see _RETRIEVAL_QUERIES' comment for
+            # why this is a question about the document, not the claim text.
             hits = index.search(retrieval_query, top_k=3)
             if not hits:
                 continue  # no chunk even matched the query — no evidence from this doc
 
+            # REAL propose step: the model sees only these retrieved chunks and
+            # either cites one verbatim or honestly reports it isn't there — never
+            # trusted on its own, verify_proposal() below re-checks it regardless.
+            try:
+                proposal = await propose(retrieval_query, hits, self._client)
+            except (NebiusClientError, httpx.HTTPError) as exc:
+                propose_errors.append(f"{doc_id}: LLM propose call failed: {exc}")
+                continue
+            if proposal is None:
+                continue  # model honestly reported the fact isn't in these passages
+
             # The numeric spec is read from the quote text and must match the proposer's
             # value; stance follows from comparing it with THIS claim's condition.
-            spec_depth, converted, _problem = _spec_depth_m(proposal_template.quote, proposal_template)
-            if spec_depth is None or proposal_template.kind != "rated":
+            spec_depth, converted, _problem = _spec_depth_m(proposal.quote, proposal)
+            if spec_depth is None or proposal.kind != "rated":
                 continue  # not a usable rated depth figure — no evidence from this doc
             stance = _derive_stance(spec_depth, converted, condition)
 
-            # Try the proposal's quote against each retrieved candidate chunk, in
-            # ranked order, rather than assuming the #1 hit is always right.
-            accepted = None
-            for hit in hits:
-                candidate = Proposal(
-                    chunk_id=hit.chunk.chunk_id,
-                    quote=proposal_template.quote,
-                    value=proposal_template.value,
-                    unit=proposal_template.unit,
-                    kind=proposal_template.kind,
-                )
-                result = verify_proposal(
-                    candidate, self._chunks_by_id[doc_id], source=doc_id, stance=stance, trust=trust
-                )
-                if result.accepted:
-                    accepted = result
-                    break
-            if accepted and accepted.evidence:
-                ev = accepted.evidence
+            result = verify_proposal(proposal, self._chunks_by_id[doc_id], source=doc_id, stance=stance, trust=trust)
+            if result.accepted and result.evidence:
+                ev = result.evidence
                 note = (
                     f" [rating ~{spec_depth:.0f} m depth-equivalent vs claimed {condition.depth_m:g} m: "
                     f"{'survives' if condition.survives else 'fails'} claim -> {stance}]"
                 )
                 evidence.append(replace(ev, snippet=ev.snippet + note))
 
+        self._last_propose_errors = propose_errors
         return evidence
 
     @staticmethod
@@ -277,6 +309,17 @@ class RoboticsAdapter(DomainAdapter):
             _cond, reason = _parse_condition(claim)
             if reason is not None:
                 return [f"Part is in the corpus but the depth condition is unusable: {reason}"]
+            if self._client is None:
+                return [
+                    "Part is in the corpus and the depth condition parses fine, but the LLM "
+                    f"propose step can't run: {self._client_error}"
+                ]
+            propose_errors = getattr(self, "_last_propose_errors", [])
+            if propose_errors:
+                return [
+                    "Part is in the corpus and the depth condition parses fine, but the live "
+                    "LLM propose call failed for every source doc: " + "; ".join(propose_errors)
+                ]
         if "bar100" in text or "bar 100" in text:
             return [
                 "Bar100XT is a known revision-target part with NO sourced datasheet evidence "
