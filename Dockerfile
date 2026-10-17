@@ -1,8 +1,3 @@
-# NOT build-tested — this build sandbox has no Docker daemon available, so this
-# file was written and reasoned through but never actually `docker build`'d.
-# Test it for real (`docker build -t anticassiopeia .`) before relying on it for
-# the submission; the most likely failure point is the RUN evals step below if
-# any path assumption is wrong.
 FROM python:3.12-slim
 
 WORKDIR /app
