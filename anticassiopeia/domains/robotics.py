@@ -1,59 +1,153 @@
 """
 Robotics domain adapter — physical/datasheet POV.
 
-Verifies claims about real hardware against real, cited sources: datasheets,
-manufacturer spec sheets, and per-part/whole-assembly survivability
-conditions.
+Verifies claims about real hardware against real, cited sources, now
+routed through the real retrieve→verify pipeline in anticassiopeia.retrieval
+instead of hand-typed Evidence objects: corpus text is chunked for real
+(retrieval/chunking.py), BM25-searched for real (retrieval/bm25.py), and
+every proposed quote is independently re-checked against the actual chunk
+text for real (retrieval/verify.py) — nothing below gets to claim a
+locator the verification step didn't actually confirm.
 
-STATUS: seeded, not live. `gather_evidence()` below is a small, hand-built
-lookup over facts extracted and sourced from Eclipse: Constellation's own
-datasheet research (see
-docs/extracted/constellation-robotics-seed.md for full provenance and the
-retrieval-pattern this is modeled on). It is real, locator-backed evidence
-for exactly the parts Constellation had already sourced — not a live
-datasheet-retrieval pipeline. A claim about any part whose keyword
-`gather_evidence()` doesn't recognize returns no evidence and an honest
-gap, the same as before. This is step one of the pattern described in the seed doc
-(ingest → hybrid retrieve → propose → independently verify → contested-or-
-missing as explicit outcomes), not the finished version of it.
+HONEST LIMITATION, stated plainly: the LLM "propose" step
+(retrieval/extract.py) is NOT live here — there's no NEBIUS_API_KEY in
+this build session. The Proposals below (`_KNOWN_PROPOSALS`) are authored
+by this adapter directly, standing in for what `extract.propose()` would
+return once that's wired to a real key. This is a real gap, not a design
+choice: retrieve (BM25 search) and verify (verbatim re-check against the
+actual chunk) are both fully real and run on every call; propose is
+simulated. Swap `_lookup_proposal()` for a real `await propose(...)` call
+once NEBIUS_API_KEY is available — the rest of the pipeline doesn't change.
 
-KNOWN LIMITATION, stated plainly rather than discovered later: `stance` on
-every piece of evidence below is hand-assigned at authoring time against
-one fixed claim framing ("<part> survives 500 m depth"). Evidence
-retrieval here matches by part keyword only, not by claim polarity — a
-claim phrased the other way ("<part> fails at 500 m") would retrieve the
-*same* evidence objects with the *same* hardcoded stance, producing a
-backwards verdict. This is exactly the kind of flaw this project exists
-to catch, so it's being named here instead of papered over: do not trust
-this adapter against a claim phrased as a negation until this is fixed
-(real fix: derive stance from a comparison between the retrieved spec
-value and the claim's stated condition, not from authoring-time intent).
+Corpus: anticassiopeia/corpus/doc{1,2,3}_*.txt — partial excerpts
+containing only the lines Constellation's own research directly quoted
+and sourced (see docs/extracted/constellation-robotics-seed.md for full
+provenance). The Bar30 excerpt deliberately omits Constellation's
+canary-altered overpressure line entirely, not just avoids citing it.
+
+Bar100XT and QuSpin QZFM Gen-3 still have no corpus — Constellation never
+sourced them (narrative-only). Unchanged from before: an honest, specific
+gap, not a guess.
+
+KNOWN LIMITATION, carried over: the stance assigned to each proposal below
+("contradicts" 500m) is still fixed at authoring time against one claim
+framing, not derived from a real polarity-aware comparison — same caveat
+as before, now inherited by the pipeline instead of fixed by it.
 """
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from anticassiopeia.core.domain import DomainAdapter
 from anticassiopeia.core.verdict import Claim, Evidence
+from anticassiopeia.retrieval import BM25Index, Proposal, chunk_document, verify_proposal
 
+_CORPUS_DIR = Path(__file__).parent.parent / "corpus"
 _SEED_DOC = "docs/extracted/constellation-robotics-seed.md"
+
+# doc_id -> (corpus file, stance against "<part> survives 500m depth", trust)
+_SOURCES: dict[str, tuple[str, str, float]] = {
+    "DOC1_BlueROV2": ("doc1_bluerov2_excerpt.txt", "contradicts", 0.8),
+    "DOC2_BlueROV2": ("doc2_bluerov2_excerpt.txt", "contradicts", 0.7),
+    "DOC3_Bar30": ("doc3_bar30_excerpt.txt", "contradicts", 0.85),
+}
+
+# Stand-in for extract.propose() until NEBIUS_API_KEY is live — see module docstring.
+# part keyword -> doc_id -> (retrieval_query, Proposal). retrieval_query is a real
+# finding-question ("what's the housing depth rating"), NOT the raw claim text —
+# a real datasheet doesn't restate the claim being checked, it states facts, and
+# retrieval has to be searched for what the document would actually say. (Found
+# this the hard way: Bar30's own chip datasheet excerpt never contains the string
+# "Bar30" at all — it's framed entirely around pressure specs — so a BM25 search
+# on the literal claim text "Bar30 survives 500m depth" matched nothing. Fixed by
+# asking what the document would say, not what the claim says.)
+# verify_proposal() independently re-checks every quote below against the real
+# chunk text on every call — a wrong quote here fails loudly, not silently.
+_KNOWN_PROPOSALS: dict[str, dict[str, tuple[str, Proposal]]] = {
+    "bluerov2": {
+        "DOC1_BlueROV2": (
+            "maximum rated depth aluminum acrylic housing",
+            Proposal(chunk_id="", quote="Maximum Rated Depth (Aluminum): 300 m", value=300, unit="m", kind="rated"),
+        ),
+        "DOC2_BlueROV2": (
+            "maximum rated depth housing",
+            Proposal(chunk_id="", quote="Maximum Rated Depth: 100 m", value=100, unit="m", kind="rated"),
+        ),
+    },
+    "bar30": {
+        "DOC3_Bar30": (
+            "operating pressure range bar",
+            Proposal(
+                chunk_id="", quote="Operating range: 0 to 30 bar, -20 to +85 C", value=30, unit="bar", kind="rated"
+            ),
+        ),
+    },
+}
 
 
 class RoboticsAdapter(DomainAdapter):
     domain_name = "robotics"
-    implemented = True  # seeded with real sourced facts for 2 of 4 researched parts — see module docstring
+    implemented = True
+
+    def __init__(self) -> None:
+        # One BM25 index per corpus doc, built once at adapter construction —
+        # real chunking + real indexing, not mocked.
+        self._indexes: dict[str, BM25Index] = {}
+        self._chunks_by_id: dict[str, dict] = {}
+        for doc_id, (filename, _stance, _trust) in _SOURCES.items():
+            path = _CORPUS_DIR / filename
+            text = path.read_text()
+            chunks = chunk_document(doc_id, text, chunk_size=300, overlap=50)
+            self._indexes[doc_id] = BM25Index(chunks)
+            self._chunks_by_id[doc_id] = {c.chunk_id: c for c in chunks}
 
     async def gather_evidence(self, claim: Claim) -> list[Evidence]:
         text = claim.text.lower()
+        part = None
+        if "bluerov2" in text or "blue rov" in text or "blue rov2" in text:
+            part = "bluerov2"
+        elif "bar30" in text or "bar 30" in text:
+            part = "bar30"
+        # Bar100XT / QuSpin: no corpus, no proposals — falls through to [] below,
+        # same as before; describe_gap() names the reason specifically.
+
+        if part is None:
+            return []
 
         evidence: list[Evidence] = []
-        if "bluerov2" in text or "blue rov" in text or "blue rov2" in text:
-            evidence += self._bluerov2_housing_evidence()
-        if "bar30" in text or "bar 30" in text:
-            evidence += self._bar30_evidence()
-        # Bar100XT and QuSpin QZFM Gen-3 are known to this adapter but intentionally
-        # produce no evidence — Constellation never sourced them (narrative-only,
-        # see seed doc §3-4). describe_gap() below says so explicitly rather than
-        # falling through to the generic "no datasheet found" message.
+        for doc_id, (retrieval_query, proposal_template) in _KNOWN_PROPOSALS[part].items():
+            _filename, stance, trust = _SOURCES[doc_id]
+            index = self._indexes[doc_id]
+
+            # REAL retrieval step: BM25 search using a real finding-question, not
+            # a hardcoded chunk_id — see _KNOWN_PROPOSALS' comment for why this is
+            # a question about the document, not the claim text. If the real top
+            # hit doesn't contain the known-correct quote, verify_proposal() below
+            # will reject it, which is the honest outcome, not something to paper over.
+            hits = index.search(retrieval_query, top_k=3)
+            if not hits:
+                continue  # no chunk even matched the query — no evidence from this doc
+
+            # Try the proposal's quote against each retrieved candidate chunk, in
+            # ranked order, rather than assuming the #1 hit is always right.
+            accepted = None
+            for hit in hits:
+                candidate = Proposal(
+                    chunk_id=hit.chunk.chunk_id,
+                    quote=proposal_template.quote,
+                    value=proposal_template.value,
+                    unit=proposal_template.unit,
+                    kind=proposal_template.kind,
+                )
+                result = verify_proposal(
+                    candidate, self._chunks_by_id[doc_id], source=doc_id, stance=stance, trust=trust
+                )
+                if result.accepted:
+                    accepted = result
+                    break
+            if accepted and accepted.evidence:
+                evidence.append(accepted.evidence)
 
         return evidence
 
@@ -78,64 +172,6 @@ class RoboticsAdapter(DomainAdapter):
             ]
         return [
             f"No datasheet or spec-sheet evidence found for this part/assembly claim in "
-            f"this adapter's seeded facts ({_SEED_DOC}). Robotics verdicts require a "
+            f"this adapter's seeded corpus ({_CORPUS_DIR}). Robotics verdicts require a "
             "traceable datasheet locator, not a generated spec."
-        ]
-
-    # -- seeded facts, each carrying a real locator back to its source --------------
-
-    @staticmethod
-    def _bluerov2_housing_evidence() -> list[Evidence]:
-        # Two manufacturer-revision datasheets disagree on the exact rating (300m vs
-        # 100m aluminum/acrylic) but AGREE on stance — both fail a 500m condition — so
-        # per core/verdict.py these are NOT "contested"; the disagreement in magnitude
-        # is carried in each entry's own snippet instead of hidden.
-        return [
-            Evidence(
-                source="Blue Robotics BlueROV2 datasheet, 2025 revision (DOC1)",
-                snippet=(
-                    "Maximum Rated Depth (Acrylic): 100 m; Maximum Rated Depth (Aluminum): 300 m "
-                    "— best case 300 m, 40% short of a 500 m condition."
-                ),
-                stance="contradicts",
-                trust=0.8,
-                locator=f"{_SEED_DOC} §1.1, citing evals/model-comparison/corpus/DOC1_BlueROV2_datasheet_2025.txt:18-19",
-            ),
-            Evidence(
-                source="Blue Robotics BlueROV2 datasheet, Rev 10/16 (DOC2)",
-                snippet=(
-                    "Maximum Rated Depth: 100 m (no aluminum variant listed); "
-                    "Maximum Tested Depth: 130 m — fails a 500 m condition outright."
-                ),
-                stance="contradicts",
-                trust=0.7,
-                locator=f"{_SEED_DOC} §1.1, citing evals/model-comparison/corpus/DOC2_BlueROV2_datasheet_rev1016.txt:17,22-23",
-            ),
-        ]
-
-    @staticmethod
-    def _bar30_evidence() -> list[Evidence]:
-        return [
-            Evidence(
-                source="Blue Robotics Bar30 / TE Connectivity MS5837-30BA chip datasheet (DOC3, unaltered line)",
-                snippet=(
-                    "Operating pressure range: 0 to 30 bar, -20 to +85 C "
-                    "(≈296 m depth-equivalent) — fails a 500 m condition by ~40%."
-                ),
-                stance="contradicts",
-                trust=0.85,
-                locator=f"{_SEED_DOC} §2, citing evals/model-comparison/corpus/DOC3_Bar30_MS5837-30BA_chip_datasheet.txt:11,33",
-            ),
-            Evidence(
-                source="Constellation's own canary documentation (METHOD.md) — NOT the chip datasheet directly",
-                snippet=(
-                    "Real overpressure Pmax ≈50 bar (≈500 m-equivalent) per Constellation's stated "
-                    "ground truth for its own canary test; the in-corpus value (45 bar) is a "
-                    "documented fake and is excluded here. 50 bar has not been independently "
-                    "re-verified against the live vendor PDF by this adapter."
-                ),
-                stance="neutral",  # ~500m sits at the destructive limit either way — too close to call a stance
-                trust=0.3,  # low trust: secondhand (Constellation's doc about its own test), not independently re-verified
-                locator=f"{_SEED_DOC} §2, citing evals/model-comparison/METHOD.md:59-73",
-            ),
         ]

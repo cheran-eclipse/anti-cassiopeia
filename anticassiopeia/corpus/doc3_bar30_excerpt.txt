@@ -1,0 +1,14 @@
+PARTIAL EXCERPT — Blue Robotics Bar30 / TE Connectivity MS5837-30BA chip datasheet (DOC3).
+Only the UNALTERED (non-canary) lines sourced in
+docs/extracted/constellation-robotics-seed.md section 2 are included below.
+Constellation's own corpus deliberately altered one line in the real document
+(an overpressure "Pmax" test canary, real value 50 bar, altered to 45 bar in
+their corpus) as a test for models answering from training memory instead of
+given text — see METHOD.md:59-73, quoted in the seed doc. That line is
+INTENTIONALLY OMITTED from this excerpt entirely, not included and marked
+fake, so there is nothing here for a BM25 search or an LLM proposal to ever
+surface as if it were real. Line numbers below do NOT match the original
+corpus file's line numbers.
+
+Operating range: 0 to 30 bar, -20 to +85 C
+Operating Pressure Range: 0 to 30 bar

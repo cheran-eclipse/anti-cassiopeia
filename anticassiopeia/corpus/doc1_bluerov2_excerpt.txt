@@ -1,0 +1,10 @@
+PARTIAL EXCERPT — Blue Robotics BlueROV2 datasheet, 2025 revision (DOC1).
+Only the lines directly quoted and sourced in docs/extracted/constellation-robotics-seed.md
+section 1.1 are included below (this repo does not hold the full vendor PDF or
+Constellation's full transcription of it — see that file for provenance).
+Line numbers below do NOT match the original corpus file's line numbers.
+
+Maximum Rated Depth (Acrylic): 100 m
+Maximum Rated Depth (Aluminum): 300 m
+Buoyancy foam rated to 300 m
+Pressure/Depth and Temperature Sensor (external): Blue Robotics Bar30

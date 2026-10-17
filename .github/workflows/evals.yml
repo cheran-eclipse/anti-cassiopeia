@@ -15,7 +15,10 @@ jobs:
           python-version: "3.12"
 
       - name: Install
-        run: pip install -e .
+        run: pip install -e ".[dev]"
+
+      - name: Run unit test suite
+        run: PYTHONPATH=. python -m pytest tests/ -v
 
       - name: Run eval suite
         run: PYTHONPATH=. python evals/run_evals.py
