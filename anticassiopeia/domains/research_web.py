@@ -41,6 +41,16 @@ from anticassiopeia.core.verdict import Claim, Evidence
 _TAG_RE = re.compile(r"<[^>]+>")
 _WS_RE = re.compile(r"\s+")
 _FETCH_TIMEOUT = 15.0
+_BLOCK_PAGE_MARKERS = (
+    "access denied",
+    "request blocked",
+    "forbidden",
+    "blocked by policy",
+    "security policy",
+    "web filter",
+    "proxy",
+    "zscaler",
+)
 
 
 def _normalize(text: str) -> str:
@@ -52,6 +62,11 @@ def _strip_html(html: str) -> str:
     # quote appears in a static page's visible text, not a real renderer.
     no_script = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", html, flags=re.DOTALL | re.IGNORECASE)
     return _TAG_RE.sub(" ", no_script)
+
+
+def _looks_like_block_page(html: str) -> bool:
+    text = _normalize(_strip_html(html))
+    return any(marker in text for marker in _BLOCK_PAGE_MARKERS)
 
 
 class ResearchWebAdapter(DomainAdapter):
@@ -89,6 +104,12 @@ class ResearchWebAdapter(DomainAdapter):
 
         page_text = _normalize(_strip_html(resp.text))
         found = _normalize(quote) in page_text
+        if not found and _looks_like_block_page(resp.text):
+            self._last_fetch_error = (
+                f"Fetch of '{url}' appears to have returned a network block/proxy page (HTTP {resp.status_code}) "
+                "instead of the requested source content."
+            )
+            return []
 
         snippet = (
             f"Quote {'found' if found else 'NOT found'} verbatim (whitespace-normalized) "
