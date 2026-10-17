@@ -1,0 +1,9 @@
+{
+  "claim": {
+    "text": "design meets 100 MHz timing",
+    "domain": "fpga_embedded",
+    "context": {"report_path": "evals/fixtures/sample_timing_report.txt", "metric": "max_frequency_mhz", "comparator": ">=", "expected_value": 100}
+  },
+  "expected_state": "confirmed",
+  "note": "Fixture report states max_frequency_mhz: 142.5, which clears a 100 MHz requirement."
+}

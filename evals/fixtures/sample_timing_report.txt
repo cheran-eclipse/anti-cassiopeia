@@ -1,0 +1,4 @@
+# Synthetic synthesis/timing report fixture (not from a real EDA tool)
+max_frequency_mhz: 142.5
+slack_ns: 0.32
+luts_used: 18422

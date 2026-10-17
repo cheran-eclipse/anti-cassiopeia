@@ -11,9 +11,9 @@ datasheet research (see
 docs/extracted/constellation-robotics-seed.md for full provenance and the
 retrieval-pattern this is modeled on). It is real, locator-backed evidence
 for exactly the parts Constellation had already sourced — not a live
-datasheet-retrieval pipeline. A claim about any part not in
-`_KNOWN_PARTS` below returns no evidence and an honest gap, the same as
-before. This is step one of the pattern described in the seed doc
+datasheet-retrieval pipeline. A claim about any part whose keyword
+`gather_evidence()` doesn't recognize returns no evidence and an honest
+gap, the same as before. This is step one of the pattern described in the seed doc
 (ingest → hybrid retrieve → propose → independently verify → contested-or-
 missing as explicit outcomes), not the finished version of it.
 

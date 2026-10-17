@@ -1,0 +1,9 @@
+{
+  "claim": {
+    "text": "design hits an unreported metric",
+    "domain": "fpga_embedded",
+    "context": {"report_path": "evals/fixtures/sample_timing_report.txt", "metric": "ghost_metric", "comparator": ">=", "expected_value": 0}
+  },
+  "expected_state": "undetermined",
+  "note": "Confirms a metric absent from the report produces a named gap listing the keys that WERE parsed, not a crash or a silent default."
+}

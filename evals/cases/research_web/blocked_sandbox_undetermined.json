@@ -1,0 +1,9 @@
+{
+  "claim": {
+    "text": "example.com states it is reserved for illustrative examples",
+    "domain": "research_web",
+    "context": {"url": "https://example.com", "quote": "illustrative examples in documents"}
+  },
+  "acceptable_states": ["undetermined", "confirmed"],
+  "note": "Genuinely environment-dependent, not a flaky adapter: 'undetermined' here (this build sandbox's outbound network is allowlisted to package registries + GitHub only, so the fetch 403s) and 'confirmed' anywhere with open outbound HTTPS, since the quote really is on that page. 'contradicted' would mean the quote-match logic broke, and would correctly fail this case."
+}

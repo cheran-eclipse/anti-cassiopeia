@@ -1,0 +1,9 @@
+{
+  "claim": {
+    "text": "voltage column mean is 5.0V",
+    "domain": "ml_data",
+    "context": {"dataset_path": "evals/fixtures/sample_measurements.csv", "column": "voltage", "stat": "mean", "expected_value": 5.0, "tolerance": 0.01}
+  },
+  "expected_state": "confirmed",
+  "note": "Real re-computed mean over evals/fixtures/sample_measurements.csv is exactly 5.0 (verified independently with statistics.mean before writing this case). First real CONFIRMED verdict produced by the engine."
+}

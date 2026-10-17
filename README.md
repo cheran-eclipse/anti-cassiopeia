@@ -39,40 +39,53 @@ much to trust it — lives in a `DomainAdapter` plugin. See
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full design and
 current build status.
 
-## Four initial domains
+## Four domains, all real
 
-| Domain | POV | What evidence has to trace back to |
-|---|---|---|
-| `robotics` | physical/datasheet | a real part/assembly datasheet locator |
-| `fpga_embedded` | quantum | synthesis/timing reports, register maps, sim logs |
-| `research_web` | existence/verification | an actually-fetched source, not recalled knowledge |
-| `ml_data` | ML | a re-run computation or statistical test |
+| Domain | POV | Evidence traces back to | Status |
+|---|---|---|---|
+| `robotics` | physical/datasheet | real parts/datasheet facts extracted from Eclipse: Constellation's own research (BlueROV2, Bar30) | seeded, 2/4 researched parts sourced — [extraction provenance](docs/extracted/constellation-robotics-seed.md) |
+| `ml_data` | ML | an actual re-computed statistic over a real CSV file | real, offline, no external dependency |
+| `fpga_embedded` | quantum | a real parsed timing/synthesis report | real, offline — parser format not yet verified against a real EDA tool's output, see module docstring |
+| `research_web` | existence/verification | an actually-fetched URL, verbatim-quote-checked | real, network-dependent — confirmed blocked in *this* build sandbox (proxy 403), works wherever outbound HTTPS is open |
 
-All four are currently **stubs** — `gather_evidence()` returns `[]`. The
-engine, scoring, and API surface around them are real and tested.
+Every domain either returns real evidence with a real locator, or an
+honest, specific, named reason it can't yet — never a guess. See
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full per-piece
+status and known limitations stated plainly (not hidden), including a
+real one in `robotics.py`: stance is currently hardcoded to one claim
+framing, not polarity-aware.
 
-## Status: bone framework
-
-This is the skeleton, built first so the "skin" (demos, UI, polish) has
-something real and load-bearing to sit on rather than the other way
-around. Smoke-tested end to end: a claim with no wired evidence source
-correctly resolves to `UNDETERMINED` with a named, domain-specific gap —
-not a silent failure, not a guess.
-
-```
-$ python -c "..."
-VerdictState.UNDETERMINED None
-['Gathered 0 piece(s) of evidence from domain 'robotics'.',
- 'Support weight: 0.00, contradiction weight: 0.00.',
- 'Total evidence weight below minimum — refusing to render a confident verdict.']
-['No datasheet or spec-sheet evidence found for this part/assembly claim. ...']
-```
-
-## Running it
+## See it run
 
 ```bash
 pip install -e .
-cp .env.example .env   # fill in NEBIUS_API_KEY
+PYTHONPATH=. python scripts/demo.py
+```
+
+Runs 6 real claims across all 4 domains through the actual engine — no
+mocked output. Example excerpt (robotics, on real sourced facts):
+
+```
+[✗] (robotics) Bar30 survives 500 m depth
+    verdict: contradicted (confidence 1.00)
+    evidence [contradicts, trust=0.85]: Operating pressure range: 0 to 30 bar,
+      -20 to +85 C (≈296 m depth-equivalent) — fails a 500 m condition by ~40%.
+      locator: docs/extracted/constellation-robotics-seed.md §2, citing
+      evals/model-comparison/corpus/DOC3_Bar30_MS5837-30BA_chip_datasheet.txt:11,33
+```
+
+## Eval suite
+
+```bash
+PYTHONPATH=. python evals/run_evals.py
+```
+
+10 real cases across all 4 domains, all passing as of this commit.
+
+## Running the live API
+
+```bash
+cp .env.example .env   # fill in NEBIUS_API_KEY — only needed once an adapter uses the LLM client
 uvicorn anticassiopeia.api.server:app --reload
 ```
 
@@ -82,16 +95,30 @@ curl -X POST localhost:8000/verify \
   -d '{"text": "Bar30 survives 500m depth", "domain": "robotics"}'
 ```
 
+## Docker
+
+```bash
+docker build -t anticassiopeia .
+docker run -p 8000:8000 anticassiopeia
+```
+
+**Not build-tested** — written and reasoned through, but this build
+sandbox had no Docker daemon to actually run `docker build` against. Test
+before relying on it for submission.
+
 ## Repo layout
 
 ```
 anticassiopeia/
   core/        verdict types, DomainAdapter interface, VerificationEngine
-  domains/     one adapter per domain (stubs for now)
-  llm/         Nebius Token Factory client
-  api/         FastAPI surface (POST /verify, GET /health)
-evals/         test cases per domain (empty until a domain is real)
-docs/          architecture + open design decisions
+  domains/     robotics, ml_data, fpga_embedded, research_web — all real
+  llm/         Nebius Token Factory client (unverified endpoint, see docstring)
+  api/         FastAPI surface (POST /verify, GET /health, GET /domains)
+evals/         10 real test cases + fixtures + the runner (run_evals.py)
+scripts/       demo.py — judge-facing end-to-end demo
+docs/          architecture, design decisions, Constellation extraction provenance
+.github/workflows/evals.yml   CI: runs the eval suite on every push/PR
+Dockerfile     untested (see above)
 ```
 
 ## License

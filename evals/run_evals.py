@@ -32,12 +32,20 @@ async def main() -> int:
         claim = Claim(**case["claim"])
         verdict = await engine.verify(claim)
         got = verdict.state.value
-        want = case["expected_state"]
-        ok = got == want
+
+        # Most cases: one correct answer. A few (currently just research_web's
+        # sandbox case) are genuinely environment-dependent — e.g. network
+        # availability changes the correct verdict — and declare the full set of
+        # states that count as a pass via "acceptable_states" instead of a single
+        # "expected_state". Don't add this escape hatch to a case casually; it
+        # exists for real environment variance, not to paper over a flaky adapter.
+        acceptable = case.get("acceptable_states") or [case["expected_state"]]
+        ok = got in acceptable
         passed += ok
         failed += not ok
         status = "PASS" if ok else "FAIL"
-        print(f"[{status}] {path.relative_to(CASES_DIR)} — expected={want} got={got}")
+        want_desc = case.get("expected_state", "/".join(acceptable))
+        print(f"[{status}] {path.relative_to(CASES_DIR)} — expected={want_desc} got={got}")
         if not ok:
             print(f"         note: {case.get('note', '')}")
 
