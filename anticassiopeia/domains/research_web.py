@@ -14,10 +14,11 @@ sandbox — a live test against https://example.com failed with
 allowlisted to package registries and GitHub, nothing else), and that
 failure came back correctly as an UNDETERMINED verdict with the real
 proxy error as the named gap, not a crash or a silent guess. That's the
-one case this adapter could actually prove end to end from here: run
-`evals/run_evals.py` somewhere with open outbound HTTPS (your machine,
-the actual deployment target) to get a real `supports`/`contradicts`
-verdict instead. The HTML-to-text
+one case this adapter could actually prove end to end from there. Evals and
+the demo now fetch a local fixture server (evals/fixture_server.py) over real
+HTTP, so confirmed/contradicted/block-page paths are exercised offline; only
+evals/cases/research_web/live_example_com_drift.json touches the internet, and
+it accepts any verdict (including `contradicted` when the live page drifts). The HTML-to-text
 extraction below is a plain regex tag-stripper, not a real HTML parser —
 it will mis-handle `<script>`/`<style>` content and JS-rendered pages;
 good enough for a static page's body text, not a guarantee.

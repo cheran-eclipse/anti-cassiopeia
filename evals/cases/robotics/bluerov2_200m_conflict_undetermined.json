@@ -1,0 +1,5 @@
+{
+  "claim": {"text": "BlueROV2 survives 200 m depth", "domain": "robotics", "context": {}},
+  "expected_state": "undetermined",
+  "note": "Sourced documents disagree (DOC1: 300 m, DOC2: 100 m); at 200 m one supports and one contradicts, net trust-weight 0.1 < threshold. Conflicting sources must not be rounded to a verdict."
+}

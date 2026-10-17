@@ -29,14 +29,37 @@ Bar100XT and QuSpin QZFM Gen-3 still have no corpus — Constellation never
 sourced them (narrative-only). Unchanged from before: an honest, specific
 gap, not a guess.
 
-KNOWN LIMITATION, carried over: the stance assigned to each proposal below
-("contradicts" 500m) is still fixed at authoring time against one claim
-framing, not derived from a real polarity-aware comparison — same caveat
-as before, now inherited by the pipeline instead of fixed by it.
+Stance is derived per claim, not fixed at authoring time: the claim's depth
+condition and polarity are read (see `_parse_condition`), the numeric spec is
+re-parsed from the VERIFIED quote text (not trusted from the proposer's
+`value`), converted to a depth rating in metres, and compared. So
+"Bar30 survives 500 m" and "Bar30 fails at 500 m" get the same retrieved
+evidence and OPPOSITE stances, as they must.
+
+Claim contract (via Claim.context, preferred — no free-text parsing):
+    {"depth_m": float, "polarity": "survives" | "fails"}   # polarity defaults to "survives"
+If depth_m is absent, a deliberately narrow text grammar is tried
+("<part> survives|withstands|fails|does not survive ... [at] <N> m [depth]").
+Anything outside that grammar (negated verbs like "does not fail", other
+units, no depth at all) is NOT guessed at: it returns no evidence and
+describe_gap() names exactly what is missing.
+
+Semantics, stated plainly: the sourced facts are RATINGS. "survives N m"
+means N m is within the part's rated limit; "fails at N m" means N m exceeds
+it. A rating is not a destructive test, so "fails" here means "beyond rated
+spec", not "observed to break".
+
+Pressure ratings (bar) are converted to depth with seawater density 1025
+kg/m^3 and g = 9.80665 m/s^2, treating the figure as gauge pressure. The
+gauge-vs-absolute ambiguity is ~3%, so a converted rating within 5% of the
+claimed depth is recorded as neutral (no stance) instead of guessed at.
+Ratings stated directly in metres are compared exactly.
 """
 
 from __future__ import annotations
 
+import re
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from anticassiopeia.core.domain import DomainAdapter
@@ -46,12 +69,86 @@ from anticassiopeia.retrieval import BM25Index, Proposal, chunk_document, verify
 _CORPUS_DIR = Path(__file__).parent.parent / "corpus"
 _SEED_DOC = "docs/extracted/constellation-robotics-seed.md"
 
-# doc_id -> (corpus file, stance against "<part> survives 500m depth", trust)
-_SOURCES: dict[str, tuple[str, str, float]] = {
-    "DOC1_BlueROV2": ("doc1_bluerov2_excerpt.txt", "contradicts", 0.8),
-    "DOC2_BlueROV2": ("doc2_bluerov2_excerpt.txt", "contradicts", 0.7),
-    "DOC3_Bar30": ("doc3_bar30_excerpt.txt", "contradicts", 0.85),
+# doc_id -> (corpus file, trust). Stance is NOT stored here — it is derived per claim.
+_SOURCES: dict[str, tuple[str, float]] = {
+    "DOC1_BlueROV2": ("doc1_bluerov2_excerpt.txt", 0.8),
+    "DOC2_BlueROV2": ("doc2_bluerov2_excerpt.txt", 0.7),
+    "DOC3_Bar30": ("doc3_bar30_excerpt.txt", 0.85),
 }
+
+_SEAWATER_DENSITY = 1025.0  # kg/m^3
+_GRAVITY = 9.80665          # m/s^2
+_BAR_TO_PA = 1e5
+#: A bar-derived depth within this fraction of the claimed depth is too close to call
+#: given the gauge/absolute ambiguity — recorded as neutral, not guessed.
+_CONVERSION_MARGIN = 0.05
+
+_SPEC_RE = re.compile(r"(\d+(?:\.\d+)?)\s*(m|bar)\b", re.IGNORECASE)
+
+_POSITIVE_VERBS = r"survives?|withstands?"
+_NEGATIVE_VERBS = r"fails?|does not survive|doesn't survive|cannot survive|can't survive|does not withstand|doesn't withstand"
+_CLAIM_RE = re.compile(
+    rf"^(?P<part>.+?)\s+(?:(?P<pos>{_POSITIVE_VERBS})|(?P<neg>{_NEGATIVE_VERBS}))"
+    r"(?:\s+(?:at|to))?\s+(?P<depth>\d+(?:\.\d+)?)\s*m(?:eters?|etres?)?(?:\s+depth)?\s*[.!]?$",
+    re.IGNORECASE,
+)
+# A negation inside the part-name span means the verb itself is negated ("does not fail").
+_NEGATION_RE = re.compile(r"\b(?:not|never|cannot|can't|no)\b|n't\b", re.IGNORECASE)
+
+
+@dataclass(frozen=True)
+class _Condition:
+    depth_m: float
+    survives: bool  # True: claim asserts the part survives depth_m; False: asserts it fails there
+
+
+def _parse_condition(claim: Claim) -> tuple[_Condition | None, str | None]:
+    """Returns (condition, None) or (None, reason it could not be determined)."""
+    ctx = claim.context
+    if "depth_m" in ctx:
+        try:
+            depth = float(ctx["depth_m"])
+        except (TypeError, ValueError):
+            return None, f"context['depth_m'] is not a number: {ctx['depth_m']!r}."
+        polarity = ctx.get("polarity", "survives")
+        if polarity not in ("survives", "fails"):
+            return None, f"context['polarity'] must be 'survives' or 'fails', got {polarity!r}."
+        return _Condition(depth, polarity == "survives"), None
+
+    m = _CLAIM_RE.match(claim.text.strip())
+    if m is None or _NEGATION_RE.search(m.group("part")):
+        return None, (
+            "could not read an unambiguous depth condition from the claim text "
+            "(supported: '<part> survives|withstands|fails [at] <N> m [depth]'); "
+            "pass Claim.context={'depth_m': <metres>, 'polarity': 'survives'|'fails'} instead."
+        )
+    return _Condition(float(m.group("depth")), survives=m.group("pos") is not None), None
+
+
+def _spec_depth_m(quote: str, proposal: Proposal) -> tuple[float | None, bool, str | None]:
+    """Depth rating in metres from the VERIFIED quote text -> (depth_m, converted_from_bar, problem).
+
+    The number comes from the quote itself, and must agree with what the
+    proposer claimed — a mismatch is rejected, never reconciled in the proposer's favour.
+    """
+    specs = _SPEC_RE.findall(quote)
+    if len(specs) != 1:
+        return None, False, f"expected exactly one m/bar figure in the quote, found {len(specs)}"
+    number, unit = float(specs[0][0]), specs[0][1].lower()
+    if proposal.value is not None and (float(proposal.value) != number or (proposal.unit or "").lower() != unit):
+        return None, False, (
+            f"proposal says {proposal.value!r} {proposal.unit!r} but the quote states {number:g} {unit}"
+        )
+    if unit == "m":
+        return number, False, None
+    return number * _BAR_TO_PA / (_SEAWATER_DENSITY * _GRAVITY), True, None
+
+
+def _derive_stance(spec_depth_m: float, converted: bool, cond: _Condition) -> str:
+    if converted and abs(spec_depth_m - cond.depth_m) <= _CONVERSION_MARGIN * cond.depth_m:
+        return "neutral"
+    within_rating = spec_depth_m >= cond.depth_m
+    return "supports" if within_rating == cond.survives else "contradicts"
 
 # Stand-in for extract.propose() until NEBIUS_API_KEY is live — see module docstring.
 # part keyword -> doc_id -> (retrieval_query, Proposal). retrieval_query is a real
@@ -95,7 +192,7 @@ class RoboticsAdapter(DomainAdapter):
         # real chunking + real indexing, not mocked.
         self._indexes: dict[str, BM25Index] = {}
         self._chunks_by_id: dict[str, dict] = {}
-        for doc_id, (filename, _stance, _trust) in _SOURCES.items():
+        for doc_id, (filename, _trust) in _SOURCES.items():
             path = _CORPUS_DIR / filename
             text = path.read_text()
             chunks = chunk_document(doc_id, text, chunk_size=300, overlap=50)
@@ -115,9 +212,13 @@ class RoboticsAdapter(DomainAdapter):
         if part is None:
             return []
 
+        condition, _problem = _parse_condition(claim)
+        if condition is None:
+            return []  # describe_gap() names why — no depth comparison is guessed
+
         evidence: list[Evidence] = []
         for doc_id, (retrieval_query, proposal_template) in _KNOWN_PROPOSALS[part].items():
-            _filename, stance, trust = _SOURCES[doc_id]
+            _filename, trust = _SOURCES[doc_id]
             index = self._indexes[doc_id]
 
             # REAL retrieval step: BM25 search using a real finding-question, not
@@ -128,6 +229,13 @@ class RoboticsAdapter(DomainAdapter):
             hits = index.search(retrieval_query, top_k=3)
             if not hits:
                 continue  # no chunk even matched the query — no evidence from this doc
+
+            # The numeric spec is read from the quote text and must match the proposer's
+            # value; stance follows from comparing it with THIS claim's condition.
+            spec_depth, converted, _problem = _spec_depth_m(proposal_template.quote, proposal_template)
+            if spec_depth is None or proposal_template.kind != "rated":
+                continue  # not a usable rated depth figure — no evidence from this doc
+            stance = _derive_stance(spec_depth, converted, condition)
 
             # Try the proposal's quote against each retrieved candidate chunk, in
             # ranked order, rather than assuming the #1 hit is always right.
@@ -147,15 +255,28 @@ class RoboticsAdapter(DomainAdapter):
                     accepted = result
                     break
             if accepted and accepted.evidence:
-                evidence.append(accepted.evidence)
+                ev = accepted.evidence
+                note = (
+                    f" [rating ~{spec_depth:.0f} m depth-equivalent vs claimed {condition.depth_m:g} m: "
+                    f"{'survives' if condition.survives else 'fails'} claim -> {stance}]"
+                )
+                evidence.append(replace(ev, snippet=ev.snippet + note))
 
         return evidence
+
+    @staticmethod
+    def _is_known_part(text: str) -> bool:
+        return any(k in text for k in ("bluerov2", "blue rov", "bar30", "bar 30"))
 
     def describe_gap(self, claim: Claim, evidence: list[Evidence]) -> list[str]:
         if evidence:
             return super().describe_gap(claim, evidence)
 
         text = claim.text.lower()
+        if self._is_known_part(text):
+            _cond, reason = _parse_condition(claim)
+            if reason is not None:
+                return [f"Part is in the corpus but the depth condition is unusable: {reason}"]
         if "bar100" in text or "bar 100" in text:
             return [
                 "Bar100XT is a known revision-target part with NO sourced datasheet evidence "

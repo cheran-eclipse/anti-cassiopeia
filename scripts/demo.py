@@ -5,9 +5,9 @@ the real engine and prints each verdict with its evidence and locators.
 Nothing in this script is scripted/mocked — every verdict below comes from
 the actual VerificationEngine, the actual domain adapters, and (for
 robotics/ml_data/fpga_embedded) actual sourced facts or re-computed values.
-research_web's case will show UNDETERMINED with a real proxy-403 gap if run
-somewhere with restricted outbound network (see domains/research_web.py);
-it'll show a real fetched verdict anywhere with open HTTPS.
+research_web's case does a real HTTP fetch of a local, version-controlled
+fixture page (evals/fixtures/web/) so the demo works offline and can't rot
+when a third-party site changes its text.
 
 Usage: PYTHONPATH=. python scripts/demo.py
 """
@@ -18,6 +18,7 @@ import asyncio
 
 from anticassiopeia.core import Claim, VerificationEngine
 from anticassiopeia.domains import default_domains
+from evals.fixture_server import resolve, serve_fixtures
 
 CASES: list[Claim] = [
     Claim(text="BlueROV2 survives 500 m depth", domain="robotics"),
@@ -45,9 +46,9 @@ CASES: list[Claim] = [
         },
     ),
     Claim(
-        text="example.com states it is reserved for illustrative examples",
+        text="the local fixture page states the reference pump is rated for 12 bar",
         domain="research_web",
-        context={"url": "https://example.com", "quote": "illustrative examples in documents"},
+        context={"url": "{FIXTURE_BASE_URL}/stable_page.html", "quote": "maximum operating pressure of 12 bar"},
     ),
 ]
 
@@ -62,7 +63,13 @@ async def main() -> None:
     print("confirmed / contradicted / undetermined — never a guess dressed up as certainty")
     print("=" * 72)
 
+    with serve_fixtures() as base_url:
+        await _run(engine, base_url)
+
+
+async def _run(engine: VerificationEngine, base_url: str) -> None:
     for claim in CASES:
+        claim = Claim(text=claim.text, domain=claim.domain, context=resolve(claim.context, base_url))
         verdict = await engine.verify(claim)
         symbol = _SYMBOL[verdict.state.value]
         print(f"\n[{symbol}] ({claim.domain}) {claim.text}")

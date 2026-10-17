@@ -1,0 +1,5 @@
+{
+  "claim": {"text": "Bar30 does not fail at 500 m depth", "domain": "robotics", "context": {}},
+  "expected_state": "undetermined",
+  "note": "Negated verb is outside the supported claim grammar; the adapter refuses to guess polarity and names the gap (pass context depth_m/polarity instead)."
+}

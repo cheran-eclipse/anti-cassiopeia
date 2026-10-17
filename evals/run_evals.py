@@ -14,6 +14,7 @@ from pathlib import Path
 
 from anticassiopeia.core import Claim, VerificationEngine
 from anticassiopeia.domains import default_domains
+from evals.fixture_server import resolve, serve_fixtures
 
 CASES_DIR = Path(__file__).parent / "cases"
 
@@ -26,16 +27,21 @@ async def main() -> int:
         print("No eval cases found under evals/cases/.")
         return 0
 
+    with serve_fixtures() as base_url:
+        return await _run(engine, case_files, base_url)
+
+
+async def _run(engine: VerificationEngine, case_files: list[Path], base_url: str) -> int:
     passed, failed = 0, 0
     for path in case_files:
         case = json.loads(path.read_text())
-        claim = Claim(**case["claim"])
+        claim = Claim(**resolve(case["claim"], base_url))
         verdict = await engine.verify(claim)
         got = verdict.state.value
 
         # Most cases: one correct answer. A few (currently just research_web's
-        # sandbox case) are genuinely environment-dependent — e.g. network
-        # availability changes the correct verdict — and declare the full set of
+        # live example.com case) are genuinely environment-dependent — network
+        # availability or third-party page drift changes the verdict — and declare the full set of
         # states that count as a pass via "acceptable_states" instead of a single
         # "expected_state". Don't add this escape hatch to a case casually; it
         # exists for real environment variance, not to paper over a flaky adapter.

@@ -1,0 +1,9 @@
+{
+  "claim": {
+    "text": "The fixture page states the reference pump is rated for 12 bar",
+    "domain": "research_web",
+    "context": {"url": "{FIXTURE_BASE_URL}/stable_page.html", "quote": "maximum operating pressure of 12 bar"}
+  },
+  "expected_state": "confirmed",
+  "note": "Real HTTP fetch of a local version-controlled page whose text cannot drift; the quote is verbatim on it."
+}
