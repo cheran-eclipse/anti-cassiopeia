@@ -52,11 +52,12 @@ adapter should (see each adapter's `describe_gap()`).
 |---|---|
 | `core/verdict.py` — `Claim`, `Evidence`, `Verdict`, `VerdictState` | done |
 | `core/domain.py` — `DomainAdapter` interface | done |
-| `core/engine.py` — `VerificationEngine` scoring | done, deliberately simple (trust-weighted sum + fixed thresholds) |
-| `domains/*.py` — robotics, fpga_embedded, research_web, ml_data | **stubs** — `gather_evidence()` returns `[]`, real retrieval not wired |
+| `core/engine.py` — `VerificationEngine` scoring | done, deliberately simple (trust-weighted sum + fixed thresholds); now also handles `contested` evidence (excluded from scoring, surfaced in reasoning) |
+| `domains/robotics.py` | **seeded, not live** — hand-built lookup over real, locator-backed facts extracted from Constellation (BlueROV2, Bar30); Bar100XT/QuSpin return an honest gap, both unsourced in Constellation itself. **Known limitation:** stance is hardcoded to one claim framing, not polarity-aware — see the module docstring |
+| `domains/fpga_embedded.py`, `research_web.py`, `ml_data.py` | **stubs** — `gather_evidence()` returns `[]`, real retrieval not wired |
 | `llm/nebius_client.py` — Token Factory client | written but **unverified** — base URL/model are TODO, confirm against live Nebius docs |
-| `api/server.py` — `POST /verify`, `GET /health` | done, routes straight to the engine above |
-| `evals/` | placeholder — needs real test cases per domain once an adapter has real evidence sources |
+| `api/server.py` — `POST /verify`, `GET /health`, `GET /domains` | done, routes straight to the engine above |
+| `evals/` | 3 real cases for `robotics`, all passing (`python evals/run_evals.py`) — none yet for the other 3 domains (still stubs) |
 
 Nothing above claims to be more finished than this table says. That table
 itself is a claim this project would check against — keep it honest as

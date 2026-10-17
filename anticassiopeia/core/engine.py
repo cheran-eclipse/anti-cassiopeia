@@ -53,6 +53,13 @@ class VerificationEngine:
     def _score(self, claim: Claim, adapter: DomainAdapter, evidence: list[Evidence]) -> Verdict:
         reasoning: list[str] = [f"Gathered {len(evidence)} piece(s) of evidence from domain '{claim.domain}'."]
 
+        contested = [e for e in evidence if e.stance == "contested"]
+        if contested:
+            reasoning.append(
+                f"{len(contested)} piece(s) of evidence are contested (independent sources/extractions "
+                "disagree) — excluded from scoring, carried here for the record."
+            )
+
         support = sum(e.trust for e in evidence if e.stance == "supports")
         contradict = sum(e.trust for e in evidence if e.stance == "contradicts")
         reasoning.append(f"Support weight: {support:.2f}, contradiction weight: {contradict:.2f}.")
@@ -61,6 +68,11 @@ class VerificationEngine:
         if total_weight < MIN_EVIDENCE_WEIGHT:
             missing = adapter.describe_gap(claim, evidence)
             reasoning.append("Total evidence weight below minimum — refusing to render a confident verdict.")
+            if contested and not missing:
+                missing = [
+                    f"{len(contested)} piece(s) of evidence exist but are contested (sources disagree) — "
+                    "resolving the disagreement would unblock a verdict."
+                ]
             return Verdict(
                 claim=claim,
                 state=VerdictState.UNDETERMINED,

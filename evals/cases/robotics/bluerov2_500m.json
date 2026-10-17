@@ -1,0 +1,5 @@
+{
+  "claim": {"text": "BlueROV2 survives 500 m depth", "domain": "robotics", "context": {}},
+  "expected_state": "contradicted",
+  "note": "Real sourced fact: best case across two conflicting manufacturer datasheet revisions is 300 m (aluminum, 2025 DOC1); the shared acrylic rating is 100 m. Both fail 500 m, so this resolves cleanly despite the cross-revision conflict in the exact number. See docs/extracted/constellation-robotics-seed.md §1.1."
+}

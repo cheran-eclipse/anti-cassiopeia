@@ -1,0 +1,5 @@
+{
+  "claim": {"text": "Bar100XT survives 500 m depth", "domain": "robotics", "context": {}},
+  "expected_state": "undetermined",
+  "note": "The 1000 m rating for this part exists ONLY as a planning narrative in Constellation (demos/subsea_rov/README.md), never an ingested/cited datasheet. This case exists specifically to confirm the engine refuses to render a verdict from a narrative claim dressed up as a spec — see docs/extracted/constellation-robotics-seed.md §3. No 'confirmed' case exists yet in this eval set because none of the currently-seeded facts support any tested claim; that's a true statement about current coverage, not a gap being papered over."
+}

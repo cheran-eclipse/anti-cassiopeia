@@ -32,9 +32,19 @@ class Evidence:
 
     source: str                 # where this came from (URL, file path, datasheet id, paper DOI, ...)
     snippet: str                # the specific passage/value/reading that matters
-    stance: str                 # "supports" | "contradicts" | "neutral"
+    stance: str                 # "supports" | "contradicts" | "neutral" | "contested"
     trust: float                # 0.0-1.0: how much this source is worth trusting, domain-adapter-assigned
     locator: str | None = None  # page/line/pin/register/section — precise enough to re-check by hand
+
+    # "contested": two independent sources/extractions disagree on this specific fact
+    # (not just differ in magnitude — disagree on the fact itself). The engine counts
+    # this toward neither support nor contradiction, but surfaces it in reasoning —
+    # see docs/DESIGN.md §1 and the retrieval-pattern note in
+    # docs/extracted/constellation-robotics-seed.md §5 ("disagreement is a signal,
+    # not noise"). Two sources that both contradict a claim, just by different
+    # margins (e.g. two depth ratings that both fail a 500m test), are NOT contested
+    # — they agree on stance, so they stay "contradicts" with their disagreement on
+    # magnitude carried in each one's own `snippet`.
 
 
 @dataclass(frozen=True)
