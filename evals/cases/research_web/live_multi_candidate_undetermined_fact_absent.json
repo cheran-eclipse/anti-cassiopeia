@@ -1,0 +1,9 @@
+{
+  "claim": {
+    "text": "BlueROV2 has a maximum operating time of 14 hours",
+    "domain": "research_web",
+    "context": {}
+  },
+  "expected_state": "undetermined",
+  "note": "Live, multi-candidate path, UNDETERMINED shape #1: real candidate pages ARE found and fetched (confirmed live: Wikipedia's 'BlueROV2' article, which genuinely discusses the vehicle in detail), but no operating-time/battery-runtime figure is actually stated anywhere on it (the infobox lists displacement, length, depth rating, and 'Lithium-ion battery' as the power source, with no hours figure at all). The model honestly reports the fact isn't in the shown passages rather than guessing a plausible-sounding number — this is the improvement multi-candidate mode 2 has over mode 1's binary found/not-found-equals-contradicted: 'sources exist but don't settle this' is distinguished from 'no sources exist at all' (see the companion undetermined_no_candidates case)."
+}

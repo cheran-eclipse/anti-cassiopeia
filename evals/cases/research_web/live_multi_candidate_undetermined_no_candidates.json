@@ -1,0 +1,9 @@
+{
+  "claim": {
+    "text": "Blue Robotics Bar30 pressure sensor has a mean time between failures of 50000 hours",
+    "domain": "research_web",
+    "context": {}
+  },
+  "expected_state": "undetermined",
+  "note": "Live, multi-candidate path, UNDETERMINED shape #2: an invented-but-plausible-sounding reliability figure, exactly the kind of confident-sounding fabrication this project exists to catch. Confirmed live, repeatedly: BOTH search backends (DuckDuckGo HTML, Wikipedia's API) return zero candidate pages at all for this query — there is no Wikipedia article on the Bar30, and DDG is confirmed anti-bot-blocked from this project's own dev sandbox (see research_web.py's module docstring). The adapter correctly stops at 'no live candidates found' rather than fetching nothing and guessing; this is a DIFFERENT failure shape than live_multi_candidate_undetermined_fact_absent.json (candidates found, fact genuinely absent) — both are honest, but for different reasons, and the gap message names which one happened."
+}
