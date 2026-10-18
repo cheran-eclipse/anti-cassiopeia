@@ -76,7 +76,7 @@ class InstrumentedNebiusClient:
     """One instance shared across all adapters/claims in a run, so
     `tracker` accumulates a true running total for the hard-stop check."""
 
-    def __init__(self, tracker: UsageTracker, timeout: float = 60.0):
+    def __init__(self, tracker: UsageTracker, timeout: float = 60.0, budget_usd: float = BUDGET_HARD_STOP_USD):
         self.api_key = _ENV.get("NEBIUS_API_KEY")
         if not self.api_key:
             raise RuntimeError("NEBIUS_API_KEY not loaded from .env via dotenv_values().")
@@ -84,12 +84,13 @@ class InstrumentedNebiusClient:
         self.model = _ENV.get("NEBIUS_MODEL") or _DEFAULT_MODEL
         self.timeout = timeout
         self.tracker = tracker
+        self.budget_usd = budget_usd
 
     async def complete(self, prompt: str, *, system: str | None = None, temperature: float = 0.2) -> str:
-        if self.tracker.total_cost_usd >= BUDGET_HARD_STOP_USD:
+        if self.tracker.total_cost_usd >= self.budget_usd:
             raise BudgetExceededError(
                 f"Running spend ${self.tracker.total_cost_usd:.4f} already at/over the "
-                f"${BUDGET_HARD_STOP_USD:.2f} hard stop — refusing to make another live call."
+                f"${self.budget_usd:.2f} hard stop — refusing to make another live call."
             )
 
         messages = []

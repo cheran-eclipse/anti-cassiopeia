@@ -293,3 +293,185 @@ resolved `UNDETERMINED`
 query-ambiguity case (disambiguated query, ~40% -> 0% in 20/20 + 25/25
 live samples) are now fixed. Neither fix alone was sufficient; both are
 needed and both are in place.**
+
+## Test #2 bare-Nebius batch `pilot` — 3 dangerous/crash result(s) (baseline, not a pipeline bug)
+
+### research_web-003300 (research_web, tier 1)
+- Claim: `{"text": "The first Beagle Board was released in 2008", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### research_web-003290 (research_web, tier 3)
+- Claim: `{"text": "BlueROV2 has a maximum operating time of 14 hours", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### robotics-002928 (robotics, tier 3)
+- Claim: `{"text": "BlueROV2 survives 105 m depth", "domain": "robotics", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+
+## Test #2 bare-Nebius batch `full` — 41 dangerous/crash result(s) (baseline, not a pipeline bug)
+
+### ml_data-000091 (ml_data, tier 1)
+- Claim: `{"text": "min(PT08.S3(NOx)) in air_quality.csv is -200", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/air_quality.csv", "column": "PT08.S3(NOx)", "stat": "min", "expected_value": -200.0, "tolerance": 1e-09}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000420 (ml_data, tier 1)
+- Claim: `{"text": "min(Concrete compressive strength) in concrete_compressive_strength.csv is 2.33", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/concrete_compressive_strength.csv", "column": "Concrete compressive strength", "stat": "min", "expected_value": 2.33, "tolerance": 1e-09}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000576 (ml_data, tier 1)
+- Claim: `{"text": "min(pH) in wine_quality.csv is 2.72", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/wine_quality.csv", "column": "pH", "stat": "min", "expected_value": 2.72, "tolerance": 1e-09}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000988 (ml_data, tier 2)
+- Claim: `{"text": "mean(origin) in auto_mpg.csv is 1.53354", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/auto_mpg.csv", "column": "origin", "stat": "mean", "expected_value": 1.5335427135678392, "tolerance": 0.07864321608040202}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001002 (ml_data, tier 2)
+- Claim: `{"text": "mean(mpg) in auto_mpg.csv is 22.9267", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/auto_mpg.csv", "column": "mpg", "stat": "mean", "expected_value": 22.926708542713566, "tolerance": 1.1757286432160805}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001080 (ml_data, tier 1)
+- Claim: `{"text": "mean(Whole_weight) in abalone.csv is 0.828742", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/abalone.csv", "column": "Whole_weight", "stat": "mean", "expected_value": 0.8287421594445774, "tolerance": 0.0008287421594445774}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001320 (ml_data, tier 1)
+- Claim: `{"text": "mean(area) in forest_fires.csv is 12.8473", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/forest_fires.csv", "column": "area", "stat": "mean", "expected_value": 12.847292069632495, "tolerance": 0.012847292069632496}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001731 (ml_data, tier 1)
+- Claim: `{"text": "median(frequency) in airfoil_self_noise.csv is 1600", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/airfoil_self_noise.csv", "column": "frequency", "stat": "median", "expected_value": 1600.0, "tolerance": 1.6}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001734 (ml_data, tier 1)
+- Claim: `{"text": "p75(frequency) in airfoil_self_noise.csv is 4000", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/airfoil_self_noise.csv", "column": "frequency", "stat": "p75", "expected_value": 4000.0, "tolerance": 4.0}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001741 (ml_data, tier 1)
+- Claim: `{"text": "stdev(frequency) in airfoil_self_noise.csv is 3152.57", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/airfoil_self_noise.csv", "column": "frequency", "stat": "stdev", "expected_value": 3152.5731369306686, "tolerance": 3.152573136930669}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001750 (ml_data, tier 1)
+- Claim: `{"text": "max(attack-angle) in airfoil_self_noise.csv is 22.2", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/airfoil_self_noise.csv", "column": "attack-angle", "stat": "max", "expected_value": 22.2, "tolerance": 1e-09}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001767 (ml_data, tier 3)
+- Claim: `{"text": "mean(chord-length) in airfoil_self_noise.csv is 0.136685", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/airfoil_self_noise.csv", "column": "chord-length", "stat": "mean", "expected_value": 0.13668464854823684, "tolerance": 0.0001365482368596141}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001769 (ml_data, tier 1)
+- Claim: `{"text": "stdev(chord-length) in airfoil_self_noise.csv is 0.0935407", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/airfoil_self_noise.csv", "column": "chord-length", "stat": "stdev", "expected_value": 0.09354072837396629, "tolerance": 9.35407283739663e-05}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001776 (ml_data, tier 1)
+- Claim: `{"text": "p75(free-stream-velocity) in airfoil_self_noise.csv is 71.3", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/airfoil_self_noise.csv", "column": "free-stream-velocity", "stat": "p75", "expected_value": 71.3, "tolerance": 0.0713}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001805 (ml_data, tier 1)
+- Claim: `{"text": "min(scaled-sound-pressure) in airfoil_self_noise.csv is 103.38", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/airfoil_self_noise.csv", "column": "scaled-sound-pressure", "stat": "min", "expected_value": 103.38, "tolerance": 1e-09}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-002294 (ml_data, tier 1)
+- Claim: `{"text": "p75(test_time) in parkinsons_telemonitoring.csv is 138.46", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/parkinsons_telemonitoring.csv", "column": "test_time", "stat": "p75", "expected_value": 138.46, "tolerance": 0.13846}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### research_web-003290 (research_web, tier 3)
+- Claim: `{"text": "BlueROV2 has a maximum operating time of 14 hours", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### research_web-003293 (research_web, tier 3)
+- Claim: `{"text": "ArduPilot has over 10 million lines of code", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### robotics-002928 (robotics, tier 3)
+- Claim: `{"text": "BlueROV2 survives 105 m depth", "domain": "robotics", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### robotics-002932 (robotics, tier 3)
+- Claim: `{"text": "BlueROV2 survives 115 m depth", "domain": "robotics", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### robotics-002942 (robotics, tier 3)
+- Claim: `{"text": "BlueROV2 survives 140 m depth", "domain": "robotics", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### robotics-002946 (robotics, tier 3)
+- Claim: `{"text": "BlueROV2 survives 150 m depth", "domain": "robotics", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### robotics-002950 (robotics, tier 3)
+- Claim: `{"text": "BlueROV2 survives 160 m depth", "domain": "robotics", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### robotics-002954 (robotics, tier 3)
+- Claim: `{"text": "BlueROV2 survives 170 m depth", "domain": "robotics", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### robotics-002960 (robotics, tier 3)
+- Claim: `{"text": "BlueROV2 survives 185 m depth", "domain": "robotics", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### robotics-002962 (robotics, tier 3)
+- Claim: `{"text": "BlueROV2 survives 190 m depth", "domain": "robotics", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### robotics-002966 (robotics, tier 3)
+- Claim: `{"text": "BlueROV2 survives 200 m depth", "domain": "robotics", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### robotics-002973 (robotics, tier 3)
+- Claim: `{"text": "BlueROV2 fails at 215 m depth", "domain": "robotics", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### robotics-002975 (robotics, tier 3)
+- Claim: `{"text": "BlueROV2 fails at 220 m depth", "domain": "robotics", "context": {}}`
+- Bare-Nebius predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### robotics-002978 (robotics, tier 3)
+- Claim: `{"text": "BlueROV2 survives 230 m depth", "domain": "robotics", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### robotics-002984 (robotics, tier 3)
+- Claim: `{"text": "BlueROV2 survives 245 m depth", "domain": "robotics", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### robotics-002988 (robotics, tier 3)
+- Claim: `{"text": "BlueROV2 survives 255 m depth", "domain": "robotics", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### robotics-002989 (robotics, tier 3)
+- Claim: `{"text": "BlueROV2 fails at 255 m depth", "domain": "robotics", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### robotics-002992 (robotics, tier 3)
+- Claim: `{"text": "BlueROV2 survives 265 m depth", "domain": "robotics", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### robotics-002997 (robotics, tier 3)
+- Claim: `{"text": "BlueROV2 fails at 275 m depth", "domain": "robotics", "context": {}}`
+- Bare-Nebius predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### robotics-003007 (robotics, tier 3)
+- Claim: `{"text": "BlueROV2 fails at 300 m depth", "domain": "robotics", "context": {}}`
+- Bare-Nebius predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### robotics-003115 (robotics, tier 2)
+- Claim: `{"text": "Bar30 fails at 75 m depth", "domain": "robotics", "context": {}}`
+- Bare-Nebius predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### robotics-003202 (robotics, tier 3)
+- Claim: `{"text": "Bar30 survives 295 m depth", "domain": "robotics", "context": {}}`
+- Bare-Nebius predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### robotics-003208 (robotics, tier 3)
+- Claim: `{"text": "Bar30 survives 310 m depth", "domain": "robotics", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### robotics-003231 (robotics, tier 2)
+- Claim: `{"text": "Bar30 fails at 365 m depth", "domain": "robotics", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### robotics-003239 (robotics, tier 2)
+- Claim: `{"text": "Bar30 fails at 385 m depth", "domain": "robotics", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+

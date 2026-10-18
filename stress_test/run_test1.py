@@ -35,7 +35,12 @@ from anticassiopeia.domains.fpga_embedded import FPGAEmbeddedAdapter  # noqa: E4
 from anticassiopeia.domains.ml_data import MLDataAdapter  # noqa: E402
 from anticassiopeia.domains.research_web import ResearchWebAdapter  # noqa: E402
 from anticassiopeia.domains.robotics import RoboticsAdapter  # noqa: E402
-from instrumented_client import BudgetExceededError, InstrumentedNebiusClient, UsageTracker  # noqa: E402
+from instrumented_client import (  # noqa: E402
+    BUDGET_HARD_STOP_USD,
+    BudgetExceededError,
+    InstrumentedNebiusClient,
+    UsageTracker,
+)
 
 MANIFEST_PATH = REPO_ROOT / "stress_test/claims/manifest.jsonl"
 RAW_RESULTS_PATH = REPO_ROOT / "stress_test/results/test1_raw.jsonl"
@@ -109,8 +114,8 @@ def classify(predicted: str, truth: str) -> str:
     return "other"
 
 
-async def build_engine(tracker: UsageTracker) -> VerificationEngine:
-    client = InstrumentedNebiusClient(tracker)
+async def build_engine(tracker: UsageTracker, budget_usd: float = BUDGET_HARD_STOP_USD) -> VerificationEngine:
+    client = InstrumentedNebiusClient(tracker, budget_usd=budget_usd)
     domains = {
         "ml_data": MLDataAdapter(),
         "fpga_embedded": FPGAEmbeddedAdapter(),
@@ -120,11 +125,23 @@ async def build_engine(tracker: UsageTracker) -> VerificationEngine:
     return VerificationEngine(domains=domains)
 
 
-async def run_batch(claims: list[dict], tag: str) -> None:
-    tracker = UsageTracker()
-    engine = await build_engine(tracker)
+async def run_batch(
+    claims: list[dict],
+    tag: str,
+    *,
+    raw_results_path: Path = RAW_RESULTS_PATH,
+    bugs_path: Path = BUGS_PATH,
+    tracker: UsageTracker | None = None,
+    budget_usd: float = BUDGET_HARD_STOP_USD,
+) -> list[dict]:
+    """Runs `claims` through the real production pipeline. Defaults reproduce
+    Test #1's exact original behavior (own tracker, own budget, own output
+    paths); Test #2's pipeline path reuses this unchanged, just passing a
+    shared tracker/budget and its own output paths — no logic duplicated."""
+    tracker = tracker if tracker is not None else UsageTracker()
+    engine = await build_engine(tracker, budget_usd=budget_usd)
 
-    RAW_RESULTS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    raw_results_path.parent.mkdir(parents=True, exist_ok=True)
 
     bugs_found: list[dict] = []
     results = []
@@ -167,7 +184,7 @@ async def run_batch(claims: list[dict], tag: str) -> None:
                 "error": error,
             }
             results.append(record)
-            locked_append(RAW_RESULTS_PATH, json.dumps(record) + "\n")
+            locked_append(raw_results_path, json.dumps(record) + "\n")
 
             if severity in ("dangerous", "crash"):
                 bugs_found.append({**record, "claim_payload": c["claim_payload"], "ground_truth_method": c["ground_truth_method"]})
@@ -190,9 +207,10 @@ async def run_batch(claims: list[dict], tag: str) -> None:
             if b["error"]:
                 chunk.append(f"- Error: `{b['error']}`\n")
             chunk.append("\n")
-        locked_append(BUGS_PATH, "".join(chunk))  # one single locked write, not one lock per line
+        locked_append(bugs_path, "".join(chunk))  # one single locked write, not one lock per line
 
     _print_summary(results, tracker, tag)
+    return results
 
 
 def _print_summary(results: list[dict], tracker: UsageTracker, tag: str) -> None:
