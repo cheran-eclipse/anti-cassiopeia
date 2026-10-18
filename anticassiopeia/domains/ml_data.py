@@ -74,6 +74,7 @@ crash, never a silent zero.
 from __future__ import annotations
 
 import csv
+import math
 import statistics
 from pathlib import Path
 
@@ -125,9 +126,23 @@ def _read_column(paths: list[Path], column: str) -> tuple[list[float] | None, in
             for row in reader:
                 row_count += 1
                 try:
-                    values.append(float(row.get(column, "")))
+                    value = float(row.get(column, ""))
                 except (TypeError, ValueError):
                     bad_rows += 1
+                    continue
+                # float() parses the literal strings "nan"/"inf"/"-inf" into
+                # real IEEE non-finite values without raising -- confirmed for
+                # real on UCI's own auto_mpg.csv, which spells 6 missing
+                # "horsepower" readings as the literal string "NaN" (not "?",
+                # not empty). A non-finite value is not a usable numeric
+                # reading; treated the same as any other unparseable cell
+                # (FOUND BUG, see stress_test/BUGS_FOUND.md: this used to
+                # silently corrupt mean/median/percentile/correlation into
+                # nan, or crash stdev outright with an uncaught StatisticsError).
+                if not math.isfinite(value):
+                    bad_rows += 1
+                    continue
+                values.append(value)
     return values, row_count, bad_rows
 
 
@@ -154,6 +169,14 @@ def _read_column_pair(
                     x = float(row.get(column_a, ""))
                     y = float(row.get(column_b, ""))
                 except (TypeError, ValueError):
+                    bad_rows += 1
+                    continue
+                # Same non-finite guard as _read_column() above, for the same
+                # real reason (see BUGS_FOUND.md) -- a NaN/Infinity in EITHER
+                # column drops the whole paired row, since correlation needs
+                # both values from one real observation, not one real and one
+                # silently-substituted-by-nothing.
+                if not (math.isfinite(x) and math.isfinite(y)):
                     bad_rows += 1
                     continue
                 xs.append(x)

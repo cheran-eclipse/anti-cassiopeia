@@ -49,7 +49,12 @@ class _FakeClient:
 # before propose() went live; scripting them here (as a fake remote LLM) instead
 # of baking them into the adapter is the whole point of this change.
 _HONEST_RESPONSES: dict[str, str] = {
-    "maximum rated depth aluminum acrylic housing": json.dumps(
+    # Marker matches robotics.py's real DOC1 query, "maximum rated depth
+    # aluminum housing" -- NOT "...aluminum acrylic housing" (the old query,
+    # fixed in robotics.py per stress_test/BUGS_FOUND.md's dated correction:
+    # asking about both materials at once was ambiguous between two real,
+    # differently-valued lines in the same real chunk).
+    "maximum rated depth aluminum housing": json.dumps(
         {
             "found": True,
             "chunk_id": "DOC1_BlueROV2#1",
@@ -325,3 +330,150 @@ async def test_live_model_honestly_reports_a_fact_not_in_the_shown_passages():
 
     proposal = await propose("maximum battery runtime hours", hits, NebiusTokenFactoryClient())
     assert proposal is None, f"expected an honest 'not found', got a hallucinated proposal: {proposal}"
+
+
+# --- FOUND BUG fix (see stress_test/BUGS_FOUND.md): a single propose() "not
+# found" used to be trusted as genuine absence; observed live, ~1-in-10 calls
+# against a real corpus doc returned "not found" even though the fact is
+# genuinely present, and when that landed on one side of a genuine two-source
+# conflict, the engine never saw the conflict. Fixed with _propose_with_retry:
+# retries ONLY on None, up to 3 attempts, never on an actual returned proposal. ---
+
+
+class _SequencedFakeClient:
+    """Returns one scripted response per call, in order — unlike _FakeClient's
+    static marker->response mapping, this is for testing retry behavior, where
+    the SAME question needs a DIFFERENT answer on successive calls (e.g. "not
+    found" twice, then a real answer)."""
+
+    def __init__(self, responses: list):
+        self._responses = list(responses)
+        self.call_count = 0
+
+    async def complete(self, prompt: str, *, system: str | None = None, temperature: float = 0.0) -> str:
+        self.call_count += 1
+        response = self._responses.pop(0)
+        if isinstance(response, Exception):
+            raise response
+        return response
+
+
+_BAR30_FOUND_JSON = _HONEST_RESPONSES["operating pressure range bar"]
+_NOT_FOUND_JSON = json.dumps({"found": False, "reason": "not stated in the shown passages"})
+
+
+async def test_retry_succeeds_on_a_later_attempt_after_empty_results():
+    client = _SequencedFakeClient([_NOT_FOUND_JSON, _NOT_FOUND_JSON, _BAR30_FOUND_JSON])
+    adapter = RoboticsAdapter(client=client)
+    claim = Claim(text="Bar30 survives 500 m depth", domain="robotics")
+    ev = await adapter.gather_evidence(claim)
+    assert len(ev) == 1, "the 3rd attempt found real evidence -- must not be treated as absent"
+    assert ev[0].stance == "contradicts"  # real 30 bar rating (~298m) genuinely contradicts "survives 500m"
+    assert client.call_count == 3
+
+
+async def test_retry_stops_as_soon_as_evidence_is_found_not_a_fixed_3_calls():
+    client = _SequencedFakeClient([_BAR30_FOUND_JSON, _NOT_FOUND_JSON, _NOT_FOUND_JSON])
+    adapter = RoboticsAdapter(client=client)
+    claim = Claim(text="Bar30 survives 500 m depth", domain="robotics")
+    ev = await adapter.gather_evidence(claim)
+    assert len(ev) == 1
+    assert client.call_count == 1, "an actual returned proposal must not be retried, even though more responses were queued"
+
+
+async def test_retry_gives_up_after_the_full_budget_and_reports_genuine_absence():
+    client = _SequencedFakeClient([_NOT_FOUND_JSON, _NOT_FOUND_JSON, _NOT_FOUND_JSON])
+    adapter = RoboticsAdapter(client=client)
+    claim = Claim(text="Bar30 survives 500 m depth", domain="robotics")
+    ev = await adapter.gather_evidence(claim)
+    assert ev == [], "all 3 attempts genuinely found nothing -- must still correctly report absence, not fabricate evidence"
+    assert client.call_count == 3
+
+
+async def test_propose_with_retry_unit_directly():
+    """Direct unit test of the retry helper itself, isolated from the rest of
+    gather_evidence()."""
+    from anticassiopeia.domains.robotics import _propose_with_retry
+
+    client_fails_then_succeeds = _SequencedFakeClient([_NOT_FOUND_JSON, _BAR30_FOUND_JSON])
+    from anticassiopeia.retrieval import BM25Index, chunk_document
+    from pathlib import Path
+
+    text = Path("anticassiopeia/corpus/doc3_bar30_excerpt.txt").read_text()
+    chunks = chunk_document("DOC3_Bar30", text, chunk_size=300, overlap=50)
+    hits = BM25Index(chunks).search("operating pressure range bar", top_k=3)
+
+    proposal = await _propose_with_retry("operating pressure range bar", hits, client_fails_then_succeeds)
+    assert proposal is not None
+    assert proposal.chunk_id == "DOC3_Bar30#3"
+    assert client_fails_then_succeeds.call_count == 2
+
+    client_always_fails = _SequencedFakeClient([_NOT_FOUND_JSON, _NOT_FOUND_JSON, _NOT_FOUND_JSON])
+    proposal2 = await _propose_with_retry("operating pressure range bar", hits, client_always_fails)
+    assert proposal2 is None
+    assert client_always_fails.call_count == 3
+
+
+@_requires_live_key
+async def test_live_conflict_zone_claim_resolves_undetermined_every_time_not_just_usually():
+    """THE test that would have caught the retry bug before the stress test did.
+    evals/cases/robotics/bluerov2_200m_conflict_undetermined.json tests this exact
+    claim, but only ONCE per `evals/run_evals.py` invocation -- not enough samples
+    to catch a ~1-in-10-per-doc live "not found" rate. This resamples the SAME
+    real conflict-zone claim 30 times against the real live pipeline and asserts
+    EVERY run resolves UNDETERMINED (DOC1=300m supports, DOC2=100m contradicts,
+    genuinely conflicting at 200m) -- with the retry fix, a single unlucky
+    "not found" draw on one doc no longer silently removes that doc's evidence
+    and flips the verdict to a confident CONFIRMED/CONTRADICTED. ~$0.0007/run,
+    ~$0.02 total for this test, negligible against the project's budget."""
+    # NOT _engine() -- that helper injects the FAKE client (_HONEST_RESPONSES);
+    # this test needs the real, live NebiusTokenFactoryClient (RoboticsAdapter()
+    # with no client= arg), same as every other test_live_* in this file.
+    engine = VerificationEngine(domains={"robotics": RoboticsAdapter()})
+    claim = Claim(text="BlueROV2 survives 200 m depth", domain="robotics")
+    states = []
+    for i in range(30):
+        v = await engine.verify(claim)
+        states.append(v.state.value)
+        assert v.state == VerdictState.UNDETERMINED, (
+            f"run {i}: expected UNDETERMINED (genuine DOC1/DOC2 conflict at 200m), "
+            f"got {v.state.value} with evidence {[(e.source, e.stance) for e in v.evidence]} -- "
+            f"states so far: {states}"
+        )
+
+
+@_requires_live_key
+async def test_live_doc1_aluminum_query_retrieves_the_aluminum_line_every_time():
+    """THE test that would have caught the 40% query-ambiguity rate directly,
+    the same way test_live_conflict_zone_claim_... resamples the conflict
+    claim itself. BEFORE this fix, DOC1's retrieval_query asked about "aluminum
+    acrylic housing" at once -- genuinely ambiguous between two different real
+    lines in the same real chunk ("Maximum Rated Depth (Acrylic): 100 m" vs
+    "...(Aluminum): 300 m") -- and a 20-trial live sample showed the model
+    honestly citing the Acrylic line roughly 40% of the time, which is the
+    dominant cause (not the rarer ~1-in-10 absence case) of the stress test's
+    dangerous conflict-zone verdicts. The fixed query ("maximum rated depth
+    aluminum housing", no "acrylic") was itself verified live 20/20 before
+    landing in robotics.py; this resamples it independently, at a higher
+    count, as this project's permanent regression guard for that finding."""
+    from pathlib import Path
+
+    from anticassiopeia.llm.nebius_client import NebiusTokenFactoryClient
+    from anticassiopeia.retrieval import BM25Index, chunk_document
+    from anticassiopeia.retrieval.extract import propose
+
+    text = Path("anticassiopeia/corpus/doc1_bluerov2_excerpt.txt").read_text()
+    chunks = chunk_document("DOC1_BlueROV2", text, chunk_size=300, overlap=50)
+    query = "maximum rated depth aluminum housing"
+    hits = BM25Index(chunks).search(query, top_k=3)
+    client = NebiusTokenFactoryClient()
+
+    quotes = []
+    for i in range(25):
+        proposal = await propose(query, hits, client)
+        assert proposal is not None, f"run {i}: model reported not-found for a fact genuinely in the corpus"
+        quotes.append(proposal.quote)
+        assert "Aluminum" in proposal.quote and "300" in proposal.quote, (
+            f"run {i}: expected the Aluminum:300m line every time, got {proposal.quote!r} -- "
+            f"quotes so far: {quotes}"
+        )

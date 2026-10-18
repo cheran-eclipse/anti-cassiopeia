@@ -95,7 +95,7 @@ import httpx
 from anticassiopeia.core.domain import DomainAdapter
 from anticassiopeia.core.verdict import Claim, Evidence
 from anticassiopeia.llm.nebius_client import NebiusClientError, NebiusTokenFactoryClient
-from anticassiopeia.retrieval import BM25Index, Proposal, chunk_document, verify_proposal
+from anticassiopeia.retrieval import BM25Index, Proposal, ScoredChunk, chunk_document, verify_proposal
 from anticassiopeia.retrieval.extract import propose
 
 _CORPUS_DIR = Path(__file__).parent.parent / "corpus"
@@ -182,6 +182,42 @@ def _derive_stance(spec_depth_m: float, converted: bool, cond: _Condition) -> st
     within_rating = spec_depth_m >= cond.depth_m
     return "supports" if within_rating == cond.survives else "contradicts"
 
+
+#: FOUND BUG this exists to fix (see stress_test/BUGS_FOUND.md): live
+#: propose() calls against a real corpus doc were observed to return "not
+#: found" roughly 1 in 10 times even though the fact is genuinely present
+#: (confirmed: isolated repeats against the same doc/question succeeded
+#: 10/10). A single empty result landing on just ONE side of a genuine
+#: two-source conflict (e.g. BlueROV2's DOC1-vs-DOC2 disagreement in the
+#: 100-300m range) meant the engine never saw the conflict and confidently
+#: resolved off whichever one source survived -- the dangerous-direction
+#: twin of the kind-field non-determinism already documented above (that
+#: one always failed safely toward UNDETERMINED; this one didn't).
+#: 3 independent attempts (not 1) drops a false "genuinely absent" call
+#: from ~10% to roughly 10%^3 = ~0.1% -- a real, substantial improvement,
+#: not cost added for its own sake: it only applies on the (uncommon)
+#: retry path, not to every call, since most sources return evidence on
+#: the first attempt and never retry at all.
+_PROPOSE_RETRY_ATTEMPTS = 3
+
+
+async def _propose_with_retry(
+    question: str, hits: list[ScoredChunk], client: NebiusTokenFactoryClient, attempts: int = _PROPOSE_RETRY_ATTEMPTS
+) -> Proposal | None:
+    """Retries ONLY on genuine absence (propose() returning None) — never on
+    an actual returned proposal, even a low-confidence-looking one, and
+    never on a raised error (a live-call FAILURE is the already-handled
+    propose_errors path in gather_evidence(), a different failure mode from
+    the silent-absence one this function exists for; an exception here
+    propagates immediately, it is not retried into a false "absent")."""
+    proposal = None
+    for _ in range(attempts):
+        proposal = await propose(question, hits, client)
+        if proposal is not None:
+            return proposal
+    return None  # genuinely absent across every attempt, not just one unlucky draw
+
+
 # part keyword -> doc_id -> retrieval_query. retrieval_query is a real
 # finding-question ("what's the housing depth rating"), NOT the raw claim text —
 # a real datasheet doesn't restate the claim being checked, it states facts, and
@@ -192,9 +228,26 @@ def _derive_stance(spec_depth_m: float, converted: bool, cond: _Condition) -> st
 # asking what the document would say, not what the claim says.) The same question
 # is also what the model (extract.propose()) is asked, over the same candidate
 # chunks BM25 retrieved — this dict carries no answer, only where to look.
+#
+# FOUND BUG, DOC1's query specifically (see stress_test/BUGS_FOUND.md's dated
+# correction entry): the question used to read "maximum rated depth aluminum
+# ACRYLIC housing", asking about BOTH materials at once even though DOC1's
+# real corpus excerpt states TWO DIFFERENT real ratings for them ("Maximum
+# Rated Depth (Acrylic): 100 m" and "...(Aluminum): 300 m" — both genuinely
+# present in the same chunk). Confirmed live, repeatedly (20/20 before the
+# fix landed on Acrylic in roughly 40% of calls — not rare, and not model
+# unreliability: the model was answering an honestly ambiguous question
+# correctly, just about whichever material it picked that time): that
+# ambiguity, not absence, was the DOMINANT cause of the dangerous
+# conflict-zone verdicts the stress test found. DOC1 is documented
+# (docs/extracted/constellation-robotics-seed.md §1.1: "best-case figure...
+# aluminum tube, 300 m, DOC1 only") as this project's own source for the
+# ALUMINUM rating specifically — the query now says so, dropping "acrylic"
+# entirely, and was re-verified 20/20 live after the fix (see
+# tests/test_domains_robotics.py's dedicated resampling test).
 _RETRIEVAL_QUERIES: dict[str, dict[str, str]] = {
     "bluerov2": {
-        "DOC1_BlueROV2": "maximum rated depth aluminum acrylic housing",
+        "DOC1_BlueROV2": "maximum rated depth aluminum housing",
         "DOC2_BlueROV2": "maximum rated depth housing",
     },
     "bar30": {
@@ -269,13 +322,15 @@ class RoboticsAdapter(DomainAdapter):
             # REAL propose step: the model sees only these retrieved chunks and
             # either cites one verbatim or honestly reports it isn't there — never
             # trusted on its own, verify_proposal() below re-checks it regardless.
+            # Retried on genuine absence only (see _propose_with_retry) — a single
+            # "not found" is not trusted any more than a single quote's content is.
             try:
-                proposal = await propose(retrieval_query, hits, self._client)
+                proposal = await _propose_with_retry(retrieval_query, hits, self._client)
             except (NebiusClientError, httpx.HTTPError) as exc:
                 propose_errors.append(f"{doc_id}: LLM propose call failed: {exc}")
                 continue
             if proposal is None:
-                continue  # model honestly reported the fact isn't in these passages
+                continue  # model honestly, and REPEATEDLY, reported the fact isn't in these passages
 
             # The numeric spec is read from the quote text and must match the proposer's
             # value; stance follows from comparing it with THIS claim's condition.

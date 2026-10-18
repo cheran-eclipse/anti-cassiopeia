@@ -324,3 +324,93 @@ async def test_compound_claim_needs_at_least_two_checks():
     assert ev == []
     gap = adapter.describe_gap(claim, ev)
     assert "2 or more" in gap[0]
+
+
+# --- FOUND BUG (see stress_test/BUGS_FOUND.md): float() parses the literal
+# strings "nan"/"inf"/"-inf" without raising, so a real-world missing-value
+# marker spelled that way (confirmed on UCI's own auto_mpg.csv, which spells
+# 6 missing "horsepower" readings as the literal string "NaN") used to
+# silently corrupt mean/median/percentile/correlation into nan, or crash
+# stdev outright with an uncaught StatisticsError. Fixed by requiring
+# math.isfinite() after float() in both _read_column() and
+# _read_column_pair(). Real file, real numbers -- independently verified
+# against this exact data before writing this test, same as every other
+# real-data test in this project. ---
+
+_AUTO_MPG_PATH = "evals/fixtures/auto_mpg.csv"
+
+
+async def test_nan_valued_rows_are_excluded_not_silently_corrupting_mean():
+    adapter = MLDataAdapter()
+    claim = Claim(
+        text="x",
+        domain="ml_data",
+        context={
+            "dataset_path": _AUTO_MPG_PATH, "column": "horsepower", "stat": "mean",
+            "expected_value": 104.46938775510205, "tolerance": 1e-6,
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert len(ev) == 1
+    assert ev[0].stance == "supports"
+    assert "rows=398" in ev[0].locator  # every row counted
+    assert "skipped_non_numeric=6" in ev[0].locator  # the 6 "NaN" rows correctly excluded
+
+
+async def test_nan_valued_rows_are_excluded_from_median_and_percentiles():
+    adapter = MLDataAdapter()
+    for stat, expected in [("median", 93.5), ("p25", 75.0), ("p75", 128.0)]:
+        claim = Claim(
+            text="x", domain="ml_data",
+            context={"dataset_path": _AUTO_MPG_PATH, "column": "horsepower", "stat": stat,
+                     "expected_value": expected, "tolerance": 1e-6},
+        )
+        ev = await adapter.gather_evidence(claim)
+        assert len(ev) == 1, stat
+        assert ev[0].stance == "supports", stat  # was silently WRONG (e.g. median=115.0, not 93.5) before the fix
+
+
+async def test_nan_valued_rows_no_longer_crash_stdev():
+    """This used to raise an uncaught statistics.StatisticsError straight out
+    of gather_evidence() -- the core property this test proves is "does not
+    raise", not just "gives the right number"."""
+    adapter = MLDataAdapter()
+    claim = Claim(
+        text="x", domain="ml_data",
+        context={"dataset_path": _AUTO_MPG_PATH, "column": "horsepower", "stat": "stdev",
+                 "expected_value": 38.49115993282849, "tolerance": 1e-6},
+    )
+    ev = await adapter.gather_evidence(claim)  # must not raise
+    assert len(ev) == 1
+    assert ev[0].stance == "supports"
+
+
+async def test_nan_valued_rows_are_excluded_from_correlation():
+    adapter = MLDataAdapter()
+    claim = Claim(
+        text="x", domain="ml_data",
+        context={
+            "dataset_path": _AUTO_MPG_PATH, "column": "horsepower", "column_b": "weight",
+            "stat": "correlation", "expected_value": 0.8645377375741444, "tolerance": 1e-6,
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert len(ev) == 1
+    assert ev[0].stance == "supports"
+
+
+async def test_clean_column_with_zero_non_finite_values_is_unaffected(csv_path):
+    """Regression guard: the fix must not change behavior on data that was
+    already clean -- same fixture, same exact assertions as the original
+    (pre-fix) mean test, still passing unchanged."""
+    adapter = MLDataAdapter()
+    claim = Claim(
+        text="mean voltage is 5.0", domain="ml_data",
+        context={"dataset_path": str(csv_path), "column": "voltage", "stat": "mean",
+                 "expected_value": 5.0, "tolerance": 0.01},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert len(ev) == 1
+    assert ev[0].stance == "supports"
+    assert "rows=6" in ev[0].locator
+    assert "skipped_non_numeric=1" in ev[0].locator  # the pre-existing "not_a_number" bad row only
