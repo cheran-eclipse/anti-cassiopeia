@@ -36,11 +36,12 @@ CASES: list[Claim] = [
         },
     ),
     Claim(
-        text="design meets 100 MHz timing",
+        text="design's clk_main meets 100 MHz timing",
         domain="fpga_embedded",
         context={
-            "report_path": "evals/fixtures/sample_timing_report.txt",
-            "metric": "max_frequency_mhz",
+            "report_path": "evals/fixtures/vivado_timing_report_single_corner.rpt",
+            "metric": "frequency_mhz",
+            "clock": "clk_main",
             "comparator": ">=",
             "expected_value": 100,
         },
