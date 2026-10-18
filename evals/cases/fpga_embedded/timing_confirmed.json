@@ -1,9 +1,15 @@
 {
   "claim": {
-    "text": "design meets 100 MHz timing",
+    "text": "design's clk_main meets 100 MHz timing",
     "domain": "fpga_embedded",
-    "context": {"report_path": "evals/fixtures/sample_timing_report.txt", "metric": "max_frequency_mhz", "comparator": ">=", "expected_value": 100}
+    "context": {
+      "report_path": "evals/fixtures/vivado_timing_report_single_corner.rpt",
+      "metric": "frequency_mhz",
+      "clock": "clk_main",
+      "comparator": ">=",
+      "expected_value": 100
+    }
   },
   "expected_state": "confirmed",
-  "note": "Fixture report states max_frequency_mhz: 142.5, which clears a 100 MHz requirement."
+  "note": "Real Vivado report_timing_summary format (Clock Summary table, verified against a real fetched open-source report — see fpga_embedded.py's module docstring). clk_main runs at 142.857 MHz, which clears a 100 MHz requirement."
 }

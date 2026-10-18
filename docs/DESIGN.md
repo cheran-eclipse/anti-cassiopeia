@@ -93,6 +93,63 @@ Concretely, that means beyond the current `POST /verify`:
   adding early since it directly supports the "don't trust more than is
   earned" ethos at the API level, not just inside one verdict.
 
+## 5. Confirmed: `ml_data`/`fpga_embedded` stay outside `retrieval/` — read the actual code first, then decided
+
+Section 1 above already called this, before either adapter existed to check
+it against. Having now read both adapters' real code (`ml_data.py`'s
+`_read_column()`, `fpga_embedded.py`'s `_parse_report()`), the reasoning
+holds, and here's the concrete argument for why, not just a restatement:
+
+`retrieval/`'s whole job (`chunking.py` + `bm25.py` + `extract.py`) is
+finding the right PASSAGE in unstructured prose when you don't know in
+advance where in the document a fact is phrased — that's a real, hard
+problem, and BM25 + an LLM propose step earns its keep solving it (see
+`robotics.py`'s and `research_web.py`'s actual live-verified use of it).
+
+Neither `ml_data.py` nor `fpga_embedded.py` has that problem:
+
+- `ml_data.py`'s "answer" isn't a sentence hiding somewhere in a CSV — it's
+  a statistic computed over EVERY row of a named column
+  (`statistics.mean(values)` in `_read_column()`'s caller). There is no
+  "right chunk" to retrieve: chunking the CSV into 800-char text blocks
+  would arbitrarily slice rows apart, and the only way to get a correct
+  mean/stdev back out would be to ask an LLM to re-derive a global
+  aggregate from a partial, truncated view it was shown — strictly worse
+  than just running `statistics.mean()` on the whole column, which is
+  exact, free, and instant. Routing this through retrieval/ wouldn't make
+  it more real, it would make it less real: swapping an exact computation
+  for an LLM's approximation of one.
+- `fpga_embedded.py`'s "answer" is looked up by an EXACT key
+  (`report[metric]` after `_parse_report()`'s regex match on `key: value`
+  lines) — the report's own structure already says exactly where the
+  value lives; there's no ambiguity to search over. A real EDA tool
+  report (Vivado/Quartus) is even more rigidly structured than this
+  adapter's current invented format — fixed-width tables with named
+  columns, not free prose — so the fix needed there (Part 2 of this
+  session's task) is a better STRUCTURED parser, not retrieval. Feeding a
+  timing table through BM25/chunking risks separating a table row from
+  its header or corner label, which a line/table-aware parser can't do
+  because it never treats the row as free text to re-rank in the first
+  place.
+
+Both adapters already encode this correctly: neither imports anything from
+`anticassiopeia.retrieval`, and both re-derive their answer from the
+actual file every call rather than trusting a cached/reported number —
+which is the real property that matters (never trust a described result;
+always recompute/re-parse from the source), independent of which
+mechanism does the re-deriving. Retrieval is one way to satisfy that
+property (for unstructured sources); direct parsing/computation is
+another (for structured ones). Using retrieval here wouldn't make either
+adapter MORE rigorous — it would introduce an unnecessary approximate step
+into something that's currently exact, which is the opposite of what this
+project is for.
+
+**Not changed by this confirmation:** if a future real EDA report turns
+out to have a substantial free-text section (design notes, warnings) that
+a claim needs to reference, THAT specific sub-problem might reasonably use
+`retrieval/` — but that's a new, narrow extension if/when it's needed, not
+a reason to route the existing structured-metric lookups through it now.
+
 ## Not decided here
 
 Team-coordination/build-split questions (which of the parallel Claude
