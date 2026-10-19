@@ -13,11 +13,25 @@ from pathlib import Path
 
 import pytest
 
+import anticassiopeia.domains.fpga_embedded as fpga_embedded_mod
 from anticassiopeia.core import Claim
 from anticassiopeia.domains.fpga_embedded import FPGAEmbeddedAdapter
 
 _SINGLE_CORNER_REPORT = "evals/fixtures/vivado_timing_report_single_corner.rpt"
 _MULTI_CORNER_REPORT = "evals/fixtures/vivado_timing_report.rpt"
+
+
+@pytest.fixture(autouse=True)
+def _allow_tmp_path_for_fixtures(monkeypatch, tmp_path):
+    """Same reasoning as test_domains_ml_data.py's identically-named fixture:
+    FPGAEmbeddedAdapter() now defaults to a FIXED allowlist for the
+    path-containment fix (see fpga_embedded.py's module docstring); this
+    module's own fixtures write real report files under pytest's tmp_path.
+    The dedicated traversal/symlink tests below escape outside tmp_path
+    too, so they still exercise the real check."""
+    monkeypatch.setattr(
+        fpga_embedded_mod, "_DEFAULT_ALLOWED_BASE_DIRS", [*fpga_embedded_mod._DEFAULT_ALLOWED_BASE_DIRS, tmp_path]
+    )
 
 
 @pytest.fixture
@@ -135,6 +149,60 @@ async def test_register_map_style_claim_is_an_honest_gap_not_a_guess(single_corn
     assert ev == []
     gap = adapter.describe_gap(claim, ev)
     assert "not found" in gap[0].lower()
+
+
+async def test_path_traversal_outside_allowed_directories_is_rejected():
+    """Same vulnerability and fix as test_domains_ml_data.py's identically-
+    named test: report_path previously went straight into Path(...) with
+    no containment check. This string starts under the real
+    evals/fixtures/ allowlist entry but ../ segments walk it out to a real
+    file outside every allowed directory."""
+    adapter = FPGAEmbeddedAdapter()
+    traversal_path = "evals/fixtures/" + "../" * 12 + "etc/passwd"
+    claim = Claim(
+        text="x", domain="fpga_embedded",
+        context={"report_path": traversal_path, "metric": "wns_ns", "comparator": ">=", "expected_value": 0},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "not within an allowed directory" in gap[0].lower()
+
+
+async def test_symlink_escaping_the_allowed_directory_is_rejected(tmp_path):
+    """Same symlink-escape vector as test_domains_ml_data.py's identically-
+    named test: a symlink living inside an allowed directory (tmp_path,
+    widened by this module's own autouse fixture) whose real target
+    resolves outside every allowed directory."""
+    target_outside_everything = Path("/etc/passwd")
+    assert target_outside_everything.is_file()
+    symlink_path = tmp_path / "escape.rpt"
+    symlink_path.symlink_to(target_outside_everything)
+
+    adapter = FPGAEmbeddedAdapter()
+    claim = Claim(
+        text="x", domain="fpga_embedded",
+        context={"report_path": str(symlink_path), "metric": "wns_ns", "comparator": ">=", "expected_value": 0},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "not within an allowed directory" in gap[0].lower()
+
+
+async def test_null_byte_in_path_is_a_clean_rejection_not_a_crash():
+    """Same fix as test_domains_ml_data.py's identically-named test: a path
+    with an embedded null byte made Path.resolve() raise ValueError, which
+    wasn't caught -- a 500 instead of a clean, named gap."""
+    adapter = FPGAEmbeddedAdapter()
+    claim = Claim(
+        text="x", domain="fpga_embedded",
+        context={"report_path": "evals/fixtures/x\x00/../../../../etc/passwd", "metric": "wns_ns", "comparator": ">=", "expected_value": 0},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "not within an allowed directory" in gap[0].lower()
 
 
 async def test_missing_report_file(tmp_path):

@@ -1,9 +1,27 @@
 import csv
+from pathlib import Path
 
 import pytest
 
+import anticassiopeia.domains.ml_data as ml_data_mod
 from anticassiopeia.core import Claim
 from anticassiopeia.domains.ml_data import MLDataAdapter
+
+
+@pytest.fixture(autouse=True)
+def _allow_tmp_path_for_fixtures(monkeypatch, tmp_path):
+    """MLDataAdapter() now defaults to a FIXED allowlist of real directories
+    (evals/fixtures/, stress_test/data/) for the path-containment fix (see
+    ml_data.py's module docstring) — this test module's own fixtures write
+    real CSVs under pytest's tmp_path, which is legitimately outside that
+    production allowlist. Widening the DEFAULT for the duration of each
+    test (not passing allowed_base_dirs explicitly at 20+ call sites) keeps
+    every existing `MLDataAdapter()` call working; the dedicated path-
+    traversal/symlink tests below do NOT rely on this widening — they
+    escape outside tmp_path too, so they still exercise the real check."""
+    monkeypatch.setattr(
+        ml_data_mod, "_DEFAULT_ALLOWED_BASE_DIRS", [*ml_data_mod._DEFAULT_ALLOWED_BASE_DIRS, tmp_path]
+    )
 
 
 @pytest.fixture
@@ -397,6 +415,81 @@ async def test_nan_valued_rows_are_excluded_from_correlation():
     ev = await adapter.gather_evidence(claim)
     assert len(ev) == 1
     assert ev[0].stance == "supports"
+
+
+async def test_path_traversal_outside_allowed_directories_is_rejected():
+    """FOUND BUG (external security review): dataset_path previously went
+    straight into Path(...).open() with no containment check -- an
+    arbitrary local file read via POST /verify, not just a "wrong file"
+    bug. This path's STRING starts under the real evals/fixtures/
+    allowlist entry, but ../ segments walk it all the way out to a real
+    file (/etc/passwd) that is NOT under any allowed directory -- proving
+    the check runs on the resolved real path, not a string prefix match."""
+    adapter = MLDataAdapter()
+    traversal_path = "evals/fixtures/" + "../" * 12 + "etc/passwd"
+    claim = Claim(
+        text="x", domain="ml_data",
+        context={"dataset_path": traversal_path, "column": "v", "stat": "mean", "expected_value": 1.0},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "not within an allowed directory" in gap[0].lower()
+
+
+async def test_symlink_escaping_the_allowed_directory_is_rejected(tmp_path):
+    """Same vulnerability class, the OTHER named vector: a symlink whose
+    literal path lives inside an allowed directory (here, tmp_path itself,
+    widened to "allowed" by this module's own autouse fixture) but whose
+    REAL target resolves outside every allowed directory. Path.resolve()
+    follows the symlink to its real target before the containment check
+    runs, so the escape is caught the same way the ../ traversal is."""
+    target_outside_everything = Path("/etc/passwd")
+    assert target_outside_everything.is_file()  # only meaningful if the escape target is real
+    symlink_path = tmp_path / "escape.csv"
+    symlink_path.symlink_to(target_outside_everything)
+
+    adapter = MLDataAdapter()
+    claim = Claim(
+        text="x", domain="ml_data",
+        context={"dataset_path": str(symlink_path), "column": "v", "stat": "mean", "expected_value": 1.0},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "not within an allowed directory" in gap[0].lower()
+
+
+async def test_null_byte_in_path_is_a_clean_rejection_not_a_crash():
+    """FOUND BUG (follow-up security review): a path with an embedded null
+    byte makes Path.resolve() raise ValueError ("embedded null character"),
+    not OSError -- only OSError was caught in is_path_within_allowed_dirs(),
+    so this crashed instead of producing a clean, named gap."""
+    adapter = MLDataAdapter()
+    claim = Claim(
+        text="x", domain="ml_data",
+        context={"dataset_path": "evals/fixtures/x\x00/../../../../etc/passwd", "column": "v", "stat": "mean", "expected_value": 1.0},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "not within an allowed directory" in gap[0].lower()
+
+
+async def test_dataset_path_list_with_a_non_string_element_is_a_named_gap_not_a_crash():
+    """FOUND BUG (follow-up security review): the list-shape check for
+    dataset_path validated it's a list, but not that every element is a
+    string -- Path(123) would crash downstream with a TypeError instead of
+    a clean, named gap."""
+    adapter = MLDataAdapter()
+    claim = Claim(
+        text="x", domain="ml_data",
+        context={"dataset_path": ["evals/fixtures/sample_measurements.csv", 123], "column": "voltage", "stat": "mean", "expected_value": 1.0},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "string" in gap[0].lower()
 
 
 async def test_clean_column_with_zero_non_finite_values_is_unaffected(csv_path):

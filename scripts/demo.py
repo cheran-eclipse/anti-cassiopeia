@@ -18,6 +18,7 @@ import asyncio
 
 from anticassiopeia.core import Claim, VerificationEngine
 from anticassiopeia.domains import default_domains
+from anticassiopeia.domains.research_web import ResearchWebAdapter
 from evals.fixture_server import resolve, serve_fixtures
 
 CASES: list[Claim] = [
@@ -57,7 +58,13 @@ _SYMBOL = {"confirmed": "✓", "contradicted": "✗", "undetermined": "?"}
 
 
 async def main() -> None:
-    engine = VerificationEngine(domains=default_domains())
+    # Same reasoning as evals/run_evals.py: this demo's research_web case
+    # fetches its own local fixture server (127.0.0.1) on purpose -- the
+    # real default's SSRF guard (see research_web.py's docstring) would
+    # otherwise reject that fetch. Every other domain stays production-default.
+    domains = default_domains()
+    domains["research_web"] = ResearchWebAdapter(block_private_networks=False)
+    engine = VerificationEngine(domains=domains)
 
     print("=" * 72)
     print("Anti-Cassiopeia — domain-agnostic verification engine")

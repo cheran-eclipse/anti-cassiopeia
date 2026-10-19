@@ -99,12 +99,60 @@ deterministically (`test_multi_candidate_mirror_sources_count_as_one_not_two`,
 real local fixture pages — one byte-identical "mirror", one genuinely
 independently-worded — proving the dedup actually changes the outcome in
 the case it exists for, and does NOT wrongly collapse real corroboration.
+
+SSRF GUARD (found during external security review, verified against the
+real code): both fetch call sites (mode 1's `ctx["url"]`, fully
+caller-supplied from a POST /verify body; mode 2's search-discovered
+candidate URLs) previously fetched ANY url with zero validation. Fixed:
+`_is_safe_to_fetch()` resolves the hostname and rejects it (fail closed
+on resolution failure too) unless EVERY resolved address is
+`ip.is_global` (not an enumerated blocklist — see that function's own
+comment for why an earlier enumerated version missed carrier-grade NAT,
+100.64.0.0/10) — this catches cloud metadata endpoints
+(169.254.169.254), RFC1918 ranges, and localhost (checked on the REAL
+resolved IP, not just the literal hostname string, which also rejects a
+DNS name that merely *looks* external but resolves internally). On by
+default (`block_private_networks=True`); only this project's own test
+suite, which legitimately fetches its local fixture server on
+127.0.0.1 (see `evals/fixture_server.py`), passes
+`block_private_networks=False` explicitly — `default_domains()` never
+disables it.
+
+SSRF-VIA-REDIRECT, found and fixed in a follow-up review pass: the first
+version of this guard checked only the ORIGINAL url, then fetched with
+`httpx`'s own `follow_redirects=True` — a url that passes the check but
+then 30x-redirects to a private address would have that redirect
+followed with no second check, a known real bypass pattern, not a
+hypothetical one. Fixed by `_safe_fetch()`: `follow_redirects=False`,
+manually walking the redirect chain and re-running `_is_safe_to_fetch()`
+on EVERY hop (the original url AND every `Location` header) before
+following it, up to `_MAX_REDIRECTS` hops. The same function also caps
+the final response body at `_MAX_RESPONSE_BYTES` by streaming instead of
+loading the whole thing via `resp.text` — an unbounded fetch is its own,
+separate resource-exhaustion risk.
+
+KNOWN, ACCEPTED GAP — DNS REBINDING, not fixed: `_is_safe_to_fetch()`
+resolves the hostname once to decide safety, then `httpx` resolves the
+SAME hostname AGAIN (independently) to actually open the connection. A
+DNS-rebinding attack controls authoritative DNS for its own domain and
+can answer the first resolution with a public IP (passes the check) and
+the second, moments later, with an internal one (what's actually
+connected to) — the two lookups aren't guaranteed to agree. The real fix
+is to resolve once and connect directly to that validated IP (bypassing
+httpx's own resolution entirely, e.g. via a custom transport), which is
+substantially more invasive to httpx's normal request flow than this
+pass's fixes; deliberately not attempted here, stated plainly as an
+accepted residual risk rather than left undocumented or silently
+"handled" by the single-resolution check above.
 """
 
 from __future__ import annotations
 
+import asyncio
 import html as html_module
+import ipaddress
 import re
+import socket
 import urllib.parse
 from collections.abc import Awaitable, Callable
 from dataclasses import replace
@@ -121,6 +169,16 @@ from anticassiopeia.retrieval.extract import propose
 _TAG_RE = re.compile(r"<[^>]+>")
 _WS_RE = re.compile(r"\s+")
 _FETCH_TIMEOUT = 15.0
+#: Max redirect hops _safe_fetch() will follow, re-checking _is_safe_to_fetch()
+#: on EVERY hop -- see _safe_fetch()'s own docstring for why httpx's own
+#: follow_redirects=True can't be used here.
+_MAX_REDIRECTS = 3
+#: Hard cap on a single fetched response body, enforced by streaming instead
+#: of loading the whole thing via resp.text -- an attacker-controlled (or
+#: just unexpectedly huge) page could otherwise exhaust server memory. 5 MiB
+#: is generously larger than any real article/datasheet page this adapter
+#: needs the text of; a legitimate page this adapter cares about is prose.
+_MAX_RESPONSE_BYTES = 5 * 1024 * 1024
 #: How many distinct source pages to actually run propose()/verify/judge_stance
 #: against, out of however many matched the pooled BM25 search. Bounded so a
 #: claim that matches many candidates doesn't trigger an unbounded number of
@@ -165,6 +223,174 @@ def _strip_html(html: str) -> str:
 def _looks_like_block_page(html: str) -> bool:
     text = _normalize(_strip_html(html))
     return any(marker in text for marker in _BLOCK_PAGE_MARKERS)
+
+
+# FOUND BUG (external security review, verified against the real code): this
+# module fetched ANY URL handed to it (ctx["url"] in mode 1, verbatim from a
+# POST /verify body) with zero validation -- SSRF, not just a "fetch failed"
+# edge case. A claim could point this adapter at the cloud metadata endpoint
+# (169.254.169.254), an internal service on a private IP, or localhost, and
+# the server would dutifully fetch it and hand the response text back
+# through the propose()/verify pipeline.
+#
+# FIX: resolve the hostname and check EVERY resolved address before any
+# network call is made -- checked on the real resolved IP(s), not the
+# literal hostname string, so a DNS name that merely LOOKS external but
+# resolves to an internal address is still caught. A hostname that fails to
+# resolve at all is treated as unsafe (fail closed), not silently allowed
+# through.
+#
+# FOLLOW-UP FIX (second review pass, same date): the FIRST version of this
+# check enumerated specific ranges to block (is_private/is_loopback/
+# is_link_local/is_multicast/is_reserved/is_unspecified) -- an
+# enumerate-what-to-block list, and it was incomplete: 100.64.0.0/10
+# (carrier-grade NAT, RFC 6598) passed it, since none of those properties
+# cover it. Replaced with `not ip.is_global`, which is strict-by-default
+# (block everything NOT affirmatively known-public) rather than
+# permissive-by-default -- confirmed against the real stdlib: 100.64.0.1,
+# 169.254.169.254, 127.0.0.1, 10.0.0.1, ::1 are all correctly `is_global ==
+# False`; 8.8.8.8 is correctly `True`.
+_LOCALHOST_NAMES = {"localhost", "localhost.localdomain"}
+
+
+async def _is_safe_to_fetch(url: str) -> tuple[bool, str | None]:
+    parsed = urllib.parse.urlsplit(url)
+    if parsed.scheme not in ("http", "https"):
+        return False, f"URL scheme '{parsed.scheme}' is not http/https."
+    host = parsed.hostname
+    if not host:
+        return False, "URL has no hostname."
+    if host.lower() in _LOCALHOST_NAMES:
+        return False, f"Hostname '{host}' is localhost."
+
+    try:
+        loop = asyncio.get_running_loop()
+        addrinfo = await loop.getaddrinfo(host, None)
+    except (socket.gaierror, OSError) as exc:
+        return False, f"Hostname '{host}' could not be resolved ({exc}) -- fail closed, not fetched."
+
+    for *_rest, sockaddr in addrinfo:
+        ip = ipaddress.ip_address(sockaddr[0])
+        if not ip.is_global:
+            return False, f"Hostname '{host}' resolves to {ip}, which is not a global/public address."
+    return True, None
+
+
+class _FetchRefused(Exception):
+    """Raised by _safe_fetch() when the original URL, or any redirect hop,
+    fails _is_safe_to_fetch() -- distinct from httpx.HTTPError (an ordinary
+    network failure), so callers can tell "we refused to even try" from
+    "we tried and the network failed"."""
+
+
+# FOLLOW-UP FIX (second review pass): the FIRST version of the SSRF guard
+# only checked the ORIGINAL url and then fetched with follow_redirects=True
+# -- a url that passes the check could still 30x-redirect straight to an
+# internal address, and httpx would silently follow it with no second
+# check. That's a well-known SSRF-via-redirect bypass, not a hypothetical
+# one. FIX: follow_redirects=False, and manually walk the redirect chain
+# here, re-running _is_safe_to_fetch() on EVERY hop (the original URL AND
+# every Location header) before following it -- up to _MAX_REDIRECTS hops.
+#
+# Also enforces _MAX_RESPONSE_BYTES on the FINAL (non-redirect) response by
+# streaming it rather than loading the whole body via resp.text -- an
+# intermediate redirect response's body is irrelevant (only its Location
+# header matters) and isn't capped, since 3xx bodies aren't what this
+# adapter ever reads.
+async def _safe_fetch(
+    url: str, *, headers: dict | None = None, timeout: float = _FETCH_TIMEOUT, block_private_networks: bool = True
+) -> httpx.Response:
+    current = url
+    client: httpx.AsyncClient | None = None
+    try:
+        # FOUND BUG (follow-up security review): httpx's own `timeout=` is a
+        # PER-OPERATION timeout (max gap between successive reads), not a cap
+        # on TOTAL wall-clock time -- a server trickling one byte just under
+        # that interval, repeatedly, could hold the connection open far past
+        # `timeout` in aggregate while never triggering httpx's own timeout.
+        # asyncio.timeout() bounds the WHOLE fetch (all redirect hops, all
+        # streaming reads) by wall clock instead, converted below to
+        # httpx.ReadTimeout (already an httpx.HTTPError subclass) so neither
+        # caller needs its own except clause for this.
+        async with asyncio.timeout(timeout):
+            for _hop in range(_MAX_REDIRECTS + 1):
+                if block_private_networks:
+                    safe, reason = await _is_safe_to_fetch(current)
+                    if not safe:
+                        raise _FetchRefused(f"Refused to fetch '{current}': {reason}")
+
+                # Client is constructed lazily, only once the FIRST hop is confirmed
+                # safe -- a rejected url never causes so much as an AsyncClient to be
+                # instantiated, let alone a socket opened (proven by tests that patch
+                # AsyncClient.stream and assert it's never called for a rejected url).
+                if client is None:
+                    client = httpx.AsyncClient(timeout=timeout, follow_redirects=False)
+
+                async with client.stream("GET", current, headers=headers) as streamed:
+                    if streamed.status_code in (301, 302, 303, 307, 308) and "location" in streamed.headers:
+                        # FOUND BUG (follow-up security review): a malformed
+                        # Location header (e.g. "http://[::1" or "http://a:b:c/")
+                        # makes httpx.URL.join() raise httpx.InvalidURL, which on
+                        # httpx 0.28.1 is NOT an httpx.HTTPError subclass -- neither
+                        # caller catches it, so this was an unhandled 500, not a
+                        # clean refusal.
+                        try:
+                            current = str(httpx.URL(current).join(streamed.headers["location"]))
+                        except httpx.InvalidURL as exc:
+                            raise _FetchRefused(
+                                f"Redirect from '{current}' has an invalid Location header: {exc}"
+                            ) from exc
+                        continue
+
+                    # FOUND BUG (follow-up security review): when a fetch is cut at
+                    # _MAX_RESPONSE_BYTES, a quote that falls past the cut read as
+                    # "not found" -> a confident CONTRADICTS, even though the page
+                    # might genuinely have stated it just past the truncation point.
+                    # `truncated` is tracked precisely (only true when real data was
+                    # actually discarded, not just when the real body happens to
+                    # land exactly on the cap) and passed through via `extensions`
+                    # so mode 1 (_gather_single_page) can downgrade this to an
+                    # honest UNDETERMINED instead of a wrong CONTRADICTS. Mode 2
+                    # doesn't have this failure mode at all: it never treats
+                    # "quote not found in this chunk" as a contradiction, only as
+                    # "no evidence from this chunk" -- a truncated page there just
+                    # yields fewer chunks, not a false verdict.
+                    chunks = []
+                    total = 0
+                    truncated = False
+                    async for chunk in streamed.aiter_bytes():
+                        remaining = _MAX_RESPONSE_BYTES - total
+                        if remaining <= 0:
+                            truncated = True
+                            break
+                        if len(chunk) > remaining:
+                            truncated = True
+                            chunk = chunk[:remaining]
+                        chunks.append(chunk)
+                        total += len(chunk)
+                    # aiter_bytes() already transparently decompresses (gzip/br/deflate) --
+                    # the headers copied from `streamed` still say e.g. content-encoding:
+                    # gzip, which would make the NEW Response try to decompress the
+                    # ALREADY-decompressed bytes a second time (a real zlib error, found
+                    # while testing this against a real gzipped Wikipedia response, not a
+                    # hypothetical). Strip the headers that describe a transfer/encoding
+                    # that no longer applies to the bytes we're handing over.
+                    response_headers = httpx.Headers(streamed.headers)
+                    for stale_header in ("content-encoding", "content-length", "transfer-encoding"):
+                        response_headers.pop(stale_header, None)
+                    return httpx.Response(
+                        streamed.status_code,
+                        headers=response_headers,
+                        content=b"".join(chunks),
+                        request=streamed.request,
+                        extensions={"truncated": truncated},
+                    )
+            raise _FetchRefused(f"Too many redirects (> {_MAX_REDIRECTS}) starting from '{url}'.")
+    except TimeoutError as exc:
+        raise httpx.ReadTimeout(f"Fetch of '{url}' exceeded the total timeout of {timeout}s.") from exc
+    finally:
+        if client is not None:
+            await client.aclose()
 
 
 async def _ddg_search(query: str, max_results: int) -> list[str]:
@@ -254,6 +480,7 @@ class ResearchWebAdapter(DomainAdapter):
         self,
         client: NebiusTokenFactoryClient | None = None,
         search: Callable[[str, int], Awaitable[list[str]]] | None = None,
+        block_private_networks: bool = True,
     ) -> None:
         # Injected the same way robotics.py injects its client: tests supply a
         # fake (here, also a fake `search` that returns local fixture URLs) so
@@ -262,6 +489,11 @@ class ResearchWebAdapter(DomainAdapter):
         self._search = search or _search_candidate_urls
         self._client = client
         self._client_error: str | None = None
+        # SSRF guard (see _is_safe_to_fetch's comment) -- on by default, the
+        # safe choice for the real server. ONLY the test suite's own local
+        # fixture server (127.0.0.1, see evals/fixture_server.py) legitimately
+        # needs this off; default_domains() never disables it.
+        self._block_private_networks = block_private_networks
         if self._client is None:
             try:
                 self._client = NebiusTokenFactoryClient()
@@ -284,8 +516,10 @@ class ResearchWebAdapter(DomainAdapter):
 
         url, quote = ctx["url"], ctx["quote"]
         try:
-            async with httpx.AsyncClient(timeout=_FETCH_TIMEOUT, follow_redirects=True) as client:
-                resp = await client.get(url)
+            resp = await _safe_fetch(url, block_private_networks=self._block_private_networks)
+        except _FetchRefused as exc:
+            self._last_fetch_error = str(exc)
+            return []
         except httpx.HTTPError as exc:
             # Network failure is its own outcome — NOT silently treated as
             # "quote not found" / contradicts. The caller needs to know the
@@ -311,6 +545,20 @@ class ResearchWebAdapter(DomainAdapter):
             self._last_fetch_error = (
                 f"Fetch of '{url}' appears to have returned a network block/proxy page (HTTP {resp.status_code}) "
                 "instead of the requested source content."
+            )
+            return []
+        # FOUND BUG (follow-up security review): a page cut at _MAX_RESPONSE_BYTES
+        # that doesn't contain the quote in its RETAINED portion used to be
+        # reported as a confident CONTRADICTS -- but the quote might genuinely
+        # be past the cut, which the page being truncated means we simply don't
+        # know. Downgrade to an honest UNDETERMINED (a named gap) instead of a
+        # wrong confident answer -- but only when the quote wasn't already found
+        # in what WAS retained; a found quote is still real evidence regardless
+        # of truncation elsewhere in the page.
+        if not found and resp.extensions.get("truncated"):
+            self._last_fetch_error = (
+                f"Fetch of '{url}' was truncated at {_MAX_RESPONSE_BYTES} bytes before the quote could be "
+                "confirmed or ruled out -- not treated as a confident contradiction."
             )
             return []
 
@@ -347,8 +595,12 @@ class ResearchWebAdapter(DomainAdapter):
         fetch_notes: list[str] = []
         for url in candidate_urls:
             try:
-                async with httpx.AsyncClient(timeout=_FETCH_TIMEOUT, follow_redirects=True) as client:
-                    resp = await client.get(url, headers={"User-Agent": _SEARCH_USER_AGENT})
+                resp = await _safe_fetch(
+                    url, headers={"User-Agent": _SEARCH_USER_AGENT}, block_private_networks=self._block_private_networks
+                )
+            except _FetchRefused as exc:
+                fetch_notes.append(str(exc))
+                continue
             except httpx.HTTPError as exc:
                 fetch_notes.append(f"{url}: fetch failed ({exc!r})")
                 continue

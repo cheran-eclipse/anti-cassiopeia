@@ -6,9 +6,15 @@ import pytest
 
 from anticassiopeia.core import Claim
 from anticassiopeia.core.verdict import Evidence
-from anticassiopeia.domains.research_web import ResearchWebAdapter, _is_near_duplicate_evidence
+from anticassiopeia.domains.research_web import _MAX_RESPONSE_BYTES, ResearchWebAdapter, _is_near_duplicate_evidence, _safe_fetch
 from anticassiopeia.llm.nebius_client import NebiusClientError
 from evals.fixture_server import serve_fixtures
+
+# `block_private_networks=False` below (only on tests that fetch this file's own
+# local fixture server, 127.0.0.1) opts out of the SSRF guard added to
+# research_web.py's real fetch calls -- see that module's docstring for the fix
+# and why this is the ONLY place it's legitimate to disable it; default_domains()
+# (what the real server uses) never does.
 
 
 class _DummyAsyncClient:
@@ -23,6 +29,29 @@ class _DummyAsyncClient:
 
     async def get(self, url: str) -> httpx.Response:
         return self._response
+
+    async def aclose(self) -> None:
+        return None
+
+    def stream(self, method: str, url: str, headers: dict | None = None) -> "_DummyStream":
+        return _DummyStream(self._response)
+
+
+class _DummyStream:
+    """Matches the subset of httpx's `client.stream(...)` async-context-manager
+    interface _safe_fetch() actually uses (status_code/headers/aiter_bytes) --
+    needed once research_web.py switched from client.get() to client.stream()
+    to support manual per-hop redirect re-validation (see that module's
+    _safe_fetch docstring)."""
+
+    def __init__(self, response: httpx.Response):
+        self._response = response
+
+    async def __aenter__(self) -> httpx.Response:
+        return self._response
+
+    async def __aexit__(self, exc_type, exc, tb):
+        return False
 
 
 async def test_block_page_200_is_treated_as_undetermined_not_contradicted(monkeypatch):
@@ -62,6 +91,263 @@ async def test_non_block_page_without_quote_is_real_contradiction(monkeypatch):
 
     assert len(ev) == 1
     assert ev[0].stance == "contradicts"
+
+
+class _NetworkCallAttempted(AssertionError):
+    """Raised if anything tries to actually open a connection -- used below to
+    prove the SSRF guard rejects an unsafe URL BEFORE any network call, not
+    just eventually via a failed fetch."""
+
+
+def _forbid_network_calls(monkeypatch) -> None:
+    """Patches the actual request-issuing method, not just AsyncClient's
+    constructor -- _safe_fetch() legitimately constructs a client lazily
+    AFTER confirming the first hop is safe, so asserting "no client was ever
+    constructed" would be the wrong (too strict, implementation-specific)
+    claim; asserting "no request was ever issued" is the real property that
+    matters and stays true regardless of internal client-construction timing."""
+
+    def _raise(*_args, **_kwargs):
+        raise _NetworkCallAttempted("httpx.AsyncClient.stream was called -- the SSRF guard did not short-circuit first.")
+
+    monkeypatch.setattr(httpx.AsyncClient, "stream", _raise)
+
+
+@pytest.mark.parametrize(
+    "unsafe_url",
+    [
+        "http://169.254.169.254/latest/meta-data/",  # cloud metadata endpoint (link-local)
+        "http://localhost/",
+        "http://127.0.0.1/",
+        "http://10.0.0.5/",  # RFC1918 private range
+    ],
+)
+async def test_ssrf_guard_rejects_unsafe_url_before_any_network_call_mode1(monkeypatch, unsafe_url):
+    """FOUND BUG (external security review): research_web.py fetched ANY url
+    handed to it in Claim.context with zero validation -- SSRF. Fixed via
+    _is_safe_to_fetch(). This proves the fix for mode 1 (ctx["url"], fully
+    caller-supplied) and proves the rejection happens BEFORE any network
+    call is attempted, not just that the eventual fetch fails."""
+    _forbid_network_calls(monkeypatch)
+    adapter = ResearchWebAdapter()
+    claim = Claim(
+        text="x", domain="research_web",
+        context={"url": unsafe_url, "quote": "anything"},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "refused to fetch" in gap[0].lower()
+
+
+async def test_ssrf_guard_rejects_unsafe_url_before_any_network_call_mode2(monkeypatch):
+    """Same guard, mode 2 (multi-candidate): a search backend that returns an
+    internal URL as a "candidate" must not get it fetched either -- the
+    guard applies uniformly, not just to the directly caller-supplied url."""
+    _forbid_network_calls(monkeypatch)
+
+    async def fake_search(_query: str, _max: int) -> list[str]:
+        return ["http://169.254.169.254/latest/meta-data/"]
+
+    adapter = ResearchWebAdapter(search=fake_search)
+    claim = Claim(text="some claim with no url in context", domain="research_web")
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+
+
+async def test_ssrf_guard_catches_a_redirect_to_an_unsafe_address_not_just_the_original_url(monkeypatch):
+    """FOUND BUG (follow-up security review): the first version of this guard
+    checked only the ORIGINAL url, then fetched with follow_redirects=True --
+    a url that passes the check could still 302-redirect straight to an
+    internal address with no second check. Simulates exactly that: a public-
+    looking first hop (passes _is_safe_to_fetch) that 302s to the cloud
+    metadata endpoint. Must be rejected at the redirect hop, not followed."""
+    call_count = {"n": 0}
+
+    class _RedirectOnceStream:
+        def __init__(self, response: httpx.Response):
+            self._response = response
+
+        async def __aenter__(self) -> httpx.Response:
+            return self._response
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+    def _fake_stream(self, method, url, headers=None):
+        call_count["n"] += 1
+        if call_count["n"] == 1:
+            # A real, legitimate-looking first hop -- passes _is_safe_to_fetch
+            # (example.com is a real public address) -- then redirects.
+            resp = httpx.Response(
+                302,
+                headers={"Location": "http://169.254.169.254/latest/meta-data/"},
+                request=httpx.Request(method, url),
+            )
+            return _RedirectOnceStream(resp)
+        raise AssertionError("the redirect target was followed without being re-checked -- SSRF-via-redirect bypass")
+
+    monkeypatch.setattr(httpx.AsyncClient, "stream", _fake_stream)
+
+    adapter = ResearchWebAdapter()
+    claim = Claim(
+        text="x", domain="research_web",
+        context={"url": "https://example.com/looks-fine", "quote": "anything"},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "refused to fetch" in gap[0].lower()
+    assert call_count["n"] == 1  # the redirect target was checked and rejected, never fetched
+
+
+async def test_safe_fetch_caps_response_body_at_the_documented_limit(monkeypatch):
+    """FOUND BUG (follow-up security review): resp.text loaded the entire
+    response body into memory with no cap -- an oversized (or malicious)
+    response could exhaust server memory. _safe_fetch() now streams and
+    stops at _MAX_RESPONSE_BYTES; proves it actually truncates, not just
+    that the constant exists."""
+    oversized = b"x" * (_MAX_RESPONSE_BYTES + 1000)
+
+    class _OversizedStream:
+        status_code = 200
+        headers = httpx.Headers({"content-type": "text/plain"})
+        request = httpx.Request("GET", "https://example.com/huge")
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def aiter_bytes(self):
+            # Yield in chunks, like a real streamed response would.
+            chunk_size = 64 * 1024
+            for i in range(0, len(oversized), chunk_size):
+                yield oversized[i : i + chunk_size]
+
+    monkeypatch.setattr(httpx.AsyncClient, "stream", lambda self, method, url, headers=None: _OversizedStream())
+
+    resp = await _safe_fetch("https://example.com/huge")
+    assert len(resp.content) == _MAX_RESPONSE_BYTES
+    assert resp.extensions["truncated"] is True
+
+
+async def test_malformed_redirect_location_header_is_a_clean_refusal_not_a_crash(monkeypatch):
+    """FOUND BUG (follow-up security review): a malformed Location header
+    (e.g. "http://[::1") makes httpx.URL.join() raise httpx.InvalidURL,
+    which on httpx 0.28.1 is NOT a subclass of httpx.HTTPError -- neither
+    caller catches it, so this was an unhandled 500 instead of a clean
+    refusal. _safe_fetch() now wraps the .join() call and converts the
+    failure into _FetchRefused."""
+    call_count = {"n": 0}
+
+    class _MalformedRedirectStream:
+        def __init__(self, response: httpx.Response):
+            self._response = response
+
+        async def __aenter__(self) -> httpx.Response:
+            return self._response
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+    def _fake_stream(self, method, url, headers=None):
+        call_count["n"] += 1
+        resp = httpx.Response(
+            302, headers={"Location": "http://[::1"}, request=httpx.Request(method, url)
+        )
+        return _MalformedRedirectStream(resp)
+
+    monkeypatch.setattr(httpx.AsyncClient, "stream", _fake_stream)
+
+    adapter = ResearchWebAdapter()
+    claim = Claim(
+        text="x", domain="research_web",
+        context={"url": "https://example.com/redirects-badly", "quote": "anything"},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "invalid" in gap[0].lower() and "location" in gap[0].lower()
+    assert call_count["n"] == 1  # never attempted to actually follow the malformed redirect
+
+
+async def test_truncated_page_without_the_quote_is_undetermined_not_a_false_contradiction(monkeypatch):
+    """FOUND BUG (follow-up security review): a page cut at _MAX_RESPONSE_BYTES
+    whose quote falls past the cut used to read as "not found" -> a
+    confident CONTRADICTS, even though the quote might genuinely be present
+    just past the truncation point. Must be UNDETERMINED (a named gap)
+    instead -- a truncated page proves nothing about what it doesn't show."""
+    quote = "the reference pump is rated for 12 bar"
+    # Real body: lots of filler, cut by _MAX_RESPONSE_BYTES, THEN the quote --
+    # so the quote genuinely exists on the real page but falls past the cut.
+    body = ("filler " * (_MAX_RESPONSE_BYTES // 7 + 10)).encode()[: _MAX_RESPONSE_BYTES + 5000]
+    body += quote.encode()
+
+    class _TruncatedStream:
+        status_code = 200
+        headers = httpx.Headers({"content-type": "text/plain"})
+        request = httpx.Request("GET", "https://example.com/big-page")
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def aiter_bytes(self):
+            chunk_size = 64 * 1024
+            for i in range(0, len(body), chunk_size):
+                yield body[i : i + chunk_size]
+
+    monkeypatch.setattr(httpx.AsyncClient, "stream", lambda self, method, url, headers=None: _TruncatedStream())
+
+    adapter = ResearchWebAdapter()
+    claim = Claim(
+        text="x", domain="research_web",
+        context={"url": "https://example.com/big-page", "quote": quote},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []  # NOT a confident contradicts
+    gap = adapter.describe_gap(claim, ev)
+    assert "truncated" in gap[0].lower()
+
+
+async def test_total_timeout_bounds_a_slow_trickling_response(monkeypatch):
+    """FOUND BUG (follow-up security review): httpx's own timeout= is a
+    PER-READ timeout, not a cap on TOTAL time -- a server trickling bytes
+    slowly (each gap individually within the per-read timeout) could hold
+    the connection open indefinitely. asyncio.timeout() now bounds the
+    WHOLE fetch; proves a trickling response that would otherwise take far
+    longer than the configured total timeout is cut off close to it,
+    not after all the data eventually arrives."""
+    import asyncio
+    import time
+
+    class _SlowTrickleStream:
+        status_code = 200
+        headers = httpx.Headers({"content-type": "text/plain"})
+        request = httpx.Request("GET", "https://example.com/slow")
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def aiter_bytes(self):
+            for _ in range(100):  # would take ~5s total if never cut off
+                await asyncio.sleep(0.05)
+                yield b"x"
+
+    monkeypatch.setattr(httpx.AsyncClient, "stream", lambda self, method, url, headers=None: _SlowTrickleStream())
+
+    start = time.monotonic()
+    with pytest.raises(httpx.ReadTimeout):
+        await _safe_fetch("https://example.com/slow", timeout=0.3)
+    elapsed = time.monotonic() - start
+    assert elapsed < 2.0  # cut off near the 0.3s budget, not after the full ~5s
 
 
 # --- mode 2: multi-candidate live search, tested offline via a fake search provider
@@ -125,7 +411,7 @@ async def test_multi_candidate_confirmed_through_real_fixture_fetch_and_verify()
         # and doc_id is the fetched URL itself — verified via chunk_document's
         # own documented id scheme, not guessed.
         client = _FakeClient(_found_json(f"{base_url}/stable_page.html#0", _FIXTURE_QUOTE), stance_response="supports")
-        adapter = ResearchWebAdapter(client=client, search=fake_search)
+        adapter = ResearchWebAdapter(client=client, search=fake_search, block_private_networks=False)
         claim = Claim(text="the reference pump is rated for a maximum operating pressure of 12 bar", domain="research_web")
         ev = await adapter.gather_evidence(claim)
 
@@ -144,7 +430,7 @@ async def test_multi_candidate_contradicted_when_model_judges_conflict():
         client = _FakeClient(
             _found_json(f"{base_url}/stable_page.html#0", _FIXTURE_QUOTE), stance_response="contradicts"
         )
-        adapter = ResearchWebAdapter(client=client, search=fake_search)
+        adapter = ResearchWebAdapter(client=client, search=fake_search, block_private_networks=False)
         claim = Claim(text="the reference pump is rated for 9999 bar", domain="research_web")
         ev = await adapter.gather_evidence(claim)
 
@@ -156,7 +442,7 @@ async def test_multi_candidate_no_candidates_found_is_a_named_gap():
     async def fake_search(_query: str, _max: int) -> list[str]:
         return []
 
-    adapter = ResearchWebAdapter(client=_FakeClient(_NOT_FOUND_JSON), search=fake_search)
+    adapter = ResearchWebAdapter(client=_FakeClient(_NOT_FOUND_JSON), search=fake_search, block_private_networks=False)
     claim = Claim(text="some claim no search backend will find anything for", domain="research_web")
     ev = await adapter.gather_evidence(claim)
 
@@ -173,7 +459,7 @@ async def test_multi_candidate_model_honestly_reports_not_found_is_undetermined_
         async def fake_search(_query: str, _max: int) -> list[str]:
             return [f"{base_url}/stable_page.html"]
 
-        adapter = ResearchWebAdapter(client=_FakeClient(_NOT_FOUND_JSON), search=fake_search)
+        adapter = ResearchWebAdapter(client=_FakeClient(_NOT_FOUND_JSON), search=fake_search, block_private_networks=False)
         claim = Claim(text="the reference pump has a maximum operating pressure of 12 bar", domain="research_web")
         ev = await adapter.gather_evidence(claim)
 
@@ -192,7 +478,7 @@ async def test_multi_candidate_fabricated_quote_is_rejected_even_with_a_real_can
             return [f"{base_url}/stable_page.html"]
 
         client = _FakeClient(_found_json(f"{base_url}/stable_page.html#0", "maximum operating pressure of 9999 bar"))
-        adapter = ResearchWebAdapter(client=client, search=fake_search)
+        adapter = ResearchWebAdapter(client=client, search=fake_search, block_private_networks=False)
         claim = Claim(text="the reference pump is rated for a maximum operating pressure of 12 bar", domain="research_web")
         ev = await adapter.gather_evidence(claim)
 
@@ -210,7 +496,7 @@ async def test_multi_candidate_missing_key_is_a_named_gap_not_a_crash(monkeypatc
         async def fake_search(_query: str, _max: int) -> list[str]:
             return [f"{base_url}/stable_page.html"]
 
-        adapter = ResearchWebAdapter(search=fake_search)  # no client injected, no key in env
+        adapter = ResearchWebAdapter(search=fake_search, block_private_networks=False)  # no client injected, no key in env
         claim = Claim(
             text="the reference pump is rated for a maximum operating pressure of 12 bar", domain="research_web"
         )
@@ -229,7 +515,7 @@ async def test_multi_candidate_propose_failure_is_a_named_gap_not_a_crash():
             return [f"{base_url}/stable_page.html"]
 
         failing = NebiusClientError('Nebius Token Factory returned 401: {"detail": "..."}')
-        adapter = ResearchWebAdapter(client=_FakeClient(failing), search=fake_search)
+        adapter = ResearchWebAdapter(client=_FakeClient(failing), search=fake_search, block_private_networks=False)
         claim = Claim(text="the reference pump is rated for a maximum operating pressure of 12 bar", domain="research_web")
         ev = await adapter.gather_evidence(claim)
 
@@ -337,7 +623,7 @@ async def test_multi_candidate_mirror_sources_count_as_one_not_two():
                 f"{url_b}#0": _found_json(f"{url_b}#0", _FIXTURE_QUOTE),
             }
         )
-        adapter = ResearchWebAdapter(client=client, search=fake_search)
+        adapter = ResearchWebAdapter(client=client, search=fake_search, block_private_networks=False)
         claim = Claim(
             text="the reference pump is rated for a maximum operating pressure of 12 bar", domain="research_web"
         )
@@ -366,7 +652,7 @@ async def test_multi_candidate_genuinely_different_sources_both_count():
                 f"{url_b}#0": _found_json(f"{url_b}#0", rephrased_quote),
             }
         )
-        adapter = ResearchWebAdapter(client=client, search=fake_search)
+        adapter = ResearchWebAdapter(client=client, search=fake_search, block_private_networks=False)
         claim = Claim(
             text="the reference pump is rated for a maximum operating pressure of 12 bar", domain="research_web"
         )

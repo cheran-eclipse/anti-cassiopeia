@@ -1,0 +1,13 @@
+# .env is never copied into the image by the current Dockerfile (it only
+# COPYs pyproject.toml, anticassiopeia/, evals/ -- never `COPY . .`), but this
+# exists as defense-in-depth against that changing later, or a build context
+# that includes it some other way. Never bake real secrets into an image.
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+.git/
+stress_test/results/

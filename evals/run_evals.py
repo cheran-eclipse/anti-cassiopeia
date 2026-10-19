@@ -14,13 +14,23 @@ from pathlib import Path
 
 from anticassiopeia.core import Claim, VerificationEngine
 from anticassiopeia.domains import default_domains
+from anticassiopeia.domains.research_web import ResearchWebAdapter
 from evals.fixture_server import resolve, serve_fixtures
 
 CASES_DIR = Path(__file__).parent / "cases"
 
 
 async def main() -> int:
-    engine = VerificationEngine(domains=default_domains())
+    # research_web's own 3 local_fixture_* cases fetch THIS repo's own local
+    # fixture server (127.0.0.1, see evals/fixture_server.py) for real, on
+    # purpose -- the SSRF guard research_web.py's real default now carries
+    # (see that module's docstring) would otherwise reject that fetch before
+    # it ever reached the block-page/quote check these cases exist to test.
+    # Every OTHER domain still comes from default_domains()'s real,
+    # production-default instance; only research_web is overridden here.
+    domains = default_domains()
+    domains["research_web"] = ResearchWebAdapter(block_private_networks=False)
+    engine = VerificationEngine(domains=domains)
     case_files = sorted(CASES_DIR.rglob("*.json"))
 
     if not case_files:

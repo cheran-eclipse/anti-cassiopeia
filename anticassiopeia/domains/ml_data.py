@@ -69,6 +69,19 @@ column, a `stat` that needs a second column it wasn't given, too few
 data points for the requested stat, or a bad `stat` name all produce NO
 evidence plus a specific, named reason via describe_gap() — never a
 crash, never a silent zero.
+
+PATH SAFETY (found during external security review, verified against the
+real code): `dataset_path` previously went straight into `Path(...).open()`
+with no containment check — since `Claim.context` is caller-supplied
+(verbatim from a POST /verify body), this was an arbitrary local file
+read, not just a "wrong file" bug. Every path is now resolved and must
+land inside one of `allowed_base_dirs` (default: `evals/fixtures/`,
+`stress_test/data/`) — see `anticassiopeia/domains/_path_safety.py` for
+exactly what "resolved" defeats (`..` traversal and symlink escapes,
+both checked on the real resolved path, not the literal string).
+`allowed_base_dirs` is constructor-injectable (same pattern as
+`RoboticsAdapter(client=...)`) so tests can point it at a temp directory
+without weakening the real server's default allowlist.
 """
 
 from __future__ import annotations
@@ -80,6 +93,10 @@ from pathlib import Path
 
 from anticassiopeia.core.domain import DomainAdapter
 from anticassiopeia.core.verdict import Claim, Evidence
+from anticassiopeia.domains._path_safety import is_path_within_allowed_dirs
+
+_REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+_DEFAULT_ALLOWED_BASE_DIRS = [_REPO_ROOT / "evals" / "fixtures", _REPO_ROOT / "stress_test" / "data"]
 
 _SINGLE_COLUMN_STATS = {
     "mean": statistics.mean,
@@ -188,6 +205,9 @@ class MLDataAdapter(DomainAdapter):
     domain_name = "ml_data"
     implemented = True
 
+    def __init__(self, allowed_base_dirs: list[Path] | None = None) -> None:
+        self._allowed_base_dirs = allowed_base_dirs if allowed_base_dirs is not None else _DEFAULT_ALLOWED_BASE_DIRS
+
     async def gather_evidence(self, claim: Claim) -> list[Evidence]:
         self._last_compound_gap: str | None = None
         ctx = claim.context
@@ -280,11 +300,10 @@ class MLDataAdapter(DomainAdapter):
         gap = self._check_single(ctx)
         return [gap] if gap else ["No computed/re-run evidence found for this metric or statistical claim."]
 
-    @staticmethod
-    def _check_single(ctx: dict) -> str | None:
-        """Re-derives, statelessly, why a single (sub-)check would produce no
-        evidence — used by gather_evidence (to short-circuit), describe_gap
-        (to explain), and _gather_compound (to validate each sub-check)."""
+    def _check_single(self, ctx: dict) -> str | None:
+        """Re-derives why a single (sub-)check would produce no evidence —
+        used by gather_evidence (to short-circuit), describe_gap (to
+        explain), and _gather_compound (to validate each sub-check)."""
         required = {"dataset_path", "column", "stat", "expected_value"}
         missing_keys = required - ctx.keys()
         if missing_keys:
@@ -293,7 +312,28 @@ class MLDataAdapter(DomainAdapter):
         spec = ctx["dataset_path"]
         if not isinstance(spec, (str, list)):
             return f"'dataset_path' must be a string or a list of strings, got {spec!r}."
+        # FOUND BUG (follow-up security review): a list was accepted without
+        # checking its ELEMENTS are strings too -- Path(123) (a non-string
+        # element) crashes downstream with a TypeError instead of a clean gap.
+        if isinstance(spec, list) and not all(isinstance(p, str) for p in spec):
+            return f"'dataset_path' list must contain only strings, got {spec!r}."
         paths = _resolve_paths(spec)
+
+        # Containment check FIRST, before even checking existence — a path outside
+        # the allowlist is rejected the same way whether or not it happens to exist,
+        # so a caller can't use the error message to probe the filesystem.
+        # FOUND BUG (follow-up security review): the message used to list the
+        # server's real, absolute allowed-directory paths (e.g.
+        # "/home/<user>/.../evals/fixtures") -- an information-disclosure leak
+        # of server filesystem layout to any API caller. `outside` only ever
+        # echoes the caller's OWN unresolved input string (not a new leak,
+        # they already know what they sent); the allowed-dir listing is
+        # dropped entirely rather than relativized, the simplest fix that
+        # discloses nothing about the real layout.
+        outside = [str(p) for p in paths if not is_path_within_allowed_dirs(p, self._allowed_base_dirs)]
+        if outside:
+            return f"Dataset file(s) not found or not within an allowed directory: {outside}."
+
         missing_files = [str(p) for p in paths if not p.is_file()]
         if missing_files:
             return f"Dataset file(s) not found: {missing_files} — cannot compute, cannot guess."

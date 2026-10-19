@@ -86,12 +86,30 @@ PYTHONPATH=. python evals/run_evals.py
 
 ```bash
 cp .env.example .env   # fill in NEBIUS_API_KEY — only needed once an adapter uses the LLM client
+```
+
+`POST /verify` requires an API key — set `ANTICASSIOPEIA_API_KEY` in `.env`
+before starting the server. Generate a real random key, don't type one by
+hand: `python3 -c "import secrets; print(secrets.token_urlsafe(32))"`.
+This is a deliberate fail-closed design: if `ANTICASSIOPEIA_API_KEY` isn't set at all, **every**
+`/verify` request is rejected, not silently allowed through with no auth.
+`/health` and `/domains` stay open (no cost, nothing sensitive). `/verify`
+is also rate-limited, keyed on the validated API key (not client IP, which
+would collapse every caller behind a shared proxy into one bucket) — plus
+a separate, stricter per-IP throttle on repeated FAILED auth attempts, so
+key-guessing gets slowed down independently of the main limit. See
+`anticassiopeia/api/server.py`'s module docstring for the exact numbers
+and its one honest limitation: this state isn't shared across multiple
+worker processes.
+
+```bash
 uvicorn anticassiopeia.api.server:app --reload
 ```
 
 ```bash
 curl -X POST localhost:8000/verify \
   -H 'content-type: application/json' \
+  -H "X-API-Key: $ANTICASSIOPEIA_API_KEY" \
   -d '{"text": "Bar30 survives 500m depth", "domain": "robotics"}'
 ```
 
