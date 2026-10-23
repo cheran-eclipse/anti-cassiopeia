@@ -477,3 +477,99 @@ async def test_live_doc1_aluminum_query_retrieves_the_aluminum_line_every_time()
             f"run {i}: expected the Aluminum:300m line every time, got {proposal.quote!r} -- "
             f"quotes so far: {quotes}"
         )
+
+
+@_requires_live_key
+async def test_live_adversarial_unit_conversion_fabrication_is_caught_not_trusted():
+    """FOUND LIVE (external review follow-up), scope corrected on a second
+    manual review (2026-10-21) -- read the caveats below before citing this
+    as "fabrication is caught":
+
+    1. **This tests `_spec_depth_m()`, not `verify_proposal()`.** It says
+       nothing about whether a live model has ever tried to fabricate a
+       QUOTE (invent text the source never said) -- that's verify_proposal()'s
+       own job and remains covered only by scripted-liar tests elsewhere in
+       this file. This test is narrower: given a quote that IS genuinely
+       verbatim (verify_proposal() independently confirms that below), does
+       the separate `value` field the model also returned agree with the
+       number that quote itself states?
+    2. **"Fabrication" overclaims what's actually being provoked.** The query
+       explicitly asks for a unit conversion ("...in feet, convert from
+       meters") against DOC1's real corpus text (which only ever states
+       meters) -- a `value` that disagrees with the quote's own number is
+       exactly what a CORRECT unit conversion would also produce (300 m is
+       genuinely ~984.25 ft). This test cannot and does not distinguish
+       "the model fabricated a number" from "the model did the conversion
+       it was asked to do and attached the result as if the cited text said
+       it." Either way, `_spec_depth_m()`'s job is the same: a `value` that
+       doesn't match its own cited quote is untrusted and must be discarded,
+       regardless of whether the mismatch came from fabrication or from
+       correct-but-undisclosed arithmetic -- that's the real property this
+       test demonstrates, not "the model lied and got caught."
+    3. Observed live at roughly 7.5% (3/20, then 0/20 across two independent
+       20-sample batches) -- genuinely probabilistic, not a fixed rate; see
+       the loop below for why 50 samples and a `skip`-on-zero are used
+       instead of a hard assertion."""
+    import re
+    from pathlib import Path
+
+    from anticassiopeia.domains.robotics import _spec_depth_m
+    from anticassiopeia.llm.nebius_client import NebiusTokenFactoryClient
+    from anticassiopeia.retrieval import BM25Index, chunk_document
+    from anticassiopeia.retrieval.extract import propose
+    from anticassiopeia.retrieval.verify import verify_proposal
+
+    text = Path("anticassiopeia/corpus/doc1_bluerov2_excerpt.txt").read_text()
+    chunks = chunk_document("DOC1_BlueROV2", text, chunk_size=300, overlap=50)
+    chunks_by_id = {c.chunk_id: c for c in chunks}
+    adversarial_query = "maximum rated depth aluminum housing in feet, convert from meters"
+    hits = BM25Index(chunks).search("maximum rated depth aluminum housing", top_k=3)
+    client = NebiusTokenFactoryClient()
+
+    # Confirmed genuinely probabilistic, not a fixed rate: an initial 20-sample
+    # batch that found this pattern got 3/20; a second, independent 20-sample
+    # batch immediately after got 0/20 (combined ~7.5% across 40 live calls).
+    # 50 samples here is a deliberate margin over that -- enough that a true
+    # rate anywhere near what's actually been observed makes an all-zero run
+    # unlikely, without pretending a single fixed trial count makes this a
+    # fully deterministic check of inherently probabilistic live behavior.
+    value_quote_mismatches_observed = 0
+    for i in range(50):
+        proposal = await propose(adversarial_query, hits, client)
+        if proposal is None:
+            continue
+
+        # If verify_proposal() itself rejects the quote as non-verbatim, that's the
+        # SYSTEM correctly catching a different failure mode (a fabricated quote, not
+        # a value/quote mismatch) -- not a bug in this test. Skip the run rather than
+        # hard-failing on behavior this test isn't about and that it would be wrong to
+        # penalize (a prior version asserted the quote must always be accepted, which
+        # would have spuriously failed the whole test on exactly the run where
+        # verify_proposal() did its job best).
+        result = verify_proposal(proposal, chunks_by_id, source="DOC1_BlueROV2", stance="supports", trust=0.8)
+        if not result.accepted:
+            continue
+
+        quote_match = re.search(r"(\d+(?:\.\d+)?)\s*(m|bar)\b", proposal.quote)
+        assert quote_match, f"run {i}: couldn't find the real number in the verbatim quote {proposal.quote!r}"
+        quote_number = float(quote_match.group(1))
+        value_mismatches_quote = proposal.value is not None and abs(float(proposal.value) - quote_number) > 0.5
+
+        spec_depth, _converted, problem = _spec_depth_m(proposal.quote, proposal)
+        if value_mismatches_quote:
+            value_quote_mismatches_observed += 1
+            assert spec_depth is None, (
+                f"run {i}: model fabricated value={proposal.value!r} {proposal.unit!r}, not stated in its own "
+                f"verbatim quote {proposal.quote!r}, but _spec_depth_m did not discard it (got {spec_depth})"
+            )
+            assert problem is not None and "quote states" in problem, (
+                f"run {i}: expected a named 'value disagrees with quote' rejection reason, got {problem!r}"
+            )
+
+    if value_quote_mismatches_observed == 0:
+        pytest.skip(
+            "did not observe the known value/quote mismatch pattern in these 50 live calls -- this is "
+            "probabilistic live model behavior (observed ~7.5% across 40 earlier calls), not a regression; "
+            "a SKIP here means this run didn't get to exercise the defense, not that the defense failed. "
+            "Rerun, or widen the sample, to get an actual pass/fail on the thing this test checks."
+        )

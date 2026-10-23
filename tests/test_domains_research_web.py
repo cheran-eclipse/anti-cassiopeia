@@ -1,9 +1,12 @@
+import asyncio
 import json
 import os
+import socket
 
 import httpx
 import pytest
 
+import anticassiopeia.domains.research_web as research_web_mod
 from anticassiopeia.core import Claim
 from anticassiopeia.core.verdict import Evidence
 from anticassiopeia.domains.research_web import _MAX_RESPONSE_BYTES, ResearchWebAdapter, _is_near_duplicate_evidence, _safe_fetch
@@ -15,6 +18,36 @@ from evals.fixture_server import serve_fixtures
 # research_web.py's real fetch calls -- see that module's docstring for the fix
 # and why this is the ONLY place it's legitimate to disable it; default_domains()
 # (what the real server uses) never does.
+
+
+_REAL_GETADDRINFO = asyncio.base_events.BaseEventLoop.getaddrinfo
+
+
+def _stub_dns_for_example_com(monkeypatch) -> None:
+    """FOUND BUG (external review): 7 tests below use `https://example.com/...`
+    as a stand-in "safe-looking" target while they actually test something
+    ELSE (block-page detection, redirect handling, the size cap, the total
+    timeout) -- but `_is_safe_to_fetch()` still does a REAL DNS lookup of
+    example.com before ever reaching their own mocked
+    `httpx.AsyncClient.stream`. That's non-hermetic: offline, or if
+    example.com's resolution is slow/blocked, these tests fail or hang for
+    a reason that has nothing to do with what they're actually checking.
+
+    Fixed by faking DNS resolution for "example.com" specifically (to a
+    real, fixed, globally-routable address, so `_is_safe_to_fetch()`'s own
+    `ip.is_global` check still runs for real) -- NOT by stubbing
+    `_is_safe_to_fetch()` itself, which would also defeat the redirect
+    test's own real check of its UNSAFE second hop (169.254.169.254).
+    Every other hostname (including literal IPs like 169.254.169.254,
+    which resolve locally without any real network query regardless)
+    still goes through the real resolver, unstubbed."""
+
+    async def _fake_getaddrinfo(self, host, port, *args, **kwargs):
+        if host == "example.com":
+            return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 0))]
+        return await _REAL_GETADDRINFO(self, host, port, *args, **kwargs)
+
+    monkeypatch.setattr(asyncio.base_events.BaseEventLoop, "getaddrinfo", _fake_getaddrinfo)
 
 
 class _DummyAsyncClient:
@@ -55,6 +88,7 @@ class _DummyStream:
 
 
 async def test_block_page_200_is_treated_as_undetermined_not_contradicted(monkeypatch):
+    _stub_dns_for_example_com(monkeypatch)
     request = httpx.Request("GET", "https://example.com")
     response = httpx.Response(
         200,
@@ -77,6 +111,7 @@ async def test_block_page_200_is_treated_as_undetermined_not_contradicted(monkey
 
 
 async def test_non_block_page_without_quote_is_real_contradiction(monkeypatch):
+    _stub_dns_for_example_com(monkeypatch)
     request = httpx.Request("GET", "https://example.com")
     response = httpx.Response(200, request=request, text="<html><body><p>ordinary page text</p></body></html>")
     monkeypatch.setattr(httpx, "AsyncClient", lambda **_: _DummyAsyncClient(response))
@@ -162,6 +197,7 @@ async def test_ssrf_guard_catches_a_redirect_to_an_unsafe_address_not_just_the_o
     internal address with no second check. Simulates exactly that: a public-
     looking first hop (passes _is_safe_to_fetch) that 302s to the cloud
     metadata endpoint. Must be rejected at the redirect hop, not followed."""
+    _stub_dns_for_example_com(monkeypatch)
     call_count = {"n": 0}
 
     class _RedirectOnceStream:
@@ -207,6 +243,7 @@ async def test_safe_fetch_caps_response_body_at_the_documented_limit(monkeypatch
     response could exhaust server memory. _safe_fetch() now streams and
     stops at _MAX_RESPONSE_BYTES; proves it actually truncates, not just
     that the constant exists."""
+    _stub_dns_for_example_com(monkeypatch)
     oversized = b"x" * (_MAX_RESPONSE_BYTES + 1000)
 
     class _OversizedStream:
@@ -240,6 +277,7 @@ async def test_malformed_redirect_location_header_is_a_clean_refusal_not_a_crash
     caller catches it, so this was an unhandled 500 instead of a clean
     refusal. _safe_fetch() now wraps the .join() call and converts the
     failure into _FetchRefused."""
+    _stub_dns_for_example_com(monkeypatch)
     call_count = {"n": 0}
 
     class _MalformedRedirectStream:
@@ -279,6 +317,7 @@ async def test_truncated_page_without_the_quote_is_undetermined_not_a_false_cont
     confident CONTRADICTS, even though the quote might genuinely be present
     just past the truncation point. Must be UNDETERMINED (a named gap)
     instead -- a truncated page proves nothing about what it doesn't show."""
+    _stub_dns_for_example_com(monkeypatch)
     quote = "the reference pump is rated for 12 bar"
     # Real body: lots of filler, cut by _MAX_RESPONSE_BYTES, THEN the quote --
     # so the quote genuinely exists on the real page but falls past the cut.
@@ -322,8 +361,9 @@ async def test_total_timeout_bounds_a_slow_trickling_response(monkeypatch):
     WHOLE fetch; proves a trickling response that would otherwise take far
     longer than the configured total timeout is cut off close to it,
     not after all the data eventually arrives."""
-    import asyncio
     import time
+
+    _stub_dns_for_example_com(monkeypatch)
 
     class _SlowTrickleStream:
         status_code = 200

@@ -35,6 +35,21 @@ and raw API JSON responses are not re-included here to keep this file
 short; re-fetch `https://archive.ics.uci.edu/api/dataset?id=<ID>` for the
 exact metadata if needed — it is a stable, versioned public API.
 
+**Phase B item 11 (held-out set, 2026-10-19):** one more real UCI
+dataset, fetched live specifically because it was never used anywhere in
+the main 3,383-claim manifest (the whole point of a held-out set):
+
+| File | UCI ID | Name | Rows | Numeric columns | Source |
+|---|---|---|---|---|---|
+| yacht_hydrodynamics.csv | 243 | Yacht Hydrodynamics | 308 | 7 (6 hull-geometry features + 1 target) | https://archive.ics.uci.edu/ml/machine-learning-databases/00243/yacht_hydrodynamics.data |
+
+Column names are this project's own labels derived directly from the
+dataset page's "Additional Variable Information" descriptions (the raw
+`.data` file has no header row) — not re-used from any other file in
+this project. Statistics over this file for the held-out claims were
+computed by hand-rolled arithmetic in `stress_test/claims/generate_heldout.py`
+itself, not by importing `stress_test/oracles/ml_data_oracle.py`.
+
 ## fpga_embedded/ — real, committed Vivado `report_timing_summary` output found via GitHub code search
 
 GitHub's code-search API requires authentication even for read access
@@ -59,6 +74,14 @@ default branch HEAD as of 2026-10-18; local filename = `<repo, "/"→"__">__<bas
 | hdlguy__make_for_vivado__timing.rpt | hdlguy/make_for_vivado | implement/results/timing.rpt | MIT | Real, parses cleanly |
 | scarletnova20__...timing_impl.txt | scarletnova20/Vision-In-Memory-System-On-RISCV | reports/timing_impl.txt | MIT | Real, but the data row is literally `NA NA NA NA ...` (an incomplete/unclosed-timing run) — genuine real-world ADVERSARIAL edge case: correct behavior is "no numeric row matched, named gap", not a crash. Used for Tier 3. |
 | scarletnova20__...timing_synth.txt | scarletnova20/Vision-In-Memory-System-On-RISCV | reports/timing_synth.txt | MIT | Same NA-row situation as above (post-synthesis, pre-route) |
+
+**Phase B item 11 (held-out set, 2026-10-19):** one more real Vivado
+report from a project never used anywhere in the main manifest, found
+via the same `gh api search/code` method as above:
+
+| Local file | Repo | Path | License | Notes |
+|---|---|---|---|---|
+| nethakah__nasdaq-pipeline__timing_route.rpt | nethakah/nasdaq-pipeline | fpga/results/timing_route.rpt | Apache-2.0 | Real, modern (Vivado v2024.1) routed report; two real clocks (core_clk 285.714MHz, dma_clk 100.000MHz); WNS(ns)=0.034, WHS(ns)=0.011, WPWS(ns)=1.218 — all read directly from the real file by eye for the held-out claims, quoted in `stress_test/claims/generate_heldout.py`'s own docstring, not parsed by a script sharing code with `fpga_embedded.py` |
 
 ### Quantum-control/accelerator FPGA data (amendment, additive to the above)
 
@@ -145,6 +168,48 @@ confirmed by fetching the real page (same method as the existing
 | ESP32 | https://en.wikipedia.org/wiki/ESP32 | 2026-10-18 | manufacturer (Espressif Systems), type (microcontroller) |
 | BeagleBone | https://en.wikipedia.org/wiki/BeagleBone | 2026-10-18 | first-release date (2008-07-28, as "Beagle Board") |
 | Analog Devices | https://en.wikipedia.org/wiki/Analog_Devices | 2026-10-18 | entity type (American semiconductor manufacturer), ticker (Nasdaq: ADI) |
+| STM32 | https://en.wikipedia.org/wiki/STM32 | 2026-10-18 | manufacturer (STMicroelectronics), architecture (ARM Cortex-M) |
+| Xilinx | https://en.wikipedia.org/wiki/Xilinx | 2026-10-18 | entity type (American technology company) |
+
+**24 more topics added for Phase B item 9** (external review: research_web
+was the most under-tested domain at only 24 claims) — each fetched LIVE
+via Wikipedia's REST summary API
+(`https://en.wikipedia.org/api/rest_v1/page/summary/<title>`, the same
+confirmed-working backend `research_web.py`'s own live tests use) on
+2026-10-19, before any claim was written:
+
+| Topic | Source URL | Fetched | Anchor fact(s) used |
+|---|---|---|---|
+| Arduino Uno | https://en.wikipedia.org/wiki/Arduino_Uno | 2026-10-19 | initial release (by the Arduino company, 2010) |
+| Linux kernel | https://en.wikipedia.org/wiki/Linux_kernel | 2026-10-19 | creator and year (Linus Torvalds, 1991) |
+| Python | https://en.wikipedia.org/wiki/Python_(programming_language) | 2026-10-19 | language character (high-level, general-purpose, readability-emphasizing) |
+| ROS | https://en.wikipedia.org/wiki/Robot_Operating_System | 2026-10-19 | nature (open-source robotics middleware suite) |
+| Nvidia Jetson | https://en.wikipedia.org/wiki/Nvidia_Jetson | 2026-10-19 | maker (series of embedded computing boards from Nvidia) |
+| KiCad | https://en.wikipedia.org/wiki/KiCad | 2026-10-19 | licensing (free software suite for EDA) |
+| Verilog | https://en.wikipedia.org/wiki/Verilog | 2026-10-19 | standard (IEEE 1364) |
+| VHDL | https://en.wikipedia.org/wiki/VHDL | 2026-10-19 | origin (US military VHSIC program, 1980s) |
+| RISC-V | https://en.wikipedia.org/wiki/RISC-V | 2026-10-19 | licensing character (free and open standard ISA) |
+| MicroPython | https://en.wikipedia.org/wiki/MicroPython | 2026-10-19 | implementation language and compatibility (written in C, largely Python 3-compatible) |
+| FreeRTOS | https://en.wikipedia.org/wiki/FreeRTOS | 2026-10-19 | license (MIT) |
+| CAN bus | https://en.wikipedia.org/wiki/CAN_bus | 2026-10-19 | nature (vehicle bus standard for microcontroller/device communication) |
+| I2C | https://en.wikipedia.org/wiki/I2C | 2026-10-19 | inventor and year (Philips Semiconductors, 1980) |
+| SPI | https://en.wikipedia.org/wiki/Serial_Peripheral_Interface | 2026-10-19 | nature (synchronous serial communication standard for embedded systems) |
+| Zephyr | https://en.wikipedia.org/wiki/Zephyr_(operating_system) | 2026-10-19 | license (Apache License 2.0) |
+| OpenCV | https://en.wikipedia.org/wiki/OpenCV | 2026-10-19 | original developer (Intel) |
+| TensorFlow | https://en.wikipedia.org/wiki/TensorFlow | 2026-10-19 | license (Apache License 2.0) |
+| PyTorch | https://en.wikipedia.org/wiki/PyTorch | 2026-10-19 | original developer (Meta Platforms) |
+| Intel 8051 | https://en.wikipedia.org/wiki/Intel_8051 | 2026-10-19 | maker and year (Intel, 1980; canonical title Intel_MCS-51) |
+| ATmega328 | https://en.wikipedia.org/wiki/ATmega328 | 2026-10-19 | maker and family (Atmel, megaAVR) |
+| Adafruit | https://en.wikipedia.org/wiki/Adafruit_Industries | 2026-10-19 | founder and year (Limor Fried, 2005) |
+| SparkFun | https://en.wikipedia.org/wiki/SparkFun_Electronics | 2026-10-19 | location (Niwot, Colorado) |
+| Bluetooth Low Energy | https://en.wikipedia.org/wiki/Bluetooth_Low_Energy | 2026-10-19 | steward (Bluetooth Special Interest Group) |
+| Modbus | https://en.wikipedia.org/wiki/Modbus | 2026-10-19 | original use case (programmable logic controllers) |
+
+Each topic's "absent" claim is a precise invented statistic not present
+in the fetched summary text (same convention the original 8 topics use);
+not independently verified against the full page beyond the fetched
+summary extract, carrying the same residual risk the original 8 topics
+already carry.
 
 All Wikipedia content: CC BY-SA 4.0 (Wikipedia's standard license,
 confirmed per Wikipedia's own terms, not re-checked per-page since it's

@@ -18,6 +18,22 @@ Multi-file datasets (one claim checked against rows split across more
 than one CSV). Real AND-semantics claim decomposition for compound
 statistical claims ("mean is X AND stdev is Y").
 
+PERCENTILE CONVENTION, stated explicitly (found undocumented by external
+review — a real product-trust risk, not just an internal detail): `p25`
+and `p75` are `statistics.quantiles(values, n=4)` with NO `method=`
+argument, which defaults to `method="exclusive"` (the R-6/Minitab-style
+method). This is NOT the same convention numpy's `percentile()`,
+pandas' `.quantile()`, or Excel's `PERCENTILE.INC` default to (all three
+default to a linear-interpolation method, R-7-equivalent) — the two
+methods give genuinely different numbers on the same data, not just
+rounding differences. A user who computed a percentile in pandas and got
+a different answer from this tool is not seeing a bug; they're seeing a
+real, different, equally-valid convention that was never stated out
+loud before this note. Not changed to match numpy/pandas here (that
+would be an unannounced behavior change to existing claims) — documented
+instead, and `stress_test/claims/generate_manifest.py`'s own p25/p75
+claim text now states this explicitly too, not just this docstring.
+
 FIXED BUG, found while adding stdev's new siblings: `stdev`, and now
 `p25`/`p75`/`correlation`, all raise `statistics.StatisticsError` on too
 few data points (stdev needs >=2, quantiles/correlation effectively the

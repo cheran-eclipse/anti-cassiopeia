@@ -128,6 +128,21 @@ for every (domain, tier) stratum in the sample:
 | robotics | 121 | 56.2% | 19.0% | 24.8% | 100.0% | 0.0% | 0.0% |
 | **Overall (n=1,000)** | 1,000 | **17.7%** | **4.1%** | **78.2%** | **99.9%** | **0.0%** | **0.1%** |
 
+**Phase B addendum (2026-10-19, external review):** the pipeline's
+single "99.9%" above blends computed-not-verified claims with real
+evidence-weighing ones. Read as two numbers:
+
+| | n | Bare correct | Bare dangerous | Pipeline correct | Pipeline dangerous |
+|---|---|---|---|---|---|
+| **Deterministic** (ml_data+fpga_embedded) | 872 | 11.9% | 1.83% | **100.0%** | **0.0%** |
+| **Verification** (robotics+research_web) | 128 | 57.0% | 19.53% | **99.2%** | **0.0%** |
+
+The pipeline's one miss anywhere in this sample is in the verification
+domains (a conservative one, not dangerous — see the single `research_web`
+tier-1 cell above); the deterministic domains are not just "mostly
+right," they are exactly, provably right every time, because they are
+computed, not verified.
+
 The single most striking line is **robotics tier 3: bare Nebius is
 confidently wrong 66.7% of the time** — not uncertain, not declining,
 *confidently wrong on two-thirds of the hardest-tier claims*. Two real

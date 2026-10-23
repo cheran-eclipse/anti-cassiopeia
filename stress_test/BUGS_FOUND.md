@@ -2112,3 +2112,1111 @@ needed and both are in place.**
 }
 `
 
+
+## Test #2 bare-Nebius batch `heldout` — 7 dangerous/crash result(s) (baseline, not a pipeline bug)
+
+### heldout-0026 (robotics, tier 3)
+- Claim: `{"text": "Blue Robotics T200 Thruster survives 500 m depth", "domain": "robotics", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0027 (robotics, tier 3)
+- Claim: `{"text": "Ping Sonar Altimeter survives 500 m depth", "domain": "robotics", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0030 (research_web, tier 3)
+- Claim: `{"text": "Micro air vehicles are restricted by international treaty to a maximum wingspan of exactly 15 centimeters", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0033 (research_web, tier 3)
+- Claim: `{"text": "LoRa's maximum range is defined as exactly 40 kilometers under all conditions", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0036 (research_web, tier 3)
+- Claim: `{"text": "The first commercial FPGA contained exactly 1,200 logic gates", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0039 (research_web, tier 3)
+- Claim: `{"text": "Zigbee's maximum network size is capped at exactly 500 devices", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0042 (research_web, tier 3)
+- Claim: `{"text": "The Rust compiler's borrow checker runs in exactly O(n) time for every program", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+
+## Test #3 generic-RAG batch `heldout` — 5 dangerous/crash result(s) (a naive off-the-shelf-style baseline; not a pipeline bug)
+
+### heldout-0006 (ml_data, tier 1)
+- Claim: `{"text": "stdev(residuary_resistance) in yacht_hydrodynamics.csv is 15.160490101992739", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/yacht_hydrodynamics.csv", "column": "residuary_resistance", "stat": "stdev", "tolerance": 1e-06, "expected_value": 15.160490101992739}}`
+- Generic-RAG predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### heldout-0007 (ml_data, tier 1)
+- Claim: `{"text": "mean(prismatic_coefficient) in yacht_hydrodynamics.csv is 0.5641363636363625", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/yacht_hydrodynamics.csv", "column": "prismatic_coefficient", "stat": "mean", "tolerance": 1e-06, "expected_value": 0.5641363636363625}}`
+- Generic-RAG predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### heldout-0010 (ml_data, tier 1)
+- Claim: `{"text": "correlation(froude_number,residuary_resistance) in yacht_hydrodynamics.csv is 0.8100922241227663", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/yacht_hydrodynamics.csv", "column": "froude_number", "stat": "correlation", "tolerance": 1e-06, "column_b": "residuary_resistance", "expected_value": 0.8100922241227663}}`
+- Generic-RAG predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### heldout-0012 (fpga_embedded, tier 1)
+- Claim: `{"text": "nethakah/nasdaq-pipeline: wns_ns >= 0.03", "domain": "fpga_embedded", "context": {"report_path": "stress_test/data/fpga_embedded/nethakah__nasdaq-pipeline__timing_route.rpt", "metric": "wns_ns", "comparator": ">=", "expected_value": 0.03}}`
+- Generic-RAG predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### heldout-0027 (robotics, tier 3)
+- Claim: `{"text": "Ping Sonar Altimeter survives 500 m depth", "domain": "robotics", "context": {}}`
+- Generic-RAG predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+
+## Test #3 Perplexity batch `heldout` — 7 dangerous/crash result(s) (external API baseline; not a pipeline bug)
+
+### heldout-0026 (robotics, tier 3)
+- Claim: `{"text": "Blue Robotics T200 Thruster survives 500 m depth", "domain": "robotics", "context": {}}`
+- Perplexity predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0030 (research_web, tier 3)
+- Claim: `{"text": "Micro air vehicles are restricted by international treaty to a maximum wingspan of exactly 15 centimeters", "domain": "research_web", "context": {}}`
+- Perplexity predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0031 (research_web, tier 1)
+- Claim: `{"text": "LoRa is a proprietary radio communication technique based on spread spectrum modulation", "domain": "research_web", "context": {}}`
+- Perplexity predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### heldout-0033 (research_web, tier 3)
+- Claim: `{"text": "LoRa's maximum range is defined as exactly 40 kilometers under all conditions", "domain": "research_web", "context": {}}`
+- Perplexity predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0036 (research_web, tier 3)
+- Claim: `{"text": "The first commercial FPGA contained exactly 1,200 logic gates", "domain": "research_web", "context": {}}`
+- Perplexity predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0039 (research_web, tier 3)
+- Claim: `{"text": "Zigbee's maximum network size is capped at exactly 500 devices", "domain": "research_web", "context": {}}`
+- Perplexity predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0042 (research_web, tier 3)
+- Claim: `{"text": "The Rust compiler's borrow checker runs in exactly O(n) time for every program", "domain": "research_web", "context": {}}`
+- Perplexity predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+
+## Test #3 Tavily+Gemini batch `heldout` — 5 dangerous/crash result(s) (external API baseline; not a pipeline bug)
+
+### heldout-0017 (fpga_embedded, tier 1)
+- Claim: `{"text": "nethakah/nasdaq-pipeline: frequency_mhz >= 250.0 (core_clk)", "domain": "fpga_embedded", "context": {"report_path": "stress_test/data/fpga_embedded/nethakah__nasdaq-pipeline__timing_route.rpt", "metric": "frequency_mhz", "comparator": ">=", "expected_value": 250.0, "clock": "core_clk"}}`
+- Tavily+Gemini predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### heldout-0033 (research_web, tier 3)
+- Claim: `{"text": "LoRa's maximum range is defined as exactly 40 kilometers under all conditions", "domain": "research_web", "context": {}}`
+- Tavily+Gemini predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0036 (research_web, tier 3)
+- Claim: `{"text": "The first commercial FPGA contained exactly 1,200 logic gates", "domain": "research_web", "context": {}}`
+- Tavily+Gemini predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0039 (research_web, tier 3)
+- Claim: `{"text": "Zigbee's maximum network size is capped at exactly 500 devices", "domain": "research_web", "context": {}}`
+- Tavily+Gemini predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0042 (research_web, tier 3)
+- Claim: `{"text": "The Rust compiler's borrow checker runs in exactly O(n) time for every program", "domain": "research_web", "context": {}}`
+- Tavily+Gemini predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+
+## Test codeexec batch `heldout` — 6 dangerous/crash result(s) (code-execution baseline; not a pipeline bug)
+
+### heldout-0026 (robotics, tier 3)
+- Claim: `{"text": "Blue Robotics T200 Thruster survives 500 m depth", "domain": "robotics", "context": {}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0030 (research_web, tier 3)
+- Claim: `{"text": "Micro air vehicles are restricted by international treaty to a maximum wingspan of exactly 15 centimeters", "domain": "research_web", "context": {}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0033 (research_web, tier 3)
+- Claim: `{"text": "LoRa's maximum range is defined as exactly 40 kilometers under all conditions", "domain": "research_web", "context": {}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0036 (research_web, tier 3)
+- Claim: `{"text": "The first commercial FPGA contained exactly 1,200 logic gates", "domain": "research_web", "context": {}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0039 (research_web, tier 3)
+- Claim: `{"text": "Zigbee's maximum network size is capped at exactly 500 devices", "domain": "research_web", "context": {}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0042 (research_web, tier 3)
+- Claim: `{"text": "The Rust compiler's borrow checker runs in exactly O(n) time for every program", "domain": "research_web", "context": {}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+
+## Test codeexec batch `main_sample` — 101 dangerous/crash result(s) (code-execution baseline; not a pipeline bug)
+
+### fpga_embedded-002628 (fpga_embedded, tier 3)
+- Claim: `{"text": "Nero7991__llm.vhdl__timing_summary_A.rpt: wns_ns == 3.493", "domain": "fpga_embedded", "context": {"report_path": "stress_test/data/fpga_embedded/Nero7991__llm.vhdl__timing_summary_A.rpt", "metric": "wns_ns", "comparator": "==", "expected_value": 3.493001}}`
+- Code-exec predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### fpga_embedded-002670 (fpga_embedded, tier 3)
+- Claim: `{"text": "Nero7991__llm.vhdl__timing_summary_A.rpt: tpws_ns >= 1e-06", "domain": "fpga_embedded", "context": {"report_path": "stress_test/data/fpga_embedded/Nero7991__llm.vhdl__timing_summary_A.rpt", "metric": "tpws_ns", "comparator": ">=", "expected_value": 1e-06}}`
+- Code-exec predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### fpga_embedded-002678 (fpga_embedded, tier 3)
+- Claim: `{"text": "Nero7991__llm.vhdl__timing_summary_B.rpt: wns_ns == 3.37", "domain": "fpga_embedded", "context": {"report_path": "stress_test/data/fpga_embedded/Nero7991__llm.vhdl__timing_summary_B.rpt", "metric": "wns_ns", "comparator": "==", "expected_value": 3.3700010000000002}}`
+- Code-exec predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### fpga_embedded-002710 (fpga_embedded, tier 3)
+- Claim: `{"text": "Nero7991__llm.vhdl__timing_summary_B.rpt: wpws_ns == 2.225", "domain": "fpga_embedded", "context": {"report_path": "stress_test/data/fpga_embedded/Nero7991__llm.vhdl__timing_summary_B.rpt", "metric": "wpws_ns", "comparator": "==", "expected_value": 2.2250010000000002}}`
+- Code-exec predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### ml_data-000025 (ml_data, tier 3)
+- Claim: `{"text": "mean(PT08.S1(CO)) in air_quality.csv is 1050.04", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/air_quality.csv", "column": "PT08.S1(CO)", "stat": "mean", "expected_value": 1050.0380019878166, "tolerance": 1.0489900609169607}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000037 (ml_data, tier 2)
+- Claim: `{"text": "mean(NMHC(GT)) in air_quality.csv is -163.067", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/air_quality.csv", "column": "NMHC(GT)", "stat": "mean", "expected_value": -163.06734530298172, "tolerance": 7.954504648925938}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000053 (ml_data, tier 3)
+- Claim: `{"text": "mean(C6H6(GT)) in air_quality.csv is 1.86755", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/air_quality.csv", "column": "C6H6(GT)", "stat": "mean", "expected_value": 1.8675472633108905, "tolerance": 0.0018656834455487872}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000065 (ml_data, tier 2)
+- Claim: `{"text": "mean(PT08.S2(NMHC)) in air_quality.csv is 872.23", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/air_quality.csv", "column": "PT08.S2(NMHC)", "stat": "mean", "expected_value": 872.2303943571658, "tolerance": 44.729763813187986}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000127 (ml_data, tier 1)
+- Claim: `{"text": "mean(PT08.S5(O3)) in air_quality.csv is 975.072", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/air_quality.csv", "column": "PT08.S5(O3)", "stat": "mean", "expected_value": 975.0720316340708, "tolerance": 0.9750720316340707}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000135 (ml_data, tier 2)
+- Claim: `{"text": "mean(PT08.S5(O3)) in air_quality.csv is 950.695", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/air_quality.csv", "column": "PT08.S5(O3)", "stat": "mean", "expected_value": 950.695230843219, "tolerance": 48.75360158170354}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000179 (ml_data, tier 3)
+- Claim: `{"text": "mean(AH) in air_quality.csv is -6.83077", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/air_quality.csv", "column": "AH", "stat": "mean", "expected_value": -6.830772878289762, "tolerance": 0.006837603644330449}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000223 (ml_data, tier 3)
+- Claim: `{"text": "mean(AT) in combined_cycle_power_plant.csv is 19.6709", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/combined_cycle_power_plant.csv", "column": "AT", "stat": "mean", "expected_value": 19.670862767247076, "tolerance": 0.019651231187290973}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000263 (ml_data, tier 2)
+- Claim: `{"text": "mean(RH) in combined_cycle_power_plant.csv is 71.4763", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/combined_cycle_power_plant.csv", "column": "RH", "stat": "mean", "expected_value": 71.47625339673914, "tolerance": 3.6654488921404687}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000354 (ml_data, tier 3)
+- Claim: `{"text": "mean(Water) in concrete_compressive_strength.csv is 181.749", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/concrete_compressive_strength.csv", "column": "Water", "stat": "mean", "expected_value": 181.7486672676699, "tolerance": 0.18156728155339807}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000391 (ml_data, tier 1)
+- Claim: `{"text": "p75(Fine Aggregate) in concrete_compressive_strength.csv is 824.25", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/concrete_compressive_strength.csv", "column": "Fine Aggregate", "stat": "p75", "expected_value": 824.25, "tolerance": 0.82425}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000396 (ml_data, tier 3)
+- Claim: `{"text": "mean(Fine Aggregate) in concrete_compressive_strength.csv is 774.353", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/concrete_compressive_strength.csv", "column": "Fine Aggregate", "stat": "mean", "expected_value": 774.3532923418447, "tolerance": 0.7735804854368933}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000422 (ml_data, tier 2)
+- Claim: `{"text": "mean(Concrete compressive strength) in concrete_compressive_strength.csv is 34.9225", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/concrete_compressive_strength.csv", "column": "Concrete compressive strength", "stat": "mean", "expected_value": 34.92251213592233, "tolerance": 1.7908980582524272}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000468 (ml_data, tier 3)
+- Claim: `{"text": "mean(fixed_acidity) in wine_quality.csv is 7.22252", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/wine_quality.csv", "column": "fixed_acidity", "stat": "mean", "expected_value": 7.222515156556872, "tolerance": 0.007215307064799138}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000494 (ml_data, tier 2)
+- Claim: `{"text": "mean(citric_acid) in wine_quality.csv is 0.310667", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/wine_quality.csv", "column": "citric_acid", "stat": "mean", "expected_value": 0.31066738494689855, "tolerance": 0.015931660766507618}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000536 (ml_data, tier 2)
+- Claim: `{"text": "mean(free_sulfur_dioxide) in wine_quality.csv is 29.7622", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/wine_quality.csv", "column": "free_sulfur_dioxide", "stat": "mean", "expected_value": 29.76218639372018, "tolerance": 1.5262659689087272}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000538 (ml_data, tier 3)
+- Claim: `{"text": "mean(free_sulfur_dioxide) in wine_quality.csv is 30.5558", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/wine_quality.csv", "column": "free_sulfur_dioxide", "stat": "mean", "expected_value": 30.55581417223334, "tolerance": 0.030525319378174546}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000566 (ml_data, tier 3)
+- Claim: `{"text": "mean(density) in wine_quality.csv is 0.99569", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/wine_quality.csv", "column": "density", "stat": "mean", "expected_value": 0.9956903357681961, "tolerance": 0.000994696633830999}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000666 (ml_data, tier 3)
+- Claim: `{"text": "mean(Appliances) in appliances_energy_prediction.csv is 97.7926", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/appliances_energy_prediction.csv", "column": "Appliances", "stat": "mean", "expected_value": 97.7925554593362, "tolerance": 0.0976949581960983}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000678 (ml_data, tier 2)
+- Claim: `{"text": "mean(lights) in appliances_energy_prediction.csv is 3.70683", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/appliances_energy_prediction.csv", "column": "lights", "stat": "mean", "expected_value": 3.70682797061059, "tolerance": 0.19009374208259439}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000706 (ml_data, tier 2)
+- Claim: `{"text": "mean(RH_1) in appliances_energy_prediction.csv is 39.2532", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/appliances_energy_prediction.csv", "column": "RH_1", "stat": "mean", "expected_value": 39.25324579778064, "tolerance": 2.012986963988751}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000709 (ml_data, tier 3)
+- Claim: `{"text": "mean(RH_1) in appliances_energy_prediction.csv is 40.3", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/appliances_energy_prediction.csv", "column": "RH_1", "stat": "mean", "expected_value": 40.300003045028724, "tolerance": 0.04025973927977502}}`
+- Code-exec predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### ml_data-000734 (ml_data, tier 2)
+- Claim: `{"text": "mean(RH_2) in appliances_energy_prediction.csv is 39.4099", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/appliances_energy_prediction.csv", "column": "RH_2", "stat": "mean", "expected_value": 39.40990990336592, "tolerance": 2.021021020685432}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000736 (ml_data, tier 3)
+- Claim: `{"text": "mean(RH_2) in appliances_energy_prediction.csv is 40.4608", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/appliances_energy_prediction.csv", "column": "RH_2", "stat": "mean", "expected_value": 40.46080041370193, "tolerance": 0.04042042041370864}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000750 (ml_data, tier 3)
+- Claim: `{"text": "mean(T3) in appliances_energy_prediction.csv is 22.2899", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/appliances_energy_prediction.csv", "column": "T3", "stat": "mean", "expected_value": 22.28985632825304, "tolerance": 0.022267610984879147}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000764 (ml_data, tier 3)
+- Claim: `{"text": "mean(RH_3) in appliances_energy_prediction.csv is 39.2817", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/appliances_energy_prediction.csv", "column": "RH_3", "stat": "mean", "expected_value": 39.2817033347755, "tolerance": 0.03924250007719838}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000776 (ml_data, tier 2)
+- Claim: `{"text": "mean(T4) in appliances_energy_prediction.csv is 20.334", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/appliances_energy_prediction.csv", "column": "T4", "stat": "mean", "expected_value": 20.333951354359566, "tolerance": 1.0427667361210033}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000804 (ml_data, tier 2)
+- Claim: `{"text": "mean(T5) in appliances_energy_prediction.csv is 19.1023", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/appliances_energy_prediction.csv", "column": "T5", "stat": "mean", "expected_value": 19.10230366982174, "tolerance": 0.9796053164011149}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000832 (ml_data, tier 2)
+- Claim: `{"text": "mean(T6) in appliances_energy_prediction.csv is 7.71317", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/appliances_energy_prediction.csv", "column": "T6", "stat": "mean", "expected_value": 7.713165849087382, "tolerance": 0.39554696661986577}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000834 (ml_data, tier 3)
+- Claim: `{"text": "mean(T6) in appliances_energy_prediction.csv is 7.91884", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/appliances_energy_prediction.csv", "column": "T6", "stat": "mean", "expected_value": 7.9188423607903795, "tolerance": 0.007910939332397315}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000848 (ml_data, tier 3)
+- Claim: `{"text": "mean(RH_6) in appliances_energy_prediction.csv is 54.6636", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/appliances_energy_prediction.csv", "column": "RH_6", "stat": "mean", "expected_value": 54.66363786187865, "tolerance": 0.05460908338757446}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000943 (ml_data, tier 1)
+- Claim: `{"text": "p75(weight) in auto_mpg.csv is 3610", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/auto_mpg.csv", "column": "weight", "stat": "p75", "expected_value": 3610.0, "tolerance": 3.61}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000988 (ml_data, tier 2)
+- Claim: `{"text": "mean(origin) in auto_mpg.csv is 1.53354", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/auto_mpg.csv", "column": "origin", "stat": "mean", "expected_value": 1.5335427135678392, "tolerance": 0.07864321608040202}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001046 (ml_data, tier 2)
+- Claim: `{"text": "mean(Length) in abalone.csv is 0.510892", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/abalone.csv", "column": "Length", "stat": "mean", "expected_value": 0.5108922971031842, "tolerance": 0.026199604979650473}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001060 (ml_data, tier 2)
+- Claim: `{"text": "mean(Diameter) in abalone.csv is 0.397684", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/abalone.csv", "column": "Diameter", "stat": "mean", "expected_value": 0.397684223126646, "tolerance": 0.020394062724443385}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001118 (ml_data, tier 3)
+- Claim: `{"text": "mean(Viscera_weight) in abalone.csv is 0.180774", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/abalone.csv", "column": "Viscera_weight", "stat": "mean", "expected_value": 0.1807740208667704, "tolerance": 0.00018059360785252574}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001130 (ml_data, tier 2)
+- Claim: `{"text": "mean(Shell_weight) in abalone.csv is 0.23286", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/abalone.csv", "column": "Shell_weight", "stat": "mean", "expected_value": 0.2328600879818051, "tolerance": 0.011941542973425904}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001146 (ml_data, tier 3)
+- Claim: `{"text": "mean(Rings) in abalone.csv is 9.94361", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/abalone.csv", "column": "Rings", "stat": "mean", "expected_value": 9.943608213310988, "tolerance": 0.009933684462532918}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001190 (ml_data, tier 3)
+- Claim: `{"text": "mean(X) in forest_fires.csv is 4.67391", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/forest_fires.csv", "column": "X", "stat": "mean", "expected_value": 4.673910224371373, "tolerance": 0.004669245647969052}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001202 (ml_data, tier 2)
+- Claim: `{"text": "mean(Y) in forest_fires.csv is 4.19231", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/forest_fires.csv", "column": "Y", "stat": "mean", "expected_value": 4.192311411992263, "tolerance": 0.21499032882011604}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001258 (ml_data, tier 2)
+- Claim: `{"text": "mean(ISI) in forest_fires.csv is 8.79612", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/forest_fires.csv", "column": "ISI", "stat": "mean", "expected_value": 8.796121856866538, "tolerance": 0.45108317214700194}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001274 (ml_data, tier 3)
+- Claim: `{"text": "mean(temp) in forest_fires.csv is 18.908", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/forest_fires.csv", "column": "temp", "stat": "mean", "expected_value": 18.908038557640236, "tolerance": 0.01888916827852998}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001286 (ml_data, tier 2)
+- Claim: `{"text": "mean(RH) in forest_fires.csv is 43.181", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/forest_fires.csv", "column": "RH", "stat": "mean", "expected_value": 43.18099613152804, "tolerance": 2.214410058027079}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001372 (ml_data, tier 2)
+- Claim: `{"text": "mean(season) in bike_sharing.csv is 2.4391", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/bike_sharing.csv", "column": "season", "stat": "mean", "expected_value": 2.43909891248058, "tolerance": 0.1250819955118246}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001374 (ml_data, tier 3)
+- Claim: `{"text": "mean(season) in bike_sharing.csv is 2.50414", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/bike_sharing.csv", "column": "season", "stat": "mean", "expected_value": 2.5041390485068185, "tolerance": 0.0025016399102364925}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001386 (ml_data, tier 2)
+- Claim: `{"text": "mean(yr) in bike_sharing.csv is 0.489997", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/bike_sharing.csv", "column": "yr", "stat": "mean", "expected_value": 0.48999654755739686, "tolerance": 0.025128028079866506}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001388 (ml_data, tier 3)
+- Claim: `{"text": "mean(yr) in bike_sharing.csv is 0.503063", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/bike_sharing.csv", "column": "yr", "stat": "mean", "expected_value": 0.5030626195983658, "tolerance": 0.0005025605615973301}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001402 (ml_data, tier 3)
+- Claim: `{"text": "mean(mnth) in bike_sharing.csv is 6.54431", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/bike_sharing.csv", "column": "mnth", "stat": "mean", "expected_value": 6.544306713850049, "tolerance": 0.006537775476149376}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001414 (ml_data, tier 2)
+- Claim: `{"text": "mean(hr) in bike_sharing.csv is 11.2581", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/bike_sharing.csv", "column": "hr", "stat": "mean", "expected_value": 11.258083031244606, "tolerance": 0.5773375913458773}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001442 (ml_data, tier 2)
+- Claim: `{"text": "mean(weekday) in bike_sharing.csv is 2.92859", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/bike_sharing.csv", "column": "weekday", "stat": "mean", "expected_value": 2.928590540307267, "tolerance": 0.15018413027216757}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001486 (ml_data, tier 3)
+- Claim: `{"text": "mean(temp) in bike_sharing.csv is 0.497484", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/bike_sharing.csv", "column": "temp", "stat": "mean", "expected_value": 0.49748365860291155, "tolerance": 0.0004969871684216583}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001498 (ml_data, tier 2)
+- Claim: `{"text": "mean(atemp) in bike_sharing.csv is 0.463881", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/bike_sharing.csv", "column": "atemp", "stat": "mean", "expected_value": 0.46388072458139123, "tolerance": 0.023788755106738016}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001500 (ml_data, tier 3)
+- Claim: `{"text": "mean(atemp) in bike_sharing.csv is 0.47625", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/bike_sharing.csv", "column": "atemp", "stat": "mean", "expected_value": 0.47625040146179287, "tolerance": 0.0004757751021347603}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001512 (ml_data, tier 2)
+- Claim: `{"text": "mean(hum) in bike_sharing.csv is 0.611548", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/bike_sharing.csv", "column": "hum", "stat": "mean", "expected_value": 0.6115481184187813, "tolerance": 0.031361441970193915}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001514 (ml_data, tier 3)
+- Claim: `{"text": "mean(hum) in bike_sharing.csv is 0.627855", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/bike_sharing.csv", "column": "hum", "stat": "mean", "expected_value": 0.6278554410144428, "tolerance": 0.0006272288394038783}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001540 (ml_data, tier 2)
+- Claim: `{"text": "mean(casual) in bike_sharing.csv is 34.7843", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/bike_sharing.csv", "column": "casual", "stat": "mean", "expected_value": 34.78431296392197, "tolerance": 1.7838109212267679}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001556 (ml_data, tier 3)
+- Claim: `{"text": "mean(registered) in bike_sharing.csv is 153.941", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/bike_sharing.csv", "column": "registered", "stat": "mean", "expected_value": 153.9405022923068, "tolerance": 0.15378686920996607}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001628 (ml_data, tier 3)
+- Claim: `{"text": "mean(X2 house age) in real_estate_valuation.csv is 17.7303", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/real_estate_valuation.csv", "column": "X2 house age", "stat": "mean", "expected_value": 17.730255234299516, "tolerance": 0.017712560386473432}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001637 (ml_data, tier 1)
+- Claim: `{"text": "p75(X3 distance to the nearest MRT station) in real_estate_valuation.csv is 1455.8", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/real_estate_valuation.csv", "column": "X3 distance to the nearest MRT station", "stat": "p75", "expected_value": 1455.798, "tolerance": 1.455798}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001680 (ml_data, tier 1)
+- Claim: `{"text": "min(X6 longitude) in real_estate_valuation.csv is 121.474", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/real_estate_valuation.csv", "column": "X6 longitude", "stat": "min", "expected_value": 121.47353, "tolerance": 1e-09}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001753 (ml_data, tier 3)
+- Claim: `{"text": "mean(attack-angle) in airfoil_self_noise.csv is 6.78908", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/airfoil_self_noise.csv", "column": "attack-angle", "stat": "mean", "expected_value": 6.789077582302062, "tolerance": 0.0067823020625415835}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001765 (ml_data, tier 2)
+- Claim: `{"text": "mean(chord-length) in airfoil_self_noise.csv is 0.133135", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/airfoil_self_noise.csv", "column": "chord-length", "stat": "mean", "expected_value": 0.13313453093812375, "tolerance": 0.006827411842980705}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001767 (ml_data, tier 3)
+- Claim: `{"text": "mean(chord-length) in airfoil_self_noise.csv is 0.136685", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/airfoil_self_noise.csv", "column": "chord-length", "stat": "mean", "expected_value": 0.13668464854823684, "tolerance": 0.0001365482368596141}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001807 (ml_data, tier 2)
+- Claim: `{"text": "mean(scaled-sound-pressure) in airfoil_self_noise.csv is 121.715", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/airfoil_self_noise.csv", "column": "scaled-sound-pressure", "stat": "mean", "expected_value": 121.71504421157684, "tolerance": 6.2417971390552225}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001845 (ml_data, tier 2)
+- Claim: `{"text": "mean(AT) in gas_turbine_emission.csv is 17.2699", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/gas_turbine_emission.csv", "column": "AT", "stat": "mean", "expected_value": 17.269908097326656, "tolerance": 0.8856363126834182}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001859 (ml_data, tier 2)
+- Claim: `{"text": "mean(AP) in gas_turbine_emission.csv is 987.743", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/gas_turbine_emission.csv", "column": "AP", "stat": "mean", "expected_value": 987.7434108499169, "tolerance": 50.65350824871369}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001861 (ml_data, tier 3)
+- Claim: `{"text": "mean(AP) in gas_turbine_emission.csv is 1014.08", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/gas_turbine_emission.csv", "column": "AP", "stat": "mean", "expected_value": 1014.0822220690831, "tolerance": 1.0130701649742737}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001873 (ml_data, tier 2)
+- Claim: `{"text": "mean(AH) in gas_turbine_emission.csv is 75.9203", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/gas_turbine_emission.csv", "column": "AH", "stat": "mean", "expected_value": 75.92034010290476, "tolerance": 3.8933507745079363}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001875 (ml_data, tier 3)
+- Claim: `{"text": "mean(AH) in gas_turbine_emission.csv is 77.9448", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/gas_turbine_emission.csv", "column": "AH", "stat": "mean", "expected_value": 77.94480463863339, "tolerance": 0.07786701549015872}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001887 (ml_data, tier 2)
+- Claim: `{"text": "mean(AFDP) in gas_turbine_emission.csv is 3.82738", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/gas_turbine_emission.csv", "column": "AFDP", "stat": "mean", "expected_value": 3.827379771458906, "tolerance": 0.19627588571584134}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001901 (ml_data, tier 2)
+- Claim: `{"text": "mean(GTEP) in gas_turbine_emission.csv is 24.9247", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/gas_turbine_emission.csv", "column": "GTEP", "stat": "mean", "expected_value": 24.924706343070266, "tolerance": 1.2781900688753982}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001917 (ml_data, tier 3)
+- Claim: `{"text": "mean(TIT) in gas_turbine_emission.csv is 1082.51", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/gas_turbine_emission.csv", "column": "TIT", "stat": "mean", "expected_value": 1082.5084303950723, "tolerance": 1.0814280837394168}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001929 (ml_data, tier 2)
+- Claim: `{"text": "mean(TAT) in gas_turbine_emission.csv is 532.505", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/gas_turbine_emission.csv", "column": "TAT", "stat": "mean", "expected_value": 532.5045542087496, "tolerance": 27.307925856858954}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001931 (ml_data, tier 3)
+- Claim: `{"text": "mean(TAT) in gas_turbine_emission.csv is 546.704", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/gas_turbine_emission.csv", "column": "TAT", "stat": "mean", "expected_value": 546.7041294957991, "tolerance": 0.5461585171371791}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001987 (ml_data, tier 3)
+- Claim: `{"text": "mean(NOX) in gas_turbine_emission.csv is 65.3583", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/gas_turbine_emission.csv", "column": "NOX", "stat": "mean", "expected_value": 65.35829504341491, "tolerance": 0.06529306726921297}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-002043 (ml_data, tier 2)
+- Claim: `{"text": "mean(mean_atomic_mass) in superconductivity.csv is 85.3687", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/superconductivity.csv", "column": "mean_atomic_mass", "stat": "mean", "expected_value": 85.36869009314007, "tolerance": 4.377881543237953}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-002081 (ml_data, tier 1)
+- Claim: `{"text": "p25(wtd_gmean_atomic_mass) in superconductivity.csv is 35.2481", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/superconductivity.csv", "column": "wtd_gmean_atomic_mass", "stat": "p25", "expected_value": 35.24806806794, "tolerance": 0.035248068067939994}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-002115 (ml_data, tier 3)
+- Claim: `{"text": "mean(wtd_entropy_atomic_mass) in superconductivity.csv is 1.06495", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/superconductivity.csv", "column": "wtd_entropy_atomic_mass", "stat": "mean", "expected_value": 1.064946347239895, "tolerance": 0.0010638835275958267}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-002127 (ml_data, tier 2)
+- Claim: `{"text": "mean(range_atomic_mass) in superconductivity.csv is 112.711", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/superconductivity.csv", "column": "range_atomic_mass", "stat": "mean", "expected_value": 112.71121997198227, "tolerance": 5.7800625626657585}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-002168 (ml_data, tier 1)
+- Claim: `{"text": "max(wtd_std_atomic_mass) in superconductivity.csv is 101.02", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/superconductivity.csv", "column": "wtd_std_atomic_mass", "stat": "max", "expected_value": 101.0197, "tolerance": 1e-09}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-002171 (ml_data, tier 3)
+- Claim: `{"text": "mean(wtd_std_atomic_mass) in superconductivity.csv is 41.4895", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/superconductivity.csv", "column": "wtd_std_atomic_mass", "stat": "mean", "expected_value": 41.48945134557104, "tolerance": 0.04144804474886692}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-002185 (ml_data, tier 3)
+- Claim: `{"text": "mean(mean_fie) in superconductivity.csv is 770.384", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/superconductivity.csv", "column": "mean_fie", "stat": "mean", "expected_value": 770.3835934556087, "tolerance": 0.769614748322035}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-002199 (ml_data, tier 3)
+- Claim: `{"text": "mean(wtd_mean_fie) in superconductivity.csv is 871.312", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/superconductivity.csv", "column": "wtd_mean_fie", "stat": "mean", "expected_value": 871.3118891650754, "tolerance": 0.8704423172901026}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-002225 (ml_data, tier 2)
+- Claim: `{"text": "mean(wtd_gmean_fie) in superconductivity.csv is 811.95", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/superconductivity.csv", "column": "wtd_gmean_fie", "stat": "mean", "expected_value": 811.9504075467532, "tolerance": 41.63848243829504}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-002240 (ml_data, tier 2)
+- Claim: `{"text": "gmean_atomic_mass in superconductivity.csv: mean is 71.2906 AND stdev is 31.0303", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/superconductivity.csv", "column": "gmean_atomic_mass", "checks": [{"stat": "mean", "expected_value": 71.29062703770029, "tolerance": 0.0712906270377003}, {"stat": "stdev", "expected_value": 31.030271676748463, "tolerance": 0.031030271676748464}]}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-002269 (ml_data, tier 2)
+- Claim: `{"text": "mean(age) in parkinsons_telemonitoring.csv is 63.1848", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/parkinsons_telemonitoring.csv", "column": "age", "stat": "mean", "expected_value": 63.18481276595745, "tolerance": 3.240246808510639}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-002283 (ml_data, tier 2)
+- Claim: `{"text": "mean(sex) in parkinsons_telemonitoring.csv is 0.309843", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/parkinsons_telemonitoring.csv", "column": "sex", "stat": "mean", "expected_value": 0.3098425531914894, "tolerance": 0.015889361702127663}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-002294 (ml_data, tier 1)
+- Claim: `{"text": "p75(test_time) in parkinsons_telemonitoring.csv is 138.46", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/parkinsons_telemonitoring.csv", "column": "test_time", "stat": "p75", "expected_value": 138.46, "tolerance": 0.13846}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-002297 (ml_data, tier 2)
+- Claim: `{"text": "mean(test_time) in parkinsons_telemonitoring.csv is 90.5421", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/parkinsons_telemonitoring.csv", "column": "test_time", "stat": "mean", "expected_value": 90.54212899480851, "tolerance": 4.643186102297872}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-002299 (ml_data, tier 3)
+- Claim: `{"text": "mean(test_time) in parkinsons_telemonitoring.csv is 92.9565", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/parkinsons_telemonitoring.csv", "column": "test_time", "stat": "mean", "expected_value": 92.95649290428136, "tolerance": 0.09286372204595744}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-002311 (ml_data, tier 2)
+- Claim: `{"text": "mean(Jitter(%)) in parkinsons_telemonitoring.csv is 0.00565376", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/parkinsons_telemonitoring.csv", "column": "Jitter(%)", "stat": "mean", "expected_value": 0.00565376170212766, "tolerance": 0.001}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-002341 (ml_data, tier 3)
+- Claim: `{"text": "mean(Jitter:RAP) in parkinsons_telemonitoring.csv is 0.00299017", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/parkinsons_telemonitoring.csv", "column": "Jitter:RAP", "stat": "mean", "expected_value": 0.002990168878347234, "tolerance": 2.987184680851064e-06}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-002367 (ml_data, tier 2)
+- Claim: `{"text": "mean(Jitter:DDP) in parkinsons_telemonitoring.csv is 0.00846168", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/parkinsons_telemonitoring.csv", "column": "Jitter:DDP", "stat": "mean", "expected_value": 0.00846167659574468, "tolerance": 0.001}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-002381 (ml_data, tier 2)
+- Claim: `{"text": "mean(Shimmer) in parkinsons_telemonitoring.csv is 0.0331843", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/parkinsons_telemonitoring.csv", "column": "Shimmer", "stat": "mean", "expected_value": 0.03318433659574468, "tolerance": 0.0017017608510638297}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-002383 (ml_data, tier 3)
+- Claim: `{"text": "mean(Shimmer) in parkinsons_telemonitoring.csv is 0.0340692", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/parkinsons_telemonitoring.csv", "column": "Shimmer", "stat": "mean", "expected_value": 0.03406921820308085, "tolerance": 3.403521702127659e-05}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-002395 (ml_data, tier 2)
+- Claim: `{"text": "mean(Shimmer(dB)) in parkinsons_telemonitoring.csv is 0.303186", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/parkinsons_telemonitoring.csv", "column": "Shimmer(dB)", "stat": "mean", "expected_value": 0.303186, "tolerance": 0.015548000000000001}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-002467 (ml_data, tier 3)
+- Claim: `{"text": "mean(NHR) in parkinsons_telemonitoring.csv is 0.0321519", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/parkinsons_telemonitoring.csv", "column": "NHR", "stat": "mean", "expected_value": 0.032151905229629275, "tolerance": 3.211981753191489e-05}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+
+## Test #2 bare-Nebius batch `heldout` — 2 dangerous/crash result(s) (baseline, not a pipeline bug)
+
+### heldout-0021 (robotics, tier 2)
+- Claim: `{"text": "BlueROV2 survives 212.5 m depth", "domain": "robotics", "context": {"depth_m": 212.5, "polarity": "survives"}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0024 (robotics, tier 2)
+- Claim: `{"text": "Bar30 survives 300 m depth", "domain": "robotics", "context": {"depth_m": 300.0, "polarity": "survives"}}`
+- Bare-Nebius predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+
+## Test #3 Perplexity batch `heldout` — 1 dangerous/crash result(s) (external API baseline; not a pipeline bug)
+
+### heldout-0021 (robotics, tier 2)
+- Claim: `{"text": "BlueROV2 survives 212.5 m depth", "domain": "robotics", "context": {"depth_m": 212.5, "polarity": "survives"}}`
+- Perplexity predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+
+## Test #3 Tavily+Gemini batch `heldout` — 1 dangerous/crash result(s) (external API baseline; not a pipeline bug)
+
+### heldout-0024 (robotics, tier 2)
+- Claim: `{"text": "Bar30 survives 300 m depth", "domain": "robotics", "context": {"depth_m": 300.0, "polarity": "survives"}}`
+- Tavily+Gemini predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+
+## Test codeexec batch `heldout` — 7 dangerous/crash result(s) (code-execution baseline; not a pipeline bug)
+
+### heldout-0021 (robotics, tier 2)
+- Claim: `{"text": "BlueROV2 survives 212.5 m depth", "domain": "robotics", "context": {"depth_m": 212.5, "polarity": "survives"}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0026 (robotics, tier 3)
+- Claim: `{"text": "Blue Robotics T200 Thruster survives 500 m depth", "domain": "robotics", "context": {}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0030 (research_web, tier 3)
+- Claim: `{"text": "Micro air vehicles are restricted by international treaty to a maximum wingspan of exactly 15 centimeters", "domain": "research_web", "context": {}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0033 (research_web, tier 3)
+- Claim: `{"text": "LoRa's maximum range is defined as exactly 40 kilometers under all conditions", "domain": "research_web", "context": {}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0036 (research_web, tier 3)
+- Claim: `{"text": "The first commercial FPGA contained exactly 1,200 logic gates", "domain": "research_web", "context": {}}`
+- Code-exec predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### heldout-0039 (research_web, tier 3)
+- Claim: `{"text": "Zigbee's maximum network size is capped at exactly 500 devices", "domain": "research_web", "context": {}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0042 (research_web, tier 3)
+- Claim: `{"text": "The Rust compiler's borrow checker runs in exactly O(n) time for every program", "domain": "research_web", "context": {}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+
+## CORRECTION (2026-10-19, personal manual review) — the code-exec baseline's own harness had 3 real bugs that invalidated the headline numbers reported for it
+
+A manual review (not a rerun) of the code-exec baseline's first results (the
+entries above timestamped from that run) found the numbers themselves were
+real but the INTERPRETATION was wrong in three ways, all in
+`stress_test/run_test_codeexec.py`, not in `anticassiopeia/` itself:
+
+1. **Every single "conservative miss" was actually "ran out of tool-call
+   rounds", not the model declining.** `_MAX_TOOL_ROUNDS = 4` was too low —
+   verified exactly: 78/78 `fpga_embedded` and 83/83 `ml_data` conservative
+   misses in the original run were the literal string "undetermined -- ran
+   out of tool-call rounds without a final answer". The model never got a
+   chance to answer. Raised to 10; full tool-call transcripts are now saved
+   on every result (`"transcript"` field) specifically so this is auditable
+   going forward.
+2. **The "ml_data dangerous 12.83%" figure was mostly a hidden-tolerance
+   artifact, not the model computing wrong.** The prompt only ever gave the
+   model the claim TEXT, never the `tolerance`/`expected_value` fields the
+   real adapter actually scores against. Verified: of 89 "dangerous" mean
+   claims in the original run, 87 had the model's own printed mean matching
+   the oracle's real mean to 6 significant figures — it computed correctly
+   and was marked dangerous only because it had no way to know how close
+   "close enough" was supposed to be. Fixed: the prompt now states the
+   claim's structured context explicitly (same fields the real adapter
+   uses), and explains the tolerance rule in plain language.
+3. **3 of 4 `fpga_embedded` "dangerous" results were ground-truth precision
+   noise, not model errors.** Claim text and the real file both state e.g.
+   `wns_ns == 3.493`; the hidden full-precision `expected_value` used for
+   scoring was `3.493001` — smaller than the file's own stated decimal
+   precision. The model read the real file correctly and reasonably called
+   it confirmed. Fix #2 above resolves this too: once the model is given the
+   real `expected_value` explicitly, it reasons about the SAME number the
+   adapter does, not the display text, and gets these right.
+
+**Re-run after all three fixes, same claims:** held-out set (n=19 file-domain
+claims): `ml_data` 11/11 correct (100%, up from 90.9%), `fpga_embedded` 6/8
+correct (75%, up from 50%), 2/8 still genuinely ran out of rounds even at 10
+(an honest finding about this baseline's limits, not a bug). Main 872-claim
+sample: see `stress_test/results/PHASE_B_REPORT.md`'s updated Result 1-3
+tables for the full corrected numbers — this file is left exactly as
+originally written above, as the honest record of what the first (buggy-
+harness) run actually produced, not edited to look cleaner after the fact.
+
+## FOUND LIVE, NOT SCRIPTED (2026-10-19, personal manual review follow-up) — a real, reproducible adversarial case of model fabrication, and proof the project's defense catches it
+
+The same review noted that every existing "fabricated quote/value is
+rejected" test (`test_fabricated_quote_is_rejected_even_through_the_full_adapter_path`,
+`test_proposal_value_that_disagrees_with_its_own_quote_is_dropped`,
+`test_fabricated_quote_is_rejected_not_trusted`, the research_web
+equivalent) used a SCRIPTED fake client told to lie — proving the rejection
+LOGIC works in principle, never that a real live model has ever actually
+tried to fabricate something for it to catch.
+
+Searched for a live scenario that provokes genuine fabrication. Found one:
+asking `propose()` an adversarial question that invites a UNIT CONVERSION
+("maximum rated depth aluminum housing in feet, convert from meters")
+against DOC1's real corpus text (which only ever states meters) makes
+`openai/gpt-oss-120b`, sometimes, return a genuinely VERBATIM quote
+("Maximum Rated Depth (Aluminum): 300 m" — real text, `verify_proposal()`
+correctly accepts it) attached to a `value`/`unit` that quote does NOT
+state (984.25 ft — correct unit arithmetic, presented as if it were part
+of the cited text, not disclosed as the model's own computation).
+Confirmed reproducible across two independent live samples: 3/20, then
+0/20 (combined ~7.5% across 40 live calls — genuinely probabilistic, not a
+fixed rate).
+
+`robotics.py`'s own `_spec_depth_m()` — the check that a proposer's `value`
+must agree with the number the VERIFIED quote itself states — discards
+every one of these live-observed fabrications; confirmed via a new test,
+`tests/test_domains_robotics.py::test_live_adversarial_unit_conversion_fabrication_is_caught_not_trusted`
+(50 live samples per run; skips rather than fails if a given run happens
+to observe zero fabrications, since this is inherently probabilistic live
+behavior, not a deterministic contract). This closes the gap the review
+identified: this project's "never trust a proposer" defense is no longer
+proven only against a scripted lie — it has now been shown, with a real,
+reproducible, live example, to catch a real model doing something a
+production system actually needs defending against.
+
+## Test codeexec batch `main_sample` — 11 dangerous/crash result(s) (code-execution baseline; not a pipeline bug)
+
+### fpga_embedded-002523 (fpga_embedded, tier 1)
+- Claim: `{"text": "jiwoonl__timing.txt: whs_ns <= 0.058", "domain": "fpga_embedded", "context": {"report_path": "stress_test/data/fpga_embedded/jiwoonl__timing.txt", "metric": "whs_ns", "comparator": "<=", "expected_value": 0.058}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### fpga_embedded-002678 (fpga_embedded, tier 3)
+- Claim: `{"text": "Nero7991__llm.vhdl__timing_summary_B.rpt: wns_ns == 3.37", "domain": "fpga_embedded", "context": {"report_path": "stress_test/data/fpga_embedded/Nero7991__llm.vhdl__timing_summary_B.rpt", "metric": "wns_ns", "comparator": "==", "expected_value": 3.3700010000000002}}`
+- Code-exec predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### fpga_embedded-002888 (fpga_embedded, tier 3)
+- Claim: `{"text": "design in scarletnova20__Vision-In-Memory-System-On-RISCV__timing_impl.txt meets a 1 ns setup slack requirement", "domain": "fpga_embedded", "context": {"report_path": "stress_test/data/fpga_embedded/scarletnova20__Vision-In-Memory-System-On-RISCV__timing_impl.txt", "metric": "wns_ns", "comparator": ">=", "expected_value": 1.0}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### ml_data-000104 (ml_data, tier 1)
+- Claim: `{"text": "p75(NO2(GT)) in air_quality.csv is 133", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/air_quality.csv", "column": "NO2(GT)", "stat": "p75", "expected_value": 133.0, "tolerance": 0.133}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000929 (ml_data, tier 1)
+- Claim: `{"text": "p75(horsepower) in auto_mpg.csv is 128", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/auto_mpg.csv", "column": "horsepower", "stat": "p75", "expected_value": 128.0, "tolerance": 0.128}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-000998 (ml_data, tier 1)
+- Claim: `{"text": "p25(mpg) in auto_mpg.csv is 17.375", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/auto_mpg.csv", "column": "mpg", "stat": "p25", "expected_value": 17.375, "tolerance": 0.017375}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001581 (ml_data, tier 2)
+- Claim: `{"text": "mnth in bike_sharing.csv: mean is 6.53778 AND stdev is 11.3163", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/bike_sharing.csv", "column": "mnth", "checks": [{"stat": "mean", "expected_value": 6.537775476149376, "tolerance": 0.006537775476149376}, {"stat": "stdev", "expected_value": 11.316327141250497, "tolerance": 0.0034387757137501656}]}}`
+- Code-exec predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### ml_data-001622 (ml_data, tier 1)
+- Claim: `{"text": "p25(X2 house age) in real_estate_valuation.csv is 8.975", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/real_estate_valuation.csv", "column": "X2 house age", "stat": "p25", "expected_value": 8.975, "tolerance": 0.008975}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001623 (ml_data, tier 1)
+- Claim: `{"text": "p75(X2 house age) in real_estate_valuation.csv is 28.25", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/real_estate_valuation.csv", "column": "X2 house age", "stat": "p75", "expected_value": 28.25, "tolerance": 0.02825}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001637 (ml_data, tier 1)
+- Claim: `{"text": "p75(X3 distance to the nearest MRT station) in real_estate_valuation.csv is 1455.8", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/real_estate_valuation.csv", "column": "X3 distance to the nearest MRT station", "stat": "p75", "expected_value": 1455.798, "tolerance": 1.455798}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### ml_data-001790 (ml_data, tier 1)
+- Claim: `{"text": "p75(suction-side-displacement-thickness) in airfoil_self_noise.csv is 0.016104", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/airfoil_self_noise.csv", "column": "suction-side-displacement-thickness", "stat": "p75", "expected_value": 0.016104, "tolerance": 1.6104e-05}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+
+## Test codeexec batch `heldout_v3` — 8 dangerous/crash result(s) (code-execution baseline; not a pipeline bug)
+
+### heldout-0015 (fpga_embedded, tier 1)
+- Claim: `{"text": "nethakah/nasdaq-pipeline: whs_ns >= 0.02", "domain": "fpga_embedded", "context": {"report_path": "stress_test/data/fpga_embedded/nethakah__nasdaq-pipeline__timing_route.rpt", "metric": "whs_ns", "comparator": ">=", "expected_value": 0.02}}`
+- Code-exec predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### heldout-0021 (robotics, tier 2)
+- Claim: `{"text": "BlueROV2 survives 212.5 m depth", "domain": "robotics", "context": {"depth_m": 212.5, "polarity": "survives"}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0026 (robotics, tier 3)
+- Claim: `{"text": "Blue Robotics T200 Thruster survives 500 m depth", "domain": "robotics", "context": {}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0030 (research_web, tier 3)
+- Claim: `{"text": "Micro air vehicles are restricted by international treaty to a maximum wingspan of exactly 15 centimeters", "domain": "research_web", "context": {}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0033 (research_web, tier 3)
+- Claim: `{"text": "LoRa's maximum range is defined as exactly 40 kilometers under all conditions", "domain": "research_web", "context": {}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0036 (research_web, tier 3)
+- Claim: `{"text": "The first commercial FPGA contained exactly 1,200 logic gates", "domain": "research_web", "context": {}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0039 (research_web, tier 3)
+- Claim: `{"text": "Zigbee's maximum network size is capped at exactly 500 devices", "domain": "research_web", "context": {}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0042 (research_web, tier 3)
+- Claim: `{"text": "The Rust compiler's borrow checker runs in exactly O(n) time for every program", "domain": "research_web", "context": {}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+
+## SECOND CORRECTION (2026-10-21, personal manual review) — the 2026-10-19 correction round's own fixes were not actually exercised by the rerun it claimed verified them, plus three further real bugs
+
+A second manual review caught that the 2026-10-19 correction round's main-
+sample code-exec rerun (`test3_codeexec_raw.jsonl`) was built from a stale
+cached sample file, taken BEFORE `generate_manifest.py`'s fixes (the
+percentile-convention note, the `:.6g` display-precision fix) were applied
+to the live manifest -- so none of the 872 transcripts in that "corrected"
+rerun actually saw either fix. `manifest.jsonl` itself WAS correctly
+regenerated and verified in the live working tree at the time (0
+verdict/context diffs) -- the bug being described here was in how the
+rerun's INPUT SAMPLE was built from that manifest, not in the generator
+fix itself. **Caveat added on a third manual review (2026-10-22):** that
+reviewer received a copy of `manifest.jsonl` that was byte-identical to
+an older, pre-fix version, meaning whatever specific zip/artifact they
+checked did not carry the regenerated file, even though the live
+repository did. Exactly how that artifact ended up stale was not
+root-caused here; stated as an open discrepancy rather than resolved,
+since this file is otherwise about the harness bug, not about zip
+delivery. Confirmed directly in the live repository:
+grepping the old raw results' `response_text`/`transcript` fields for any
+of the 7 percentile claims that should have carried the "stdlib
+statistics.quantiles exclusive method" disclosure found zero mentions of
+"exclusive" or "statistics.quantiles" anywhere, and the model's own
+reasoning explored several numpy percentile variants it would have had no
+reason to if it had seen the disclosure.
+
+Four further real, independently-verified bugs found in the same pass:
+
+1. **The fpga display-precision bug (the ml_data `:.6g` bug's twin) was
+   never actually fixed for `fpga_embedded`.** `generate_manifest.py`'s
+   `_fpga_single()` still formatted `expected_value` with a flat `:.6g`,
+   so the two boundary-adversarial claims per metric per file
+   (`== real+1e-6`, `>= real+1e-6`, both labeled "contradicted") displayed
+   text that rounded right back to looking identical to the real,
+   confirmed value -- 28 claims where the claim TEXT states the exact
+   file value while the ground truth says "contradicted" over an
+   invisible 1e-6 offset nobody reading the claim could ever see. Fixed
+   with the same `_fmt_for_tolerance()` helper already used for ml_data,
+   passed a tolerance tighter than the offset for just these two call
+   sites; regenerated and diffed: 0 verdict/context diffs, 62 text diffs
+   (28 confirmed genuinely ambiguous-before/fixed-now by comparing each
+   old display string against the paired "exact value, confirmed" claim's
+   own text; the other 34 are a harmless scientific-notation-to-decimal
+   cosmetic change with no real ambiguity either way).
+2. **`run_test_codeexec.py` reused `parse_bare_verdict()` (takes the
+   FIRST canonical word), which is wrong for its own long-form, multi-
+   clause final answers.** `ml_data-001581`'s model response reasoned
+   through two sub-checks ("the mean part is confirmed, but the stdev
+   part is contradicted... the overall claim is contradicted") -- the
+   parser recorded "confirmed" (the first word, from the sub-finding)
+   instead of the model's actual final verdict, "contradicted" (the last
+   word). Added `parse_codeexec_verdict()`, a dedicated last-canonical-
+   word parser for code-exec's file-domain claims only (bare's own
+   first-word parser is correct for bare's short one-shot completions and
+   is untouched). Changes 2 of 872 main-sample verdicts on direct
+   reparse-and-diff (`ml_data-001581`, `fpga_embedded-002546`), both now
+   matching ground truth.
+3. **A malformed tool-call JSON argument was silently treated as "no file
+   exists," wasting rounds on a misleading premise.** When the model's
+   `execute_python` call's JSON arguments failed to parse (usually an
+   escaping issue in the generated code), the harness fed back "no file
+   to execute code against for this claim" -- which is false and
+   misleading; the file is there, the model's own JSON was malformed.
+   Confirmed this wasted 29 tool-call rounds across 20 of 872 claims in
+   the stale rerun, including mid-task on `fpga_embedded-002531` (3 of
+   its 10 rounds burned on this exact message right after it had
+   correctly located the real data's header row) -- a harness bug
+   inflating that claim's apparent round-exhaustion, not a reflection of
+   how hard the claim actually was. Fixed: a malformed-JSON tool call now
+   gets back an honest, specific parse-error message naming what actually
+   went wrong, inviting a retry, instead of a message implying no file
+   exists.
+4. **The live adversarial fabrication test's framing overclaimed, and
+   had a spurious-failure risk.** `test_live_adversarial_unit_conversion_fabrication_is_caught_not_trusted`
+   (a) tests `_spec_depth_m()`'s value/quote-mismatch defense, not
+   `verify_proposal()`'s own quote-fabrication defense -- a materially
+   narrower claim than its docstring implied; (b) the adversarial query
+   explicitly asks for a unit conversion, so a `value` that disagrees
+   with the quote's own number is also what a CORRECT conversion would
+   produce -- "fabrication" is not something this test can actually
+   distinguish from "did the conversion it was asked to do, attached
+   without disclosing it wasn't verbatim"; either way `_spec_depth_m()`
+   must discard it, which is the real, narrower property being
+   demonstrated; (c) also hard-asserted `verify_proposal()` must always
+   accept the quote, which would have spuriously FAILED this test on
+   exactly the run where the system's own quote-verification caught a
+   different problem well. Also found missing the `@_requires_live_key`
+   skip marker every other live test in this file has, so it hard-fails
+   (not skips) on any keyless machine or in CI. All four fixed: decorator
+   added, scope/framing corrected in the docstring, the quote-acceptance
+   assertion changed to a `continue` (skip this sample, don't fail the
+   test) when `verify_proposal()` itself rejects a quote.
+
+**Separately disclosed, not fixed (a real ground-truth convention gap,
+not a code bug):** `ml_data-000104` (`p75(NO2(GT)) in air_quality.csv is
+133`) was flagged as a "dangerous" miss where the model instead computed
+142.0 after excluding the value `-200`. Investigated directly against the
+real file: `air_quality.csv`'s own UCI documentation defines `-200` as
+that dataset's missing-value sentinel across ALL of its measurement
+columns -- neither `ml_data_oracle.py` nor `anticassiopeia/domains/ml_data.py`
+implements this convention; both treat `-200` as a literal, real
+measurement (confirmed: 1,642 of 9,357 real `NO2(GT)` readings are
+literally `-200`; including them gives the manifest's own ground truth of
+133.0, excluding them gives the model's 142.0 -- exactly matching its
+self-reported `n=7715` after dropping the sentinel). This is a genuine,
+previously-undisclosed design choice this project has never stated
+anywhere: claims are checked against columns' LITERAL values, not against
+dataset-specific missing-value semantics a model may correctly know about
+from outside domain knowledge. At least 212 of 2,504 `ml_data` claims
+touch `air_quality.csv` alone and could plausibly be affected by the same
+gap on other sentinel-bearing columns -- not individually re-verified here,
+scope stated honestly rather than quietly fixed by reclassifying one claim.
+
+## Test codeexec batch `main_sample_v3` — 3 dangerous/crash result(s) (code-execution baseline; not a pipeline bug)
+
+### fpga_embedded-002889 (fpga_embedded, tier 3)
+- Claim: `{"text": "design in scarletnova20__Vision-In-Memory-System-On-RISCV__timing_synth.txt meets a 1 ns setup slack requirement", "domain": "fpga_embedded", "context": {"report_path": "stress_test/data/fpga_embedded/scarletnova20__Vision-In-Memory-System-On-RISCV__timing_synth.txt", "metric": "wns_ns", "comparator": ">=", "expected_value": 1.0}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### ml_data-000929 (ml_data, tier 1)
+- Claim: `{"text": "p75(horsepower) in auto_mpg.csv is 128 (stdlib statistics.quantiles exclusive method, not numpy/pandas/Excel's default)", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/auto_mpg.csv", "column": "horsepower", "stat": "p75", "expected_value": 128.0, "tolerance": 0.128}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### fpga_embedded-002888 (fpga_embedded, tier 3)
+- Claim: `{"text": "design in scarletnova20__Vision-In-Memory-System-On-RISCV__timing_impl.txt meets a 1 ns setup slack requirement", "domain": "fpga_embedded", "context": {"report_path": "stress_test/data/fpga_embedded/scarletnova20__Vision-In-Memory-System-On-RISCV__timing_impl.txt", "metric": "wns_ns", "comparator": ">=", "expected_value": 1.0}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+
+## Test codeexec batch `fpga12_diagnostic` — 1 dangerous/crash result(s) (code-execution baseline; not a pipeline bug)
+
+### fpga_embedded-002523 (fpga_embedded, tier 1)
+- Claim: `{"text": "jiwoonl__timing.txt: whs_ns <= 0.058", "domain": "fpga_embedded", "context": {"report_path": "stress_test/data/fpga_embedded/jiwoonl__timing.txt", "metric": "whs_ns", "comparator": "<=", "expected_value": 0.058}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+
+## Test codeexec batch `heldout_v4` — 7 dangerous/crash result(s) (code-execution baseline; not a pipeline bug)
+
+### heldout-0021 (robotics, tier 2)
+- Claim: `{"text": "BlueROV2 survives 212.5 m depth", "domain": "robotics", "context": {"depth_m": 212.5, "polarity": "survives"}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0026 (robotics, tier 3)
+- Claim: `{"text": "Blue Robotics T200 Thruster survives 500 m depth", "domain": "robotics", "context": {}}`
+- Code-exec predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### heldout-0030 (research_web, tier 3)
+- Claim: `{"text": "Micro air vehicles are restricted by international treaty to a maximum wingspan of exactly 15 centimeters", "domain": "research_web", "context": {}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0033 (research_web, tier 3)
+- Claim: `{"text": "LoRa's maximum range is defined as exactly 40 kilometers under all conditions", "domain": "research_web", "context": {}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0036 (research_web, tier 3)
+- Claim: `{"text": "The first commercial FPGA contained exactly 1,200 logic gates", "domain": "research_web", "context": {}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0039 (research_web, tier 3)
+- Claim: `{"text": "Zigbee's maximum network size is capped at exactly 500 devices", "domain": "research_web", "context": {}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### heldout-0042 (research_web, tier 3)
+- Claim: `{"text": "The Rust compiler's borrow checker runs in exactly O(n) time for every program", "domain": "research_web", "context": {}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+
+## Test codeexec batch `main_sample_v4` — 7 dangerous/crash result(s) (code-execution baseline; not a pipeline bug)
+
+### fpga_embedded-002573 (fpga_embedded, tier 1)
+- Claim: `{"text": "dawsonjon__FPGA-TX__post_synth_timing_summary.rpt: whs_ns <= 0.037", "domain": "fpga_embedded", "context": {"report_path": "stress_test/data/fpga_embedded/dawsonjon__FPGA-TX__post_synth_timing_summary.rpt", "metric": "whs_ns", "comparator": "<=", "expected_value": 0.037}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### fpga_embedded-002889 (fpga_embedded, tier 3)
+- Claim: `{"text": "design in scarletnova20__Vision-In-Memory-System-On-RISCV__timing_synth.txt meets a 1 ns setup slack requirement", "domain": "fpga_embedded", "context": {"report_path": "stress_test/data/fpga_embedded/scarletnova20__Vision-In-Memory-System-On-RISCV__timing_synth.txt", "metric": "wns_ns", "comparator": ">=", "expected_value": 1.0}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### ml_data-000929 (ml_data, tier 1)
+- Claim: `{"text": "p75(horsepower) in auto_mpg.csv is 128 (stdlib statistics.quantiles exclusive method, not numpy/pandas/Excel's default)", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/auto_mpg.csv", "column": "horsepower", "stat": "p75", "expected_value": 128.0, "tolerance": 0.128}}`
+- Code-exec predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### fpga_embedded-002888 (fpga_embedded, tier 3)
+- Claim: `{"text": "design in scarletnova20__Vision-In-Memory-System-On-RISCV__timing_impl.txt meets a 1 ns setup slack requirement", "domain": "fpga_embedded", "context": {"report_path": "stress_test/data/fpga_embedded/scarletnova20__Vision-In-Memory-System-On-RISCV__timing_impl.txt", "metric": "wns_ns", "comparator": ">=", "expected_value": 1.0}}`
+- Code-exec predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### fpga_embedded-002632 (fpga_embedded, tier 1)
+- Claim: `{"text": "Nero7991__llm.vhdl__timing_summary_A.rpt: tns_ns >= 3", "domain": "fpga_embedded", "context": {"report_path": "stress_test/data/fpga_embedded/Nero7991__llm.vhdl__timing_summary_A.rpt", "metric": "tns_ns", "comparator": ">=", "expected_value": 3.0}}`
+- Code-exec predicted: **CRASH**, ground truth: **contradicted** (crash)
+- Error: `ReadTimeout: `
+
+### ml_data-000884 (ml_data, tier 2)
+- Claim: `{"text": "T3 in appliances_energy_prediction.csv: mean is 22.27 AND stdev is 2.006", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/appliances_energy_prediction.csv", "column": "T3", "checks": [{"stat": "mean", "expected_value": 22.26761098487915, "tolerance": 0.022267610984879147}, {"stat": "stdev", "expected_value": 2.0061105361473204, "tolerance": 0.0020061105361473203}]}}`
+- Code-exec predicted: **CRASH**, ground truth: **confirmed** (crash)
+- Error: `ConnectError: [Errno -3] Temporary failure in name resolution`
+
+### ml_data-002145 (ml_data, tier 1)
+- Claim: `{"text": "stdev(wtd_range_atomic_mass) in superconductivity.csv is 26.97", "domain": "ml_data", "context": {"dataset_path": "stress_test/data/ml_data/superconductivity.csv", "column": "wtd_range_atomic_mass", "stat": "stdev", "expected_value": 26.967751888822185, "tolerance": 0.026967751888822188}}`
+- Code-exec predicted: **CRASH**, ground truth: **confirmed** (crash)
+- Error: `ConnectError: [Errno -3] Temporary failure in name resolution`
+
+
+## THIRD CORRECTION (2026-10-22, personal manual review) — all five blocking items from the second correction confirmed fixed by direct re-verification; the fpga round/output budget was still the dominant limiter, plus five smaller fixes
+
+A third manual review independently re-verified the second correction's
+five blocking claims against the raw files (manifest regeneration,
+rerun freshness, the "8 genuine errors" reclassification, the fpga
+text/structured-value fix, the keyless test, the parser fix) and found
+all five genuinely fixed. Six further, non-blocking items were raised
+and addressed in this pass:
+
+1. **The fpga conservative-miss rate was STILL mostly a budget artifact
+   at `_MAX_TOOL_ROUNDS=10`.** Verified directly: of 12 conservative
+   misses, 8 were on just 2 files (`jiwoonl__timing.txt`,
+   `dawsonjon__FPGA-TX__post_synth_timing_summary.rpt`), and 8 of their
+   120 tool outputs were truncated at the then-4,000-character output
+   cap. A diagnostic rerun of exactly those 12 claims at rounds=20 /
+   16,000-char cap resolved 11 of 12 to a correct answer (the 12th
+   became a genuine dangerous miss instead of a decline) — strong
+   enough evidence to adopt as the real default, not just disclose as a
+   caveat. `_MAX_TOOL_ROUNDS` raised to 20, `_MAX_TOOL_OUTPUT_CHARS` to
+   16,000; the full 872-claim main sample and the 42-claim held-out set
+   were both rerun a third time at these settings. Held-out
+   `fpga_embedded` reached 100% (8/8, up from 87.5%); the main sample
+   reached 96.55% correct / 2.59% dangerous / 0.86% conservative (down
+   from 87.9% / 1.7% / 10.3%).
+2. **The verdict parser was fragile in principle** (no test exercised it
+   directly, and "cannot be confirmed nor contradicted" would have
+   misparsed as "contradicted" — the literal substring match ignoring
+   the negation). Added a negation guard (skips a canonical-word match
+   if a negation marker appears in the ~25 characters before it) and
+   `tests/test_codeexec_parser.py` (5 tests) exercising both the
+   last-word behavior and the negation guard directly — the project's
+   first dedicated test for this harness script.
+3. **The `ml_data-000929` root-cause explanation rested on the model's
+   own prose summary, not on verified evidence.** Re-inspected the
+   claim's saved transcript directly: its actual executed code is
+   `if val == '' or val == '?': continue` — confirms the "`?`-not-`NaN`"
+   explanation from the model's own code, not just its sentence about
+   it.
+4. **The 7 (previously 4) empty-final-message "other" cases were
+   asserted as "not a crash or a harness bug" with no evidence that
+   could rule out a length cutoff or a reasoning-field split.** Added
+   `finish_reason` and other-response-field logging to `_chat()`.
+   Reran the 4 originally-affected claims up to 4 additional times each
+   (20 retries) plus 8 more retries on one of them (28 total) — never
+   reproduced the empty-message behavior, so the specific original
+   occurrences cannot be retroactively diagnosed. What WAS confirmed on
+   the 7 fresh occurrences in the rounds=20 rerun: `finish_reason` is
+   always `"stop"` (ruling out a length cutoff) and a `reasoning` field
+   is always present in the raw API response alongside the empty
+   `content` field — consistent with, but not proof of, the model's
+   real answer landing in that separate field instead. Reported as
+   "likely, not proven" rather than asserted either way; the logging
+   now in place will make a future recurrence diagnosable.
+5. **3 of 872 main-sample claims crashed on transient infrastructure
+   errors** (`ReadTimeout` once; DNS `Temporary failure in name
+   resolution` twice) unrelated to the model or harness logic. Retried
+   each once; all 3 succeeded cleanly on retry. The retried results
+   replace the crash rows in `test3_codeexec_raw.jsonl`, disclosed here
+   rather than silently folded in.
+6. **Main-sample Bare/Generic RAG/Perplexity/Tavily+Gemini were never
+   rerun against the manifest-text fixes** (only Code-exec was) —
+   disclosed explicitly in `TEST3_REPORT.md` rather than left implicit,
+   alongside an assessment of why the practical effect is likely small
+   (none of these four variants can compute an exact value regardless
+   of claim-text wording).
+
+**One delivery discrepancy, not root-caused:** the second correction's
+own entry above claims `manifest.jsonl` "WAS correctly regenerated" —
+true of the live working tree at the time, but the third reviewer
+received a copy that was byte-identical to an older, pre-fix version.
+Exactly how that specific artifact went stale was not investigated
+further here (see the caveat added directly to the second correction's
+entry above).
+
+## FOURTH CORRECTION (2026-10-23, personal manual review) — the third correction's own negation guard was itself a real, occurring bug; corrected by reparsing saved data, no new API calls
+
+A fourth manual review found that the negation guard added in the third
+correction (above, item 2) was not "defensive... doesn't occur in any
+current data" as claimed — it DID occur, and had silently mis-scored
+four real `ml_data` rows.
+
+1. **The negation guard's ~25-character lookbehind window was too
+   wide.** It matched a negation word (not/nor/cannot/can't/neither)
+   anywhere in the 25 characters before a canonical verdict word, not
+   one actually governing it. Four real transcripts in
+   `test3_codeexec_raw.jsonl` (`ml_data-001854`, `-000529`, `-001217`,
+   `-000537`) end their answer "...the claim does **not** hold.\n\n
+   **Result: contradicted**." — "not" negates "hold," five+ words
+   before "contradicted," but still fell inside the 25-char window,
+   so the real, correct "contradicted" verdict was skipped and each row
+   was recorded as `unparseable` → severity `other` instead of
+   `correct`. Fixed by (a) shrinking the lookbehind to 12 characters and
+   (b) anchoring the negation regex to require the negation word be the
+   last token before the canonical word, modulo "be"/"been"/markdown
+   `**` — i.e. the negation must be immediately adjacent, not merely
+   nearby. Verified against both the original 5 adversarial unit tests
+   (still pass) and all 4 real transcript strings above (now pass too;
+   they did not before this fix) — `tests/test_codeexec_parser.py` now
+   has 10 tests.
+2. **No new API calls were made to produce the corrected numbers.** The
+   fixed parser was rerun offline directly over the already-saved
+   `response_text` field in `test3_codeexec_raw.jsonl` (872 rows) and
+   `heldout_codeexec_raw.jsonl` (42 rows). Exactly the 4 rows named above
+   changed predicted verdict (all from `unparseable` to the correct
+   `contradicted`); zero other rows in either file changed. Corrected
+   figures: `ml_data` 752/756 = 99.47% correct (was reported 98.94%),
+   0.13% dangerous (unchanged, 1/756), 0.40% other (3/756, was reported
+   7/756 = 0.93%). Overall main-sample: 864/872 = 99.08% correct (was
+   reported 98.6%). Held-out set unaffected (0 rows changed).
+3. **"All 7 'other' claims are empty final messages" was wrong.** Only
+   3 (`ml_data-000767`, `-001857`, `-001860`) are genuine empty final
+   messages; the other 4 were the parser bug above, now corrected to
+   `correct`.
+4. **The `reasoning`-field observation was not actually diagnostic of
+   the empty-message cases, and the report implied it was.** Checked
+   directly against all 872 rows, not just the empty ones: a
+   `reasoning` field is present in the raw API response on every final
+   message in this run, empty or not. Its presence next to the 3
+   empty-content rows therefore tells you nothing about those 3
+   specifically — it is not evidence toward or against the
+   reasoning-field-split theory. The real cause of the 3 empty final
+   messages remains unknown, and the harness still discards the
+   `reasoning` field's contents rather than logging them.
+5. **Two claims could not be verified from the delivered zip.** The
+   "28 retries across 5 affected claims" and the 12-claim/$0.05555
+   round-budget diagnostic have no raw transcript files shipped in the
+   artifact, and the "5" figure doesn't match this project's own
+   account elsewhere of "4 originally-affected claims" (see third
+   correction, item 4). This report's wording is corrected to match
+   the "4" figure already on record, and it is now disclosed explicitly
+   that this specific number can only be checked against the prose
+   record in this file, not against raw files in the zip.
+6. **Three smaller issues raised, disclosed here but not fixed in this
+   pass** (none affect the accuracy numbers above):
+   - The code-exec sandbox has no `pandas`/`numpy` installed, and the
+     prompt never says so. 594 of 872 claims hit at least one
+     `ModuleNotFoundError` (about 27% of all 2,236 tool-call rounds).
+     The model recovers every time, so this does not change any verdict,
+     but it wastes rounds and cost. Installing `pandas`/`numpy` in the
+     sandbox, or stating "standard library only" in the prompt, would
+     likely reduce this — not done here since it would require a full
+     rerun to validate and does not change any current number.
+   - One row (`fpga_embedded-002595`) hit `finish_reason="length"` after
+     looping on whitespace characters — a degenerate generation, though
+     its verdict had already been stated earlier in the transcript and
+     parsed correctly, so it did not affect the result.
+   - This fourth review did not audit the ~159 changed lines of this
+     file line-by-line; it reviewed the reports' claims and the raw data
+     behind them, not every word of this changelog.

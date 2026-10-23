@@ -66,15 +66,39 @@ _FETCH_TIMEOUT = 15.0
 _CANONICAL_WORDS = ("confirmed", "contradicted", "undetermined")
 
 
+#: FOUND BUG (external review, verified: 83 of 1,000 deduped main-sample
+#: rows and 10 of 42 held-out rows): this prompt itself asks "does this
+#: context support, contradict, or not address the claim" -- so the
+#: model very consistently (83/83 of the affected rows, checked) answers
+#: in ITS OWN echo of that wording ("**Supported** -- ...") rather than
+#: the literal word "confirmed" the instructions separately asked for.
+#: That's not the model failing to answer; it's this parser failing to
+#: recognize an entirely predictable synonym its own prompt invited.
+#: Mapped explicitly below, checked for "not/un-supported" BEFORE bare
+#: "supported" so a genuine contradiction isn't mis-read as a confirmation.
+_SYNONYM_MAP = (
+    (re.compile(r"\b(not support(?:s|ed)?|unsupported|does(?:n't| not) support)\b"), "contradicted"),
+    (re.compile(r"\bsupport(?:s|ed)?\b"), "confirmed"),
+    (re.compile(r"\b(does(?:n't| not) address|unrelated|not addressed)\b"), "undetermined"),
+)
+
+
 def parse_rag_verdict(text: str) -> str:
     """Same parsing contract as run_test2_bare.parse_bare_verdict: first
-    canonical word by position, else a declined/unparseable fallback."""
+    canonical word (or known synonym of one) by position, else a
+    declined/unparseable fallback."""
     t = text.lower()
     positions = {}
     for word in _CANONICAL_WORDS:
         m = re.search(rf"\b{word}\b", t)
         if m:
             positions[word] = m.start()
+    for pattern, canonical in _SYNONYM_MAP:
+        m = pattern.search(t)
+        if m and canonical not in positions:
+            positions[canonical] = m.start()
+        elif m and m.start() < positions[canonical]:
+            positions[canonical] = m.start()
     if positions:
         return min(positions, key=positions.get)
     if shows_access_awareness(t) or "cannot determine" in t or "can't determine" in t:

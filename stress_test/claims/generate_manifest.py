@@ -52,6 +52,34 @@ _ML_FILES = [
 _ML_SKIP_COLS = {"no", "subject#", "instant", "year", "index"}
 
 
+# FOUND BUG (external review, verified independently against the real
+# data: exactly 41 of 2,504 non-compound ml_data claims, 30 of them
+# labeled "confirmed"): claim TEXT used to always display `expected_value`
+# at a fixed 6 significant figures (f"{expected:.6g}"), while the
+# STRUCTURED `context["expected_value"]` the real adapter actually scores
+# against kept full precision. For most claims the rounding error is far
+# below `tolerance` and nobody notices; but for claims with a very tight
+# tolerance (e.g. an exact median/percentile match, tolerance ~1e-9), 6
+# significant figures can round away MORE precision than the tolerance
+# allows -- so the human-readable claim text states a DIFFERENT number
+# than what's actually being verified. That's invisible to the real
+# pipeline (which never reads the display text, only `context`), but it
+# silently penalizes every baseline that only sees the text (bare Nebius,
+# Perplexity, Tavily+Gemini, code-exec without structured context) by
+# asking them to verify a number that isn't the one actually being
+# checked. Fixed: display precision is now chosen so the ROUNDING ERROR
+# itself is always smaller than the tolerance that number is checked
+# against, not a fixed digit count.
+def _fmt_for_tolerance(value: float, tolerance: float) -> str:
+    if tolerance <= 0:
+        return repr(value)
+    for decimals in range(0, 16):
+        rounded = round(value, decimals)
+        if abs(rounded - value) <= tolerance * 0.5:
+            return f"{rounded:.{decimals}f}".rstrip("0").rstrip(".") if "." in f"{rounded:.{decimals}f}" else f"{rounded:.{decimals}f}"
+    return repr(value)
+
+
 def gen_ml_data_claims() -> list[dict]:
     claims = []
     for slug in _ML_FILES:
@@ -178,7 +206,7 @@ def gen_ml_data_claims() -> list[dict]:
         claims.append({
             "claim_id": _next_id("ml_data"), "domain": "ml_data", "tier": 2,
             "claim_payload": {
-                "text": f"combined mean of {col} across both real shards of {slug} is {real_mean:.6g}",
+                "text": f"combined mean of {col} across both real shards of {slug} is {_fmt_for_tolerance(real_mean, tol)}",
                 "domain": "ml_data",
                 "context": {"dataset_path": [_rel(s1), _rel(s2)], "column": col, "stat": "mean",
                             "expected_value": real_mean, "tolerance": tol},
@@ -206,11 +234,26 @@ def gen_ml_data_claims() -> list[dict]:
     return claims
 
 
+#: FOUND BUG (external review): the percentile CONVENTION ml_data.py's
+#: p25/p75 actually use (stdlib `statistics.quantiles(..., method="exclusive")`
+#: -- the default when `method=` isn't passed) is never stated anywhere a
+#: user would see it before checking a claim -- and it genuinely
+#: disagrees with numpy/pandas/Excel's own default (the "linear"/R-7
+#: method), affecting 300 of 2,504 ml_data claims. A user who computed
+#: p75 in pandas and got a different number from this tool would have no
+#: way to know why without reading ml_data.py's source. Stated explicitly
+#: in the claim text itself below (not just in ml_data.py's docstring)
+#: so every baseline, not just the real adapter, has a fair chance to
+#: know which convention is being asked about.
+_PERCENTILE_NOTE = " (stdlib statistics.quantiles exclusive method, not numpy/pandas/Excel's default)"
+
+
 def _ml_single(path, col, stat, expected, tol, verdict, tier, method) -> dict:
+    note = _PERCENTILE_NOTE if stat in ("p25", "p75") else ""
     return {
         "claim_id": _next_id("ml_data"), "domain": "ml_data", "tier": tier,
         "claim_payload": {
-            "text": f"{stat}({col}) in {path.name} is {expected:.6g}",
+            "text": f"{stat}({col}) in {path.name} is {_fmt_for_tolerance(expected, tol)}{note}",
             "domain": "ml_data",
             "context": {"dataset_path": _rel(path), "column": col, "stat": stat,
                         "expected_value": expected, "tolerance": tol},
@@ -225,7 +268,7 @@ def _ml_compound(path, col, mean, tol_m, stdev, tol_s, verdict, tier, method) ->
     return {
         "claim_id": _next_id("ml_data"), "domain": "ml_data", "tier": tier,
         "claim_payload": {
-            "text": f"{col} in {path.name}: mean is {mean:.6g} AND stdev is {stdev:.6g}",
+            "text": f"{col} in {path.name}: mean is {_fmt_for_tolerance(mean, tol_m)} AND stdev is {_fmt_for_tolerance(stdev, tol_s)}",
             "domain": "ml_data",
             "context": {
                 "dataset_path": _rel(path), "column": col,
@@ -301,11 +344,13 @@ def gen_fpga_embedded_claims() -> list[dict]:
             claims.append(_fpga_single(path, metric, "==", real, "confirmed", 3,
                                         f"oracle: exact equality to real {metric}={real!r}"))
             claims.append(_fpga_single(path, metric, "==", real + 1e-6, "contradicted", 3,
-                                        f"oracle: real {metric}={real!r}, expected off by a tiny epsilon (== has 1e-9 tolerance)"))
+                                        f"oracle: real {metric}={real!r}, expected off by a tiny epsilon (== has 1e-9 tolerance)",
+                                        fmt_tolerance=1e-7))
             claims.append(_fpga_single(path, metric, ">=", real, "confirmed", 3,
                                         f"oracle: real {metric}={real!r}, >= itself exactly (boundary-inclusive)"))
             claims.append(_fpga_single(path, metric, ">=", real + 1e-6, "contradicted", 3,
-                                        f"oracle: real {metric}={real!r}, >= an infinitesimally higher value"))
+                                        f"oracle: real {metric}={real!r}, >= an infinitesimally higher value",
+                                        fmt_tolerance=1e-7))
 
         for key, val in corner_data.items():
             if key.endswith(".frequency_mhz"):
@@ -369,11 +414,20 @@ def gen_fpga_embedded_claims() -> list[dict]:
     return claims
 
 
-def _fpga_single(path, metric, comparator, expected, verdict, tier, method) -> dict:
+def _fpga_single(path, metric, comparator, expected, verdict, tier, method, fmt_tolerance=None) -> dict:
+    # fmt_tolerance: for the boundary-adversarial ==/>= epsilon-off claims, a fixed
+    # `:.6g` would round `real + 1e-6` right back to looking identical to `real`'s
+    # own display -- the claim text would then say the exact same number the file
+    # actually has while the ground truth says "contradicted", which reads as the
+    # model being wrong for correctly reporting what the file states (same bug
+    # class as ml_data's display-precision bug -- see BUGS_FOUND.md, personal
+    # manual review, 2026-10-21). Passing a tolerance tighter than the offset keeps
+    # enough decimal places that the text visibly differs from the real value.
+    display = _fmt_for_tolerance(expected, fmt_tolerance) if fmt_tolerance is not None else f"{expected:.6g}"
     return {
         "claim_id": _next_id("fpga_embedded"), "domain": "fpga_embedded", "tier": tier,
         "claim_payload": {
-            "text": f"{path.name}: {metric} {comparator} {expected:.6g}",
+            "text": f"{path.name}: {metric} {comparator} {display}",
             "domain": "fpga_embedded",
             "context": {"report_path": _rel(path), "metric": metric, "comparator": comparator,
                         "expected_value": expected},
@@ -424,37 +478,57 @@ def _fpga_clock_contradicted(path, clock, real_freq, tier) -> dict:
 # Real sourced facts (see anticassiopeia/corpus/doc{1,2,3}_*.txt and
 # docs/extracted/constellation-robotics-seed.md — already-committed,
 # already-sourced material, reused per task instruction, not re-fetched).
-_BLUEROV2_DOC1_M = 300.0  # Aluminum housing, trust 0.8
-_BLUEROV2_DOC2_M = 100.0  # trust 0.7
-_BAR30_BAR = 30.0         # trust 0.85
+_BLUEROV2_DOC1_M = 300.0  # Aluminum housing variant's real rated depth
+_BLUEROV2_DOC2_M = 100.0  # Acrylic housing variant's real rated depth
+_BAR30_BAR = 30.0         # Bar30's real rated pressure
 _SEAWATER_DENSITY, _GRAVITY, _BAR_TO_PA = 1025.0, 9.80665, 1e5
 _BAR30_M = _BAR30_BAR * _BAR_TO_PA / (_SEAWATER_DENSITY * _GRAVITY)  # ~298.3 m
-_DECISION_THRESHOLD, _MIN_EVIDENCE_WEIGHT = 0.5, 0.3  # engine.py's own documented, public constants
+
+# FOUND BUG (external security/methodology review): both verdict functions
+# below used to import core/engine.py's own PUBLIC DECISION_THRESHOLD
+# (0.5) / MIN_EVIDENCE_WEIGHT (0.3) constants AND the exact same trust
+# values (0.8/0.7/0.85) robotics.py's own _SOURCES dict assigns, then
+# re-ran engine.py's own trust-weighted-sum formula on them to decide
+# "ground truth". That tests whether production code reproduces a copy
+# of its OWN scoring algorithm, which is circular -- not an independent
+# check against reality. Neither function below references engine.py's
+# constants or any trust weight anymore; see each function's own
+# docstring for the real-world justification that replaces it.
 
 
 def _bluerov2_verdict(depth_m: float, survives_claim: bool) -> str:
-    stance1 = "supports" if (depth_m <= _BLUEROV2_DOC1_M) == survives_claim else "contradicts"
-    stance2 = "supports" if (depth_m <= _BLUEROV2_DOC2_M) == survives_claim else "contradicts"
-    weights = {"supports": 0.0, "contradicts": 0.0}
-    for s, trust in [(stance1, 0.8), (stance2, 0.7)]:
-        weights[s] += trust
-    net = weights["supports"] - weights["contradicts"]
-    total = weights["supports"] + weights["contradicts"]
-    if total < _MIN_EVIDENCE_WEIGHT or abs(net) < _DECISION_THRESHOLD:
-        return "undetermined"
-    return "confirmed" if net > 0 else "contradicted"
+    """Real-world resolution, independent of engine.py's scoring formula.
+
+    The real-world fact: BlueROV2 genuinely ships in two housing variants
+    with two different, BOTH REAL depth ratings -- DOC1 (aluminum tube):
+    300m; DOC2 (acrylic housing): 100m (see
+    docs/extracted/constellation-robotics-seed.md for provenance). A bare
+    claim that doesn't say which housing is genuinely ambiguous IN THE
+    REAL WORLD for 100 < depth <= 300m -- not an artifact of any scoring
+    threshold, but the real product line having two different real
+    answers depending on which configuration is actually meant. Outside
+    that zone, both housings agree, so the claim is unambiguous."""
+    acrylic_rated_ok = depth_m <= _BLUEROV2_DOC2_M
+    aluminum_rated_ok = depth_m <= _BLUEROV2_DOC1_M
+    if acrylic_rated_ok != aluminum_rated_ok:
+        return "undetermined"  # the two real housings genuinely disagree here
+    within_rating = acrylic_rated_ok  # both housings agree
+    return "confirmed" if within_rating == survives_claim else "contradicted"
 
 
 def _bar30_verdict(depth_m: float, survives_claim: bool) -> str:
+    """Real-world resolution: Bar30's real rated pressure (30 bar) converts
+    to ~298.3m via the documented seawater-density physics conversion
+    (independently recomputed here from public physical constants, not
+    imported from robotics.py or engine.py). The 5% margin is the real,
+    documented gauge-vs-absolute pressure ambiguity for this exact sensor
+    -- a genuine physical uncertainty about what "30 bar rated" even
+    means at the boundary, not an engine-internal threshold."""
     margin = 0.05 * depth_m
     if abs(_BAR30_M - depth_m) <= margin:
-        return "undetermined"  # neutral — gauge/absolute ambiguity, same as production's documented margin
+        return "undetermined"  # real gauge/absolute pressure ambiguity, documented
     within_rating = _BAR30_M >= depth_m
-    stance = "supports" if within_rating == survives_claim else "contradicts"
-    weight = 0.85
-    if weight < _MIN_EVIDENCE_WEIGHT or weight < _DECISION_THRESHOLD:
-        return "undetermined"
-    return "confirmed" if stance == "supports" else "contradicted"
+    return "confirmed" if within_rating == survives_claim else "contradicted"
 
 
 def gen_robotics_claims() -> list[dict]:
@@ -474,9 +548,10 @@ def gen_robotics_claims() -> list[dict]:
                 "claim_payload": {"text": f"BlueROV2 {verb} {depth} m depth", "domain": "robotics", "context": {}},
                 "ground_truth_verdict": verdict,
                 "ground_truth_method": (
-                    f"independently reasoned: DOC1=300m (trust 0.8), DOC2=100m (trust 0.7), "
-                    f"engine DECISION_THRESHOLD=0.5/MIN_EVIDENCE_WEIGHT=0.3 (both are this project's own "
-                    f"documented, public constants, not internal adapter logic)"
+                    f"real-world resolution, independent of engine.py: aluminum housing variant "
+                    f"rated 300m (DOC1), acrylic housing variant rated 100m (DOC2), both real -- "
+                    f"undetermined exactly when the two real housings disagree (100 < depth <= 300m), "
+                    f"otherwise both agree and the claim is unambiguous"
                 ),
                 "provenance": "real sourced facts in anticassiopeia/corpus/doc{1,2}_bluerov2_excerpt.txt (reused, not re-fetched)",
             })
@@ -494,9 +569,10 @@ def gen_robotics_claims() -> list[dict]:
                 "claim_payload": {"text": f"Bar30 {verb} {depth} m depth", "domain": "robotics", "context": {}},
                 "ground_truth_verdict": verdict,
                 "ground_truth_method": (
-                    f"independently reasoned: 30 bar -> {_BAR30_M:.1f}m via seawater density 1025 kg/m^3, "
-                    f"g=9.80665 (documented public physics conversion, independently recomputed here), "
-                    f"5% neutral margin (documented), trust 0.85, engine thresholds"
+                    f"real-world resolution, independent of engine.py: 30 bar -> {_BAR30_M:.1f}m via "
+                    f"seawater density 1025 kg/m^3, g=9.80665 (public physics constants, independently "
+                    f"recomputed here); 5% margin is the real documented gauge/absolute pressure "
+                    f"ambiguity for this sensor, not an engine-internal threshold"
                 ),
                 "provenance": "real sourced fact in anticassiopeia/corpus/doc3_bar30_excerpt.txt (reused, not re-fetched)",
             })
@@ -569,6 +645,160 @@ _RESEARCH_WEB_FACTS = [
         "false": "Xilinx is a German technology company",
         "absent": "Xilinx's first FPGA shipped with exactly 64 configurable logic blocks",
         "source": "https://en.wikipedia.org/wiki/Xilinx",
+    },
+    # Added for Phase B item 9 (external review: research_web was the most
+    # under-tested domain at only 24 claims). 24 new topics below, each
+    # independently fetched LIVE via Wikipedia's REST summary API
+    # (https://en.wikipedia.org/api/rest_v1/page/summary/<title>, the
+    # exact same confirmed-working backend research_web.py's own live
+    # tests already use) on 2026-10-19 before writing any claim --
+    # "true"/"false" are grounded directly in that fetched text (false by
+    # negating/altering one real value: a year, a company, a standard
+    # number), "absent" is a precise invented statistic not present in
+    # that text, same convention the original 8 topics already use.
+    {
+        "topic": "Arduino Uno", "true": "The Arduino Uno was initially developed and released by the Arduino company in 2010",
+        "false": "The Arduino Uno was initially developed and released by the Arduino company in 2015",
+        "absent": "The Arduino Uno's bootloader occupies exactly 0.5 KB of flash memory",
+        "source": "https://en.wikipedia.org/wiki/Arduino_Uno",
+    },
+    {
+        "topic": "Linux kernel", "true": "The Linux kernel was created by Linus Torvalds in 1991",
+        "false": "The Linux kernel was created by Linus Torvalds in 1995",
+        "absent": "The Linux kernel's source tree contains exactly 40 million lines of code",
+        "source": "https://en.wikipedia.org/wiki/Linux_kernel",
+    },
+    {
+        "topic": "Python", "true": "Python is a high-level, general-purpose programming language that emphasizes code readability",
+        "false": "Python is a low-level, hardware-specific programming language that emphasizes maximum execution speed",
+        "absent": "Python's reference implementation compiles source code to native machine code by default",
+        "source": "https://en.wikipedia.org/wiki/Python_(programming_language)",
+    },
+    {
+        "topic": "ROS", "true": "Robot Operating System is an open-source robotics middleware suite",
+        "false": "Robot Operating System is a proprietary robotics middleware suite sold exclusively by Boston Dynamics",
+        "absent": "ROS requires exactly 2 gigabytes of RAM to run any node",
+        "source": "https://en.wikipedia.org/wiki/Robot_Operating_System",
+    },
+    {
+        "topic": "Nvidia Jetson", "true": "Nvidia Jetson is a series of embedded computing boards from Nvidia",
+        "false": "Nvidia Jetson is a series of embedded computing boards from Qualcomm",
+        "absent": "The Jetson TX2 model draws exactly 7.5 watts under all workloads",
+        "source": "https://en.wikipedia.org/wiki/Nvidia_Jetson",
+    },
+    {
+        "topic": "KiCad", "true": "KiCad is a free software suite for electronic design automation",
+        "false": "KiCad is a proprietary paid software suite for electronic design automation",
+        "absent": "KiCad's PCB router supports exactly 32 copper layers maximum",
+        "source": "https://en.wikipedia.org/wiki/KiCad",
+    },
+    {
+        "topic": "Verilog", "true": "Verilog is standardized as IEEE 1364",
+        "false": "Verilog is standardized as IEEE 802.11",
+        "absent": "Verilog was first standardized in exactly 1978",
+        "source": "https://en.wikipedia.org/wiki/Verilog",
+    },
+    {
+        "topic": "VHDL", "true": "VHDL was developed for the US military VHSIC program in the 1980s",
+        "false": "VHDL was developed for the US military VHSIC program in the 1960s",
+        "absent": "VHDL source files must have a maximum line length of exactly 80 characters",
+        "source": "https://en.wikipedia.org/wiki/VHDL",
+    },
+    {
+        "topic": "RISC-V", "true": "RISC-V is a free and open standard instruction set architecture",
+        "false": "RISC-V is a proprietary, royalty-bearing instruction set architecture",
+        "absent": "The RISC-V base integer instruction set contains exactly 40 instructions",
+        "source": "https://en.wikipedia.org/wiki/RISC-V",
+    },
+    {
+        "topic": "MicroPython", "true": "MicroPython is a software implementation of a programming language largely compatible with Python 3, written in C",
+        "false": "MicroPython is a software implementation of a programming language largely compatible with Java, written in Rust",
+        "absent": "MicroPython's garbage collector runs on a fixed 10 millisecond cycle",
+        "source": "https://en.wikipedia.org/wiki/MicroPython",
+    },
+    {
+        "topic": "FreeRTOS", "true": "FreeRTOS is a real-time operating system kernel for embedded devices distributed under the MIT License",
+        "false": "FreeRTOS is a real-time operating system kernel for embedded devices distributed under the GPL License",
+        "absent": "FreeRTOS's scheduler tick defaults to exactly 1 millisecond on every supported platform",
+        "source": "https://en.wikipedia.org/wiki/FreeRTOS",
+    },
+    {
+        "topic": "CAN bus", "true": "A controller area network is a vehicle bus standard designed to allow microcontrollers and devices to communicate with each other",
+        "false": "A controller area network is a wireless satellite communication standard designed for deep-space probes",
+        "absent": "The CAN bus standard specifies a maximum cable length of exactly 40 meters",
+        "source": "https://en.wikipedia.org/wiki/CAN_bus",
+    },
+    {
+        "topic": "I2C", "true": "I2C was invented in 1980 by Philips Semiconductors",
+        "false": "I2C was invented in 1980 by Texas Instruments",
+        "absent": "I2C's standard mode clock speed is defined as exactly 90 kHz",
+        "source": "https://en.wikipedia.org/wiki/I2C",
+    },
+    {
+        "topic": "SPI", "true": "Serial Peripheral Interface is a de facto standard for synchronous serial communication used primarily in embedded systems",
+        "false": "Serial Peripheral Interface is a de facto standard for asynchronous wireless communication used primarily in satellites",
+        "absent": "SPI's specification limits bus length to exactly 2 meters",
+        "source": "https://en.wikipedia.org/wiki/Serial_Peripheral_Interface",
+    },
+    {
+        "topic": "Zephyr", "true": "Zephyr is a small real-time operating system released under the Apache License 2.0",
+        "false": "Zephyr is a small real-time operating system released under a closed-source commercial license",
+        "absent": "Zephyr's kernel binary is exactly 12 kilobytes on every supported board",
+        "source": "https://en.wikipedia.org/wiki/Zephyr_(operating_system)",
+    },
+    {
+        "topic": "OpenCV", "true": "OpenCV was originally developed by Intel",
+        "false": "OpenCV was originally developed by Microsoft",
+        "absent": "OpenCV's first stable release shipped with exactly 350 algorithms",
+        "source": "https://en.wikipedia.org/wiki/OpenCV",
+    },
+    {
+        "topic": "TensorFlow", "true": "TensorFlow is free and open-source software released under the Apache License 2.0",
+        "false": "TensorFlow is proprietary closed-source software sold under a per-seat commercial license",
+        "absent": "TensorFlow's core runtime is written in exactly 2 million lines of C++",
+        "source": "https://en.wikipedia.org/wiki/TensorFlow",
+    },
+    {
+        "topic": "PyTorch", "true": "PyTorch was originally developed by Meta Platforms",
+        "false": "PyTorch was originally developed by Amazon",
+        "absent": "PyTorch's autograd engine supports exactly 500 differentiable operations",
+        "source": "https://en.wikipedia.org/wiki/PyTorch",
+    },
+    {
+        "topic": "Intel 8051", "true": "The Intel MCS-51 is a single-chip microcontroller series developed by Intel in 1980",
+        "false": "The Intel MCS-51 is a single-chip microcontroller series developed by Intel in 1995",
+        "absent": "The original Intel 8051 die measured exactly 5.6 square millimeters",
+        "source": "https://en.wikipedia.org/wiki/Intel_8051",
+    },
+    {
+        "topic": "ATmega328", "true": "The ATmega328 was created by Atmel in the megaAVR family",
+        "false": "The ATmega328 was created by Microchip in the PIC family",
+        "absent": "The ATmega328 has exactly 6 hardware PWM channels",
+        "source": "https://en.wikipedia.org/wiki/ATmega328",
+    },
+    {
+        "topic": "Adafruit", "true": "Adafruit Industries was founded by Limor Fried in 2005",
+        "false": "Adafruit Industries was founded by Limor Fried in 2010",
+        "absent": "Adafruit Industries operates exactly 3 retail stores in New York City",
+        "source": "https://en.wikipedia.org/wiki/Adafruit_Industries",
+    },
+    {
+        "topic": "SparkFun", "true": "SparkFun Electronics is an electronics retailer in Niwot, Colorado",
+        "false": "SparkFun Electronics is an electronics retailer in Austin, Texas",
+        "absent": "SparkFun Electronics was founded with exactly $500 in startup capital",
+        "source": "https://en.wikipedia.org/wiki/SparkFun_Electronics",
+    },
+    {
+        "topic": "Bluetooth Low Energy", "true": "Bluetooth Low Energy is designed and marketed by the Bluetooth Special Interest Group",
+        "false": "Bluetooth Low Energy is designed and marketed by the Wi-Fi Alliance",
+        "absent": "Bluetooth Low Energy's maximum data rate is defined as exactly 10 Mbps in every version",
+        "source": "https://en.wikipedia.org/wiki/Bluetooth_Low_Energy",
+    },
+    {
+        "topic": "Modbus", "true": "Modbus was originally designed for use with programmable logic controllers",
+        "false": "Modbus was originally designed for use with satellite ground stations",
+        "absent": "The Modbus protocol limits a single network to exactly 64 connected devices",
+        "source": "https://en.wikipedia.org/wiki/Modbus",
     },
 ]
 

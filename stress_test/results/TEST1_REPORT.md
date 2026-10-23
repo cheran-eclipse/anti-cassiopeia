@@ -18,6 +18,24 @@ superseded by this full run) are kept separately in `test1_pilot_only.jsonl`.
 | Actual total spend | **$0.216879** |
 | Budget hard stop | $6.00 (3.6% used) |
 
+**Phase B addendum (2026-10-19, external review):** the single 99.3%
+figure above blends two genuinely different kinds of task — computed
+answers that have no real way to be "almost right," and real
+evidence-weighing that can fail in genuinely interesting ways. Read as
+two numbers instead of one:
+
+| | n | Correct |
+|---|---|---|
+| **Deterministic domains** (ml_data + fpga_embedded — computed, not verified) | 2,889 | 2,877 (99.58%) |
+| **Verification domains** (robotics + research_web — real evidence-weighing) | 422 | 410 (97.16%) |
+
+The deterministic domains' 0.42% of errors are exactly the pre-fix NaN
+bug this run itself found (see `BUGS_FOUND.md`) — now fixed, see the
+re-verification note at the end of this report. The verification
+domains' 2.84% is where this project's actual hard problem lives, and
+it's the one blended into invisibility by the deterministic domains'
+sheer volume (2,889 vs. 422 claims) in the single top-line number above.
+
 ## Per-domain, per-tier confusion matrix
 
 Rows show (ground truth → predicted) pairs that actually occurred; a
