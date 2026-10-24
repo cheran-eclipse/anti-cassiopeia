@@ -34,6 +34,24 @@ would be an unannounced behavior change to existing claims) — documented
 instead, and `stress_test/claims/generate_manifest.py`'s own p25/p75
 claim text now states this explicitly too, not just this docstring.
 
+FIXED BUG (was "disclosed, not fixed" — second manual review, then
+actually fixed this pass): `air_quality.csv`'s own UCI documentation
+defines `-200` as that dataset's missing-value marker across every
+measurement column; this adapter used to treat `-200` as a literal real
+reading, same bug class as the NaN-string issue below but for a
+different sentinel. Fixed via `_DATASET_SENTINELS` — a per-FILENAME
+lookup (not a blanket "-200 is always missing" rule; a -200 in some
+OTHER dataset could be real) populated only from a real, cited source,
+same discipline as everything else this adapter re-derives from the
+actual file rather than assuming. KNOWN FOLLOW-UP, stated plainly: the
+stress-test manifest's ~212 `air_quality.csv` claims had their ground
+truth generated BEFORE this fix (literal `-200` included) — this fix
+was not accompanied by regenerating that ground truth, so running the
+full manifest against the now-more-correct adapter will show new
+mismatches on those claims that are the GROUND TRUTH being stale, not
+the adapter being wrong. Regenerating it is real, separate follow-up
+work, not done here.
+
 FIXED BUG, found while adding stdev's new siblings: `stdev`, and now
 `p25`/`p75`/`correlation`, all raise `statistics.StatisticsError` on too
 few data points (stdev needs >=2, quantiles/correlation effectively the
@@ -114,6 +132,32 @@ from anticassiopeia.domains._path_safety import is_path_within_allowed_dirs
 _REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 _DEFAULT_ALLOWED_BASE_DIRS = [_REPO_ROOT / "evals" / "fixtures", _REPO_ROOT / "stress_test" / "data"]
 
+#: FIXED (was "disclosed, not fixed" — see docs/ARCHITECTURE.md): dataset
+#: files that document their own missing-value sentinel, keyed by filename
+#: (matched against `path.name`, not the full path — a dataset's identity
+#: is its content/schema, not where a caller happens to mount it). ONLY
+#: `air_quality.csv` is listed: its real UCI documentation
+#: (https://archive.ics.uci.edu/dataset/360/air+quality) states -200 as
+#: that dataset's missing-value marker across ALL of its measurement
+#: columns — confirmed against the real file (8530 occurrences). This is
+#: deliberately NOT a blanket "-200 is always missing" rule: a -200
+#: reading in some OTHER dataset could be a real, legitimate value, and
+#: guessing that convention onto a file that never documented it would be
+#: exactly the kind of unannounced assumption this project exists to avoid
+#: making. Add a dataset here only when a real, cited source documents its
+#: sentinel — never inferred from the data alone.
+_DATASET_SENTINELS: dict[str, float] = {"air_quality.csv": -200.0}
+
+
+def _sentinel_for(paths: list[Path]) -> float | None:
+    """All paths in a multi-file claim are assumed to share one schema (see
+    _read_column's own docstring) — so they share one sentinel convention
+    too. Returns None if none of the known sentinel-bearing filenames match."""
+    for path in paths:
+        if path.name in _DATASET_SENTINELS:
+            return _DATASET_SENTINELS[path.name]
+    return None
+
 _SINGLE_COLUMN_STATS = {
     "mean": statistics.mean,
     "min": min,
@@ -151,6 +195,7 @@ def _read_column(paths: list[Path], column: str) -> tuple[list[float] | None, in
     values: list[float] = []
     row_count = 0
     bad_rows = 0
+    sentinel = _sentinel_for(paths)
     for path in paths:
         with path.open(newline="") as f:
             reader = csv.DictReader(f)
@@ -175,6 +220,12 @@ def _read_column(paths: list[Path], column: str) -> tuple[list[float] | None, in
                 if not math.isfinite(value):
                     bad_rows += 1
                     continue
+                # FIXED (was "disclosed, not fixed") -- a documented
+                # missing-value sentinel (see _DATASET_SENTINELS) is not a
+                # real reading either, same treatment as NaN/Infinity above.
+                if sentinel is not None and value == sentinel:
+                    bad_rows += 1
+                    continue
                 values.append(value)
     return values, row_count, bad_rows
 
@@ -191,6 +242,7 @@ def _read_column_pair(
     ys: list[float] = []
     row_count = 0
     bad_rows = 0
+    sentinel = _sentinel_for(paths)
     for path in paths:
         with path.open(newline="") as f:
             reader = csv.DictReader(f)
@@ -210,6 +262,12 @@ def _read_column_pair(
                 # both values from one real observation, not one real and one
                 # silently-substituted-by-nothing.
                 if not (math.isfinite(x) and math.isfinite(y)):
+                    bad_rows += 1
+                    continue
+                # Same sentinel fix as _read_column() above -- either column
+                # being the documented missing-value marker drops the pair,
+                # same reasoning as the NaN/Infinity guard just above.
+                if sentinel is not None and (x == sentinel or y == sentinel):
                     bad_rows += 1
                     continue
                 xs.append(x)

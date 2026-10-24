@@ -14,12 +14,21 @@ from __future__ import annotations
 
 import csv
 import math
+from pathlib import Path
+
+#: Mirrors anticassiopeia/domains/ml_data.py's _DATASET_SENTINELS, deliberately
+#: duplicated rather than imported -- this oracle's whole job is to be an
+#: INDEPENDENT computation (see module docstring), so sharing the production
+#: module's lookup table would defeat that; keep both in sync by hand if the
+#: documented convention ever changes.
+_DATASET_SENTINELS: dict[str, float] = {"air_quality.csv": -200.0}
 
 
 def read_columns(paths: list[str]) -> tuple[list[str], list[list[float | None]]]:
     """Returns (header, rows) where each row is a list of float-or-None
     (None where a cell wasn't numeric), aligned across all given files
     (files are assumed to share the same header; raises if they don't)."""
+    sentinel = next((_DATASET_SENTINELS[Path(p).name] for p in paths if Path(p).name in _DATASET_SENTINELS), None)
     header: list[str] | None = None
     rows: list[list[float | None]] = []
     for p in paths:
@@ -46,7 +55,8 @@ def read_columns(paths: list[str]) -> tuple[list[str], list[list[float | None]]]
                     # as an empty cell -- this is what a correct oracle does, and
                     # exposed that anticassiopeia/domains/ml_data.py does NOT do this
                     # (see stress_test/BUGS_FOUND.md).
-                    parsed.append(value if math.isfinite(value) else None)
+                    is_sentinel = sentinel is not None and value == sentinel
+                    parsed.append(value if (math.isfinite(value) and not is_sentinel) else None)
                 rows.append(parsed)
     return header or [], rows
 

@@ -92,3 +92,23 @@ def test_ml_data_000537_real_transcript_tail():
         "**not** hold.\n\n**Result: contradicted**."
     )
     assert parse_codeexec_verdict(text) == "contradicted"
+
+
+def test_system_prompt_discloses_stdlib_only_sandbox():
+    """FOUND BUG (external review): the prompt hinted at stdlib ("csv module,
+    or just open()") but never stated that pandas/numpy are NOT guaranteed
+    available -- a model could reasonably try `import pandas` for a stats
+    claim and either crash a tool round or, worse, get inconsistent
+    behavior depending on what happens to be installed on whichever machine
+    runs this script (confirmed: numpy IS present in this project's own dev
+    venv via an unrelated dependency, pandas is NOT -- an accident of this
+    one machine, not a declared contract). Fixed by stating the GUARANTEE
+    (stdlib-only, matching ml_data.py's own real constraint) rather than
+    describing one environment's current package list."""
+    from run_test_codeexec import _build_system_prompt
+
+    prompt = _build_system_prompt("air_quality.csv")
+    lowered = prompt.lower()
+    assert "pandas" in lowered
+    assert "numpy" in lowered
+    assert "standard library" in lowered

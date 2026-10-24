@@ -417,6 +417,87 @@ async def test_nan_valued_rows_are_excluded_from_correlation():
     assert ev[0].stance == "supports"
 
 
+@pytest.fixture
+def air_quality_csv_path(tmp_path):
+    """Filename MUST be exactly 'air_quality.csv' -- the sentinel lookup
+    (_DATASET_SENTINELS) matches by filename, not content, same as the real
+    UCI file this is a small stand-in for."""
+    path = tmp_path / "air_quality.csv"
+    with path.open("w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=["CO(GT)", "NOx(GT)"])
+        writer.writeheader()
+        for co, nox in [(2.6, 166), (2.0, 103), (-200, 131), (1.2, -200), (2.2, 150)]:
+            writer.writerow({"CO(GT)": co, "NOx(GT)": nox})
+    return path
+
+
+async def test_air_quality_sentinel_excluded_from_mean(air_quality_csv_path):
+    """FIXED (was 'disclosed, not fixed' -- see ml_data.py's module
+    docstring): -200 is air_quality.csv's own documented missing-value
+    marker; a real -200 CO(GT) reading used to be averaged in literally.
+    CO(GT) column is [2.6, 2.0, -200, 1.2, 2.2]; only the row where CO(GT)
+    itself is -200 is excluded (NOx(GT)'s own -200, on a different row, is
+    irrelevant to CO(GT)'s mean) -> real values [2.6, 2.0, 1.2, 2.2], mean
+    2.0, not (2.6+2.0-200+1.2+2.2)/5 = -38.4."""
+    adapter = MLDataAdapter()
+    claim = Claim(
+        text="x", domain="ml_data",
+        context={
+            "dataset_path": str(air_quality_csv_path), "column": "CO(GT)", "stat": "mean",
+            "expected_value": (2.6 + 2.0 + 1.2 + 2.2) / 4, "tolerance": 1e-9,
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert len(ev) == 1
+    assert ev[0].stance == "supports"
+    assert "skipped_non_numeric=1" in ev[0].locator  # only CO(GT)'s own -200 row
+
+
+async def test_air_quality_sentinel_excluded_from_correlation(air_quality_csv_path):
+    """A -200 in EITHER column of the pair drops that row (same rule as
+    NaN/Infinity) -- 2 of the 5 rows have a -200 somewhere, leaving 3
+    real paired rows: (2.6,166), (2.0,103), (2.2,150)."""
+    adapter = MLDataAdapter()
+    import statistics as _statistics
+
+    expected = _statistics.correlation([2.6, 2.0, 2.2], [166, 103, 150])
+    claim = Claim(
+        text="x", domain="ml_data",
+        context={
+            "dataset_path": str(air_quality_csv_path), "column": "CO(GT)", "column_b": "NOx(GT)",
+            "stat": "correlation", "expected_value": expected, "tolerance": 1e-9,
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert len(ev) == 1
+    assert ev[0].stance == "supports"
+    assert "skipped_non_numeric=2" in ev[0].locator
+
+
+async def test_minus_200_in_a_differently_named_file_is_not_treated_as_a_sentinel(csv_path):
+    """The sentinel lookup is scoped to filenames in _DATASET_SENTINELS --
+    a -200 in an UNRELATED file (this module's own generic csv_path fixture,
+    named 'data.csv') must be treated as a real, literal reading, not
+    silently guessed to be a missing-value marker it was never documented
+    to be."""
+    import csv as _csv
+
+    path = csv_path.parent / "other.csv"
+    with path.open("w", newline="") as f:
+        writer = _csv.DictWriter(f, fieldnames=["value"])
+        writer.writeheader()
+        writer.writerow({"value": -200})
+        writer.writerow({"value": 10})
+    adapter = MLDataAdapter()
+    claim = Claim(
+        text="x", domain="ml_data",
+        context={"dataset_path": str(path), "column": "value", "stat": "mean", "expected_value": -95.0, "tolerance": 1e-9},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert len(ev) == 1
+    assert ev[0].stance == "supports"  # (-200 + 10) / 2 == -95.0 -- -200 counted as real
+
+
 async def test_path_traversal_outside_allowed_directories_is_rejected():
     """FOUND BUG (external security review): dataset_path previously went
     straight into Path(...).open() with no containment check -- an

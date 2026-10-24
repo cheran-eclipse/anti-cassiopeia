@@ -266,7 +266,16 @@ def _build_system_prompt(filenames: str | None) -> str:
             "precomputed answer. You have a tool, execute_python(code), that runs code in your current "
             f"working directory, which contains this real file: {filenames}. Read it yourself (plain "
             "Python file I/O -- csv module, or just open()/readlines(), whatever you need), compute "
-            "whatever the claim asks about, and print() what you find. You may call the tool multiple "
+            "whatever the claim asks about, and print() what you find. "
+            "ONLY THE PYTHON STANDARD LIBRARY IS GUARANTEED AVAILABLE -- do not `import pandas` or "
+            "`import numpy`; neither is guaranteed present in this sandbox (this isn't a general-purpose "
+            "data-science environment, and whether either happens to be installed varies by machine -- "
+            "do not assume either way). Use `csv`, `statistics`, `math`, and other stdlib modules only; "
+            "this matches the real project's own ml_data adapter, which deliberately has no pandas/numpy "
+            "dependency either, so your computation stays comparable to what it will actually be checked "
+            "against. If you try an import and it fails, that is expected, not a sandbox malfunction -- "
+            "rewrite using the standard library instead of retrying the same import. "
+            "You may call the tool multiple "
             "times. The claim gives you the EXACT expected_value and tolerance (or comparator) it will "
             "be checked against -- use those exact numbers, not your own judgment of 'close enough': "
             "confirmed means your computed value is within `tolerance` of `expected_value` (or satisfies "
@@ -338,12 +347,16 @@ async def run_codeexec_batch(
                         transcript.append({
                             "role": "assistant", "content": final_text,
                             "finish_reason": message.get("_finish_reason"),
-                            # Any OTHER fields the API returned alongside content/tool_calls
-                            # (e.g. a separate reasoning field) -- diagnostic for an empty
-                            # final message, not asserted without this evidence.
-                            "other_message_keys": sorted(
-                                k for k in message if k not in ("content", "tool_calls", "role", "_finish_reason")
-                            ),
+                            # FIXED (was a real logging gap, flagged in PHASE_B_REPORT.md:
+                            # "the harness still discards the reasoning field rather than
+                            # logging its contents" -- key NAMES alone couldn't actually
+                            # diagnose an empty final message, since every response in that
+                            # run had a `reasoning` key regardless of whether content was
+                            # empty). Logs the real VALUE of every extra field now, not
+                            # just that it exists.
+                            "other_message_fields": {
+                                k: message[k] for k in message if k not in ("content", "tool_calls", "role", "_finish_reason")
+                            },
                         })
                         break
                     messages.append({

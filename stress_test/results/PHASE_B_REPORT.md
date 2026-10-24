@@ -298,9 +298,18 @@ don't count:
     all 872 rows rather than assumed, that field is present on EVERY
     final message in this run, empty or not, so its presence next to
     these 3 is not itself evidence of anything; it does not distinguish
-    them from the 869 normal responses. The real cause of these 3 empty
-    messages remains unknown, and the harness still discards the
-    `reasoning` field rather than logging its contents.
+    them from the 869 normal responses.
+    **UPDATED (fifth correction, 2026-10-24, `BUGS_FOUND.md`): actually
+    investigated, not left as "remains unknown."** The logging gap is
+    fixed (the `reasoning` field's real contents are now captured, not
+    just its presence), and all 3 claims were re-run 12 more times total
+    with zero reproductions of the empty-message shape -- plus a real,
+    independently-observed `503 Service Temporarily Unavailable` from
+    Nebius's own endpoint during that investigation, direct evidence the
+    API does have genuine transient-failure modes of its own. Best-
+    supported conclusion, not asserted as proof: a rare transient
+    response-delivery glitch, not a bug tied to these claims or this
+    harness. See `BUGS_FOUND.md`'s fifth correction for the full account.
     **Honestly reported as likely, not proven, and only partially
     verifiable from this artifact:** `BUGS_FOUND.md`'s own account of
     the retry investigation says 4 originally-affected claims were

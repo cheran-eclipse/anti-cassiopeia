@@ -282,20 +282,31 @@ reads display text) but silently unfair to every baseline that only sees
 it. Fixed with a tolerance-aware formatter; verified zero remaining
 inconsistencies across the full manifest.
 
-**Disclosed, not fixed (second manual review, 2026-10-21): the `-200`
-missing-value sentinel.** `air_quality.csv`'s own UCI documentation
-defines `-200` as that dataset's missing-value marker across all its
-measurement columns; neither this adapter nor
-`stress_test/oracles/ml_data_oracle.py` implements that convention —
-both treat `-200` as a literal real reading. Claims are checked against
-columns' LITERAL values, not dataset-specific missing-value semantics a
-model may correctly apply from outside domain knowledge (confirmed: a
-code-exec claim computing `p75(NO2(GT))` after correctly excluding `-200`
-as missing got a different, equally defensible answer than this
-project's own ground truth, which includes it). At least 212 of 2,504
-`ml_data` claims touch `air_quality.csv` and could plausibly be affected
-on other sentinel-bearing columns — not individually re-verified, see
-`stress_test/BUGS_FOUND.md`.
+**FIXED (was "disclosed, not fixed" as of the second manual review,
+2026-10-21; actually fixed this pass): the `-200` missing-value
+sentinel.** `air_quality.csv`'s own UCI documentation defines `-200` as
+that dataset's missing-value marker across all its measurement columns;
+neither this adapter nor `stress_test/oracles/ml_data_oracle.py`
+implemented that convention — both treated `-200` as a literal real
+reading. Fixed in both (kept independent on purpose — the oracle
+duplicates the lookup table rather than importing it, since sharing code
+with the thing it's checking would defeat the point of an independent
+oracle) via a per-FILENAME sentinel lookup populated only from a real,
+cited source (`_DATASET_SENTINELS` in `ml_data.py`) — deliberately NOT a
+blanket "-200 is always missing" rule, confirmed by its own test
+(`test_minus_200_in_a_differently_named_file_is_not_treated_as_a_sentinel`):
+a `-200` in a file never documented to use that convention is still
+counted as a real, literal value.
+
+**Known follow-up, stated plainly, not silently left stale:** the
+stress-test manifest's ~212 `air_quality.csv` claims had their
+`expected_value`/ground truth generated BEFORE this fix (with the
+literal `-200` included in the computation). Regenerating those 212
+claims against the now-fixed oracle is real, separate work — not done
+in this pass — so running the full manifest against this adapter will
+show new mismatches on those specific claims that are the GROUND TRUTH
+being stale, not this adapter being wrong; see `stress_test/BUGS_FOUND.md`
+for the original finding this fixes.
 
 ### `domains/fpga_embedded.py` detail
 
