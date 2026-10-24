@@ -46,3 +46,25 @@ class DomainAdapter(ABC):
         if not evidence:
             return [f"No evidence found for claim in domain '{self.domain_name}'."]
         return []
+
+    def describe_partial_gaps(self, claim: Claim) -> list[str]:
+        """Name sources this adapter EXPECTED to check but could not get a
+        usable answer from, for the most recent `gather_evidence()` call.
+
+        FOUND BUG this exists to fix (external review): `describe_gap()`
+        above is only ever consulted by the engine when the FINAL evidence
+        is empty or below the confidence threshold — so a source that
+        returned something (an incomplete, ambiguous, or verification-
+        rejected answer, not a clean `None`) silently vanished with no
+        trace once at least one OTHER source produced enough evidence to
+        render a confident verdict. A caller reading that confident verdict
+        had no way to know one of the sources it should have checked never
+        actually contributed. The engine now calls this UNCONDITIONALLY
+        and appends every returned string to `Verdict.reasoning`,
+        regardless of how confident the final verdict is.
+
+        Default: no adapter knows its own expected-source count, so this
+        says nothing by default — override only if the adapter actually
+        tracks which sources it expected to consult (see `robotics.py`).
+        """
+        return []

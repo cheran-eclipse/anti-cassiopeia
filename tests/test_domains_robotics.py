@@ -86,6 +86,20 @@ _HONEST_RESPONSES: dict[str, str] = {
     ),
 }
 
+# Bar100XT uses its own distinct retrieval_query ("maximum operating pressure
+# rating bar" — see _RETRIEVAL_QUERIES), so this can live in _HONEST_RESPONSES
+# alongside Bar30's without one marker shadowing the other.
+_HONEST_RESPONSES["maximum operating pressure rating bar"] = json.dumps(
+    {
+        "found": True,
+        "chunk_id": "DOC4_Bar100XT#3",
+        "quote": "Operating Pressure Range: 0 to 100 bar",
+        "value": 100,
+        "unit": "bar",
+        "kind": "rated",
+    }
+)
+
 
 def _honest_adapter() -> RoboticsAdapter:
     return RoboticsAdapter(client=_FakeClient(dict(_HONEST_RESPONSES)))
@@ -115,23 +129,37 @@ async def test_bar30_claim_produces_real_evidence_with_a_real_locator():
     assert "chunk" in ev[0].locator  # proves it went through chunking, not a hardcoded string
 
 
-async def test_bar100xt_has_no_corpus_and_gets_a_specific_named_gap():
+async def test_bar100xt_claim_produces_real_evidence_with_a_real_locator():
+    """Bar100XT was sourced this session (Blue Robotics' official BarXT page,
+    see doc4_bar100xt_excerpt.txt) — it used to have no corpus at all."""
     adapter = _honest_adapter()
     claim = Claim(text="Bar100XT survives 500 m depth", domain="robotics")
     ev = await adapter.gather_evidence(claim)
-    assert ev == []
-    gap = adapter.describe_gap(claim, ev)
-    assert "bar100xt" in gap[0].lower()
-    assert "planning narrative" in gap[0].lower()
+    assert len(ev) == 1
+    assert ev[0].stance == "supports"  # 100 bar rating ~= 995 m depth-equivalent >= 500 m
+    assert "DOC4_Bar100XT" in ev[0].locator
+    assert "chunk" in ev[0].locator
 
 
-async def test_quspin_has_no_corpus_and_gets_a_specific_named_gap():
+async def test_bar100xt_claim_beyond_its_rating_contradicts():
+    adapter = _honest_adapter()
+    claim = Claim(text="Bar100XT survives 1200 m depth", domain="robotics")
+    ev = await adapter.gather_evidence(claim)
+    assert len(ev) == 1
+    assert ev[0].stance == "contradicts"  # ~995 m depth-equivalent rating < 1200 m
+
+
+async def test_quspin_has_no_numeric_rating_and_gets_a_specific_named_gap():
+    """QuSpin QZFM Gen-3 was checked live this session against QuSpin's own
+    official product page (confirmed: no pressure/depth rating stated at
+    all) — a real, checked absence now, not just an unsourced narrative gap."""
     adapter = _honest_adapter()
     claim = Claim(text="QuSpin QZFM Gen-3 survives 500 m depth", domain="robotics")
     ev = await adapter.gather_evidence(claim)
     assert ev == []
     gap = adapter.describe_gap(claim, ev)
     assert "quspin" in gap[0].lower()
+    assert "quspin.com" in gap[0].lower()
 
 
 async def test_unrecognized_part_gets_the_generic_gap():

@@ -135,10 +135,14 @@ async def test_unrecognized_metric_lists_the_fields_that_WERE_parsed(single_corn
     assert "wns_ns" in gap[0]  # names what it DID find, not just what it didn't
 
 
-async def test_register_map_style_claim_is_an_honest_gap_not_a_guess(single_corner_report_path):
-    """The real report format genuinely has no register/address-map data —
-    see module docstring for why this wasn't forced in. Must be a named
-    gap, never a fabricated address."""
+async def test_unsupported_register_metric_name_against_a_vivado_report_is_an_honest_gap_not_a_guess(single_corner_report_path):
+    """Register-map claims ARE now supported (see the dedicated SVD tests
+    below) — but only against a real CMSIS-SVD file, and only under the
+    exact metric names this adapter recognizes (_REGISTER_METRICS). This
+    metric name ("register_address") isn't one of them, so it's treated
+    as an ordinary Vivado Design Timing Summary field name and correctly
+    not found — a named gap, never a fabricated address, same property
+    as before this session's SVD support was added."""
     adapter = FPGAEmbeddedAdapter()
     claim = Claim(
         text="REG_CTRL is mapped at 0x40",
@@ -149,6 +153,29 @@ async def test_register_map_style_claim_is_an_honest_gap_not_a_guess(single_corn
     assert ev == []
     gap = adapter.describe_gap(claim, ev)
     assert "not found" in gap[0].lower()
+
+
+async def test_real_register_metric_name_against_a_vivado_report_is_also_an_honest_gap(single_corner_report_path):
+    """The inverse of the test above: a REAL register-map metric name, but
+    pointed at a Vivado timing report instead of an SVD file — must be
+    refused as a format mismatch, not silently parsed as if it were an SVD."""
+    adapter = FPGAEmbeddedAdapter()
+    claim = Claim(
+        text="x",
+        domain="fpga_embedded",
+        context={
+            "report_path": single_corner_report_path,
+            "metric": "register_offset",
+            "peripheral": "RNG",
+            "register": "DATA",
+            "comparator": "==",
+            "expected_value": "0xB0",
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "doesn't look like a cmsis-svd" in gap[0].lower()
 
 
 async def test_path_traversal_outside_allowed_directories_is_rejected():
@@ -309,3 +336,269 @@ async def test_multi_corner_clock_summary_is_identical_across_corners_in_this_fi
         )
         ev = await adapter.gather_evidence(claim)
         assert ev[0].stance == "supports", corner
+
+
+# --- register-map claims (CMSIS-SVD) — see fpga_embedded.py's module docstring's
+# "REGISTER-MAP CLAIMS" section for the real file this is tested against and
+# why SVD, not a Vivado-specific format, was picked. ---
+
+_SVD_REGISTER_MAP = "evals/fixtures/esp32c2_register_map_excerpt.svd"
+
+
+@pytest.fixture
+def svd_register_map_path() -> str:
+    assert Path(_SVD_REGISTER_MAP).is_file()
+    return _SVD_REGISTER_MAP
+
+
+async def test_register_offset_claim_that_matches_is_confirmed(svd_register_map_path):
+    adapter = FPGAEmbeddedAdapter()
+    claim = Claim(
+        text="RNG's DATA register is at offset 0xB0",
+        domain="fpga_embedded",
+        context={
+            "report_path": svd_register_map_path,
+            "metric": "register_offset",
+            "peripheral": "RNG",
+            "register": "DATA",
+            "comparator": "==",
+            "expected_value": "0xB0",
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert len(ev) == 1
+    assert ev[0].stance == "supports"  # real addressOffset is 0xB0 (176)
+    assert ev[0].locator.endswith(":58")  # the exact <addressOffset> line
+
+
+async def test_register_offset_claim_that_disagrees_contradicts(svd_register_map_path):
+    adapter = FPGAEmbeddedAdapter()
+    claim = Claim(
+        text="RNG's DATA register is at offset 0x100",
+        domain="fpga_embedded",
+        context={
+            "report_path": svd_register_map_path,
+            "metric": "register_offset",
+            "peripheral": "RNG",
+            "register": "DATA",
+            "comparator": "==",
+            "expected_value": "0x100",
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev[0].stance == "contradicts"  # real offset is 0xB0, not 0x100
+
+
+async def test_peripheral_base_address_claim(svd_register_map_path):
+    adapter = FPGAEmbeddedAdapter()
+    claim = Claim(
+        text="BB peripheral is based at 0x6001D000",
+        domain="fpga_embedded",
+        context={
+            "report_path": svd_register_map_path,
+            "metric": "peripheral_base_address",
+            "peripheral": "BB",
+            "comparator": "==",
+            "expected_value": "0x6001D000",
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev[0].stance == "supports"
+
+
+async def test_field_bit_offset_and_width_claims(svd_register_map_path):
+    adapter = FPGAEmbeddedAdapter()
+    claim = Claim(
+        text="FFT_FORCE_PU field starts at bit 3 and is 1 bit wide",
+        domain="fpga_embedded",
+        context={
+            "report_path": svd_register_map_path,
+            "metric": "field_bit_offset",
+            "peripheral": "BB",
+            "register": "BBPD_CTRL",
+            "field": "FFT_FORCE_PU",
+            "comparator": "==",
+            "expected_value": 3,
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev[0].stance == "supports"  # real bitOffset is 3
+
+    claim2 = Claim(
+        text="FFT_FORCE_PU field is 1 bit wide",
+        domain="fpga_embedded",
+        context={
+            "report_path": svd_register_map_path,
+            "metric": "field_bit_width",
+            "peripheral": "BB",
+            "register": "BBPD_CTRL",
+            "field": "FFT_FORCE_PU",
+            "comparator": "==",
+            "expected_value": 1,
+        },
+    )
+    ev2 = await adapter.gather_evidence(claim2)
+    assert ev2[0].stance == "supports"
+
+
+async def test_register_size_bits_claim(svd_register_map_path):
+    adapter = FPGAEmbeddedAdapter()
+    claim = Claim(
+        text="DATA register is 32 bits wide",
+        domain="fpga_embedded",
+        context={
+            "report_path": svd_register_map_path,
+            "metric": "register_size_bits",
+            "peripheral": "RNG",
+            "register": "DATA",
+            "comparator": "==",
+            "expected_value": 32,
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev[0].stance == "supports"
+
+
+async def test_unknown_peripheral_is_a_named_gap_listing_real_peripherals(svd_register_map_path):
+    adapter = FPGAEmbeddedAdapter()
+    claim = Claim(
+        text="x",
+        domain="fpga_embedded",
+        context={
+            "report_path": svd_register_map_path,
+            "metric": "peripheral_base_address",
+            "peripheral": "NOPE",
+            "comparator": "==",
+            "expected_value": 0,
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "bb" in gap[0].lower() and "rng" in gap[0].lower()
+
+
+async def test_unknown_register_is_a_named_gap_listing_real_registers(svd_register_map_path):
+    adapter = FPGAEmbeddedAdapter()
+    claim = Claim(
+        text="x",
+        domain="fpga_embedded",
+        context={
+            "report_path": svd_register_map_path,
+            "metric": "register_offset",
+            "peripheral": "RNG",
+            "register": "GHOST_REG",
+            "comparator": "==",
+            "expected_value": 0,
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "data" in gap[0].lower()  # names the one register that WAS parsed
+
+
+async def test_unknown_field_is_a_named_gap_listing_real_fields(svd_register_map_path):
+    adapter = FPGAEmbeddedAdapter()
+    claim = Claim(
+        text="x",
+        domain="fpga_embedded",
+        context={
+            "report_path": svd_register_map_path,
+            "metric": "field_bit_width",
+            "peripheral": "BB",
+            "register": "BBPD_CTRL",
+            "field": "GHOST_FIELD",
+            "comparator": "==",
+            "expected_value": 0,
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "fft_force_pu" in gap[0].lower()
+
+
+async def test_register_missing_without_peripheral_base_address_metric_is_a_named_gap(svd_register_map_path):
+    """'register' is required for every register-map metric except
+    peripheral_base_address — must be a named gap, not a KeyError."""
+    adapter = FPGAEmbeddedAdapter()
+    claim = Claim(
+        text="x",
+        domain="fpga_embedded",
+        context={
+            "report_path": svd_register_map_path,
+            "metric": "register_offset",
+            "peripheral": "RNG",
+            "comparator": "==",
+            "expected_value": 0,
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "'register'" in gap[0]
+
+
+async def test_field_missing_for_a_field_metric_is_a_named_gap(svd_register_map_path):
+    adapter = FPGAEmbeddedAdapter()
+    claim = Claim(
+        text="x",
+        domain="fpga_embedded",
+        context={
+            "report_path": svd_register_map_path,
+            "metric": "field_bit_offset",
+            "peripheral": "BB",
+            "register": "BBPD_CTRL",
+            "comparator": "==",
+            "expected_value": 0,
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "'field'" in gap[0]
+
+
+async def test_invalid_expected_value_is_a_named_gap_not_a_crash(svd_register_map_path):
+    adapter = FPGAEmbeddedAdapter()
+    claim = Claim(
+        text="x",
+        domain="fpga_embedded",
+        context={
+            "report_path": svd_register_map_path,
+            "metric": "register_offset",
+            "peripheral": "RNG",
+            "register": "DATA",
+            "comparator": "==",
+            "expected_value": "not-a-number",
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "not a number" in gap[0].lower()
+
+
+async def test_register_map_path_traversal_outside_allowed_directories_is_rejected():
+    """Same containment fix as the Vivado path (test_path_traversal_outside_allowed_directories_is_rejected
+    above) — register-map claims go through the SAME is_path_within_allowed_dirs
+    check, via _check_register(), not a second unguarded code path."""
+    adapter = FPGAEmbeddedAdapter()
+    traversal_path = "evals/fixtures/../../anticassiopeia/domains/fpga_embedded.py"
+    claim = Claim(
+        text="x",
+        domain="fpga_embedded",
+        context={
+            "report_path": traversal_path,
+            "metric": "register_offset",
+            "peripheral": "RNG",
+            "register": "DATA",
+            "comparator": "==",
+            "expected_value": 0,
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "not within an allowed directory" in gap[0].lower()

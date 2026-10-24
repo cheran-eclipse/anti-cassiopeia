@@ -34,11 +34,62 @@ async def test_no_evidence_is_undetermined_with_a_gap():
 
 
 async def test_strong_support_is_confirmed():
+    # One source's trust=0.9 would naively give confidence=0.9/0.9=1.0 --
+    # fixed (external review): a lone source is capped below full
+    # certainty regardless of its own trust value, see test below.
     ev = [Evidence(source="s", snippet="x", stance="supports", trust=0.9)]
     engine = VerificationEngine(domains={"test_domain": _FixedEvidenceAdapter(ev)})
     v = await engine.verify(_claim())
     assert v.state == VerdictState.CONFIRMED
+    assert v.confidence == pytest.approx(0.9)
+
+
+async def test_single_source_confidence_is_capped_below_full_certainty():
+    # FOUND BUG (external review): confidence = |net|/total_weight reached a
+    # full 1.00 off exactly one piece of evidence, regardless of trust --
+    # fixed by capping confidence when only one source contributes.
+    from anticassiopeia.core.engine import SINGLE_SOURCE_CONFIDENCE_CAP
+
+    ev = [Evidence(source="only-source", snippet="x", stance="supports", trust=0.99)]
+    engine = VerificationEngine(domains={"test_domain": _FixedEvidenceAdapter(ev)})
+    v = await engine.verify(_claim())
+    assert v.state == VerdictState.CONFIRMED
+    assert v.confidence == pytest.approx(SINGLE_SOURCE_CONFIDENCE_CAP)
+    assert any("capped" in r.lower() for r in v.reasoning)
+
+
+async def test_two_independent_sources_are_not_capped():
+    # Genuine corroboration from two DIFFERENT sources is real signal a
+    # lone source can't provide -- the cap must not apply here.
+    ev = [
+        Evidence(source="source-a", snippet="x", stance="supports", trust=0.9),
+        Evidence(source="source-b", snippet="y", stance="supports", trust=0.9),
+    ]
+    engine = VerificationEngine(domains={"test_domain": _FixedEvidenceAdapter(ev)})
+    v = await engine.verify(_claim())
+    assert v.state == VerdictState.CONFIRMED
     assert v.confidence == pytest.approx(1.0)
+
+
+async def test_same_source_repeated_does_not_double_count_weight():
+    # FOUND BUG (external review, docs/DESIGN.md §3): two near-identical
+    # pieces of evidence from the SAME source used to sum like two
+    # independent confirmations. Fixed: same-source evidence is collapsed
+    # to its single highest-trust piece before summing, so repeating a
+    # source adds no extra weight (and does NOT lift the single-source cap
+    # into a two-source result either).
+    ev = [
+        Evidence(source="same-doc", snippet="x", stance="supports", trust=0.6),
+        Evidence(source="same-doc", snippet="x (duplicate chunk)", stance="supports", trust=0.6),
+    ]
+    one_piece = VerificationEngine(
+        domains={"test_domain": _FixedEvidenceAdapter([ev[0]])}
+    )
+    two_pieces_same_source = VerificationEngine(domains={"test_domain": _FixedEvidenceAdapter(ev)})
+    v1 = await one_piece.verify(_claim())
+    v2 = await two_pieces_same_source.verify(_claim())
+    assert v1.state == v2.state == VerdictState.CONFIRMED
+    assert v1.confidence == pytest.approx(v2.confidence)  # the duplicate added nothing
 
 
 async def test_strong_contradiction_is_contradicted():
@@ -76,7 +127,9 @@ async def test_contested_evidence_is_excluded_from_scoring_not_counted_either_wa
     engine = VerificationEngine(domains={"test_domain": _FixedEvidenceAdapter(ev)})
     v = await engine.verify(_claim())
     assert v.state == VerdictState.CONFIRMED
-    assert v.confidence == pytest.approx(1.0)  # contested evidence must not dilute this
+    # contested evidence must not dilute this -- still just one scored
+    # (non-contested) source, so still subject to the single-source cap.
+    assert v.confidence == pytest.approx(0.9)
 
 
 async def test_only_contested_evidence_is_undetermined_with_a_specific_reason():
@@ -95,7 +148,23 @@ async def test_neutral_evidence_does_not_affect_the_verdict():
     engine = VerificationEngine(domains={"test_domain": _FixedEvidenceAdapter(ev)})
     v = await engine.verify(_claim())
     assert v.state == VerdictState.CONFIRMED
-    assert v.confidence == pytest.approx(1.0)
+    assert v.confidence == pytest.approx(0.9)  # still just one scored source
+
+
+async def test_adapter_partial_gaps_are_always_surfaced_in_reasoning():
+    # FOUND BUG (external review): a source returning an unusable, not-None
+    # answer used to vanish without a trace once another source alone was
+    # enough for a confident verdict. describe_partial_gaps() must now be
+    # surfaced in reasoning regardless of final confidence.
+    class _AdapterWithPartialGap(_FixedEvidenceAdapter):
+        def describe_partial_gaps(self, claim):
+            return ["doc-b: got an answer, but it wasn't usable: test reason."]
+
+    ev = [Evidence(source="doc-a", snippet="x", stance="supports", trust=0.9)]
+    engine = VerificationEngine(domains={"test_domain": _AdapterWithPartialGap(ev)})
+    v = await engine.verify(_claim())
+    assert v.state == VerdictState.CONFIRMED  # confident verdict...
+    assert any("doc-b" in r and "test reason" in r for r in v.reasoning)  # ...but gap still recorded
 
 
 async def test_register_adds_a_domain_after_construction():

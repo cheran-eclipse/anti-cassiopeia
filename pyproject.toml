@@ -1,7 +1,8 @@
 [project]
 name = "anticassiopeia"
 version = "0.1.0"
-description = "Domain-agnostic verification engine: confirmed / contradicted / undetermined."
+description = "A verification engine: confirmed / contradicted / undetermined."
+license = "MPL-2.0"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115",

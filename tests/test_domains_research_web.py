@@ -63,6 +63,9 @@ class _DummyAsyncClient:
     async def get(self, url: str) -> httpx.Response:
         return self._response
 
+    async def post(self, url: str, **kwargs) -> httpx.Response:
+        return self._response
+
     async def aclose(self) -> None:
         return None
 
@@ -126,6 +129,77 @@ async def test_non_block_page_without_quote_is_real_contradiction(monkeypatch):
 
     assert len(ev) == 1
     assert ev[0].stance == "contradicts"
+
+
+async def test_tavily_search_returns_no_urls_without_an_api_key(monkeypatch):
+    monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+    urls = await research_web_mod._tavily_search("does this need a key", max_results=5)
+    assert urls == []
+
+
+async def test_tavily_search_extracts_and_dedupes_urls_from_a_real_response_shape(monkeypatch):
+    monkeypatch.setenv("TAVILY_API_KEY", "test-key")
+    request = httpx.Request("POST", "https://api.tavily.com/search")
+    response = httpx.Response(
+        200,
+        request=request,
+        json={
+            "results": [
+                {"title": "A", "url": "https://a.example/page"},
+                {"title": "B (mirror)", "url": "https://a.example/page"},  # duplicate URL, not a duplicate title
+                {"title": "C", "url": "https://c.example/page"},
+            ]
+        },
+    )
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **_: _DummyAsyncClient(response))
+
+    urls = await research_web_mod._tavily_search("some query", max_results=5)
+
+    assert urls == ["https://a.example/page", "https://c.example/page"]
+
+
+async def test_tavily_search_non_200_response_is_treated_as_no_results_not_a_crash(monkeypatch):
+    monkeypatch.setenv("TAVILY_API_KEY", "test-key")
+    request = httpx.Request("POST", "https://api.tavily.com/search")
+    response = httpx.Response(500, request=request, text="internal error")
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **_: _DummyAsyncClient(response))
+
+    urls = await research_web_mod._tavily_search("some query", max_results=5)
+
+    assert urls == []
+
+
+async def test_search_candidate_urls_falls_back_to_ddg_and_wikipedia_when_tavily_finds_nothing(monkeypatch):
+    monkeypatch.delenv("TAVILY_API_KEY", raising=False)  # Tavily contributes [] -- fallback path should still run
+
+    async def _fake_ddg(query, max_results):
+        return ["https://ddg.example/hit"]
+
+    async def _fake_wiki(query, max_results):
+        return ["https://en.wikipedia.org/wiki/Hit"]
+
+    monkeypatch.setattr(research_web_mod, "_ddg_search", _fake_ddg)
+    monkeypatch.setattr(research_web_mod, "_wikipedia_search", _fake_wiki)
+
+    urls = await research_web_mod._search_candidate_urls("some query")
+
+    assert urls == ["https://ddg.example/hit", "https://en.wikipedia.org/wiki/Hit"]
+
+
+async def test_search_candidate_urls_does_not_fall_back_when_tavily_succeeds(monkeypatch):
+    async def _fake_tavily(query, max_results):
+        return ["https://tavily.example/hit"]
+
+    async def _fail_if_called(query, max_results):
+        raise AssertionError("fallback backend called even though Tavily already returned results")
+
+    monkeypatch.setattr(research_web_mod, "_tavily_search", _fake_tavily)
+    monkeypatch.setattr(research_web_mod, "_ddg_search", _fail_if_called)
+    monkeypatch.setattr(research_web_mod, "_wikipedia_search", _fail_if_called)
+
+    urls = await research_web_mod._search_candidate_urls("some query")
+
+    assert urls == ["https://tavily.example/hit"]
 
 
 class _NetworkCallAttempted(AssertionError):
@@ -603,7 +677,18 @@ async def test_live_multi_candidate_contradicted_by_a_real_wikipedia_article():
 @_requires_live_key
 async def test_live_multi_candidate_undetermined_when_no_real_source_settles_it():
     """A specific, plausible-sounding, fabricated-style number that no real
-    source actually states — must stay UNDETERMINED, never a guessed CONFIRMED."""
+    source actually states — must stay UNDETERMINED, never a guessed CONFIRMED,
+    regardless of which specific honest-gap shape it lands in.
+
+    UPDATED this session: with Tavily wired in as the primary search backend
+    (replacing keyless DDG+Wikipedia, which found NOTHING for this query —
+    the original reason this test asserted the "no live candidate pages
+    found" gap specifically), Tavily now genuinely finds real candidate
+    pages (real Blue Robotics forum threads) for this query. The model
+    still, correctly, reports the MTBF figure isn't stated in any of them —
+    a DIFFERENT honest-gap shape (candidates found, but none confirm) from
+    before, not a regression: ev == [] either way is the property that
+    actually matters, and is unchanged."""
     adapter = ResearchWebAdapter()
     claim = Claim(
         text="Blue Robotics Bar30 pressure sensor has a mean time between failures of 50000 hours",
@@ -612,7 +697,10 @@ async def test_live_multi_candidate_undetermined_when_no_real_source_settles_it(
     ev = await adapter.gather_evidence(claim)
     assert ev == [], f"expected no evidence (honest gap), got: {ev}"
     gap = adapter.describe_gap(claim, ev)
-    assert "no live candidate pages found" in gap[0].lower()
+    assert (
+        "no live candidate pages found" in gap[0].lower()
+        or "none produced usable evidence" in gap[0].lower()
+    ), gap
 
 
 # --- near-duplicate evidence guard: two near-identical sources (a mirror, or a

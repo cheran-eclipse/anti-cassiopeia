@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  PARTIAL EXCERPT, real file, not invented. Source: Espressif Systems'
+  official CMSIS-SVD register-map description for the ESP32-C2, fetched
+  live 2026-10-24 from https://github.com/espressif/svd (file: svd/esp32c2.svd,
+  raw: https://raw.githubusercontent.com/espressif/svd/main/svd/esp32c2.svd).
+  Apache License, Version 2.0 (Copyright 2024 Espressif Systems (Shanghai)
+  PTE LTD) -- see that repository's LICENSE file. Only the <device> header
+  and two real, complete, small <peripheral> blocks (RNG, BB) are kept
+  below, copied verbatim byte-for-byte from the real file (including their
+  real addresses/offsets/bit layouts) -- not re-typed or paraphrased, same
+  "PARTIAL EXCERPT... real... not invented" convention
+  anticassiopeia/corpus/doc3_bar30_excerpt.txt and evals/fixtures/
+  vivado_timing_report.rpt already use for sourced-but-partial real
+  material. CMSIS-SVD (System View Description) is a vendor-neutral XML
+  register-map format used across the embedded-systems industry (ARM's
+  own CMSIS tooling, and vendors from ST to Nordic to Espressif all
+  publish SVDs in this exact schema) -- picked over a Xilinx/Vivado-
+  specific register report precisely because it is genuinely generic, per
+  this project's own choice not to tie register-map support to one FPGA
+  vendor's proprietary toolchain output.
+-->
+<device schemaVersion="1.1" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
+  <vendor>ESPRESSIF SYSTEMS (SHANGHAI) CO., LTD.</vendor>
+  <vendorID>ESPRESSIF</vendorID>
+  <name>ESP32-C2</name>
+  <series>ESP32 C-Series</series>
+  <version>10</version>
+  <description>32-bit RISC-V MCU &amp; 2.4 GHz Wi-Fi &amp; Bluetooth 5 (LE)</description>
+  <cpu>
+    <name>RV32IMC</name>
+    <revision>r0p0</revision>
+    <endian>little</endian>
+    <mpuPresent>false</mpuPresent>
+    <fpuPresent>false</fpuPresent>
+    <nvicPrioBits>0</nvicPrioBits>
+    <vendorSystickConfig>false</vendorSystickConfig>
+  </cpu>
+  <addressUnitBits>32</addressUnitBits>
+  <width>32</width>
+  <resetValue>0x00000000</resetValue>
+  <resetMask>0xFFFFFFFF</resetMask>
+  <peripherals>
+    <peripheral>
+      <name>RNG</name>
+      <description>Hardware Random Number Generator</description>
+      <groupName>RNG</groupName>
+      <baseAddress>0x60026000</baseAddress>
+      <addressBlock>
+        <offset>0x0</offset>
+        <size>0x4</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>DATA</name>
+          <description>Random number data</description>
+          <addressOffset>0xB0</addressOffset>
+          <size>0x20</size>
+          <access>read-only</access>
+        </register>
+      </registers>
+    </peripheral>
+    <peripheral>
+      <name>BB</name>
+      <description>BB Peripheral</description>
+      <groupName>BB</groupName>
+      <baseAddress>0x6001D000</baseAddress>
+      <addressBlock>
+        <offset>0x0</offset>
+        <size>0x4</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>BBPD_CTRL</name>
+          <description>Baseband control register</description>
+          <addressOffset>0x54</addressOffset>
+          <size>0x20</size>
+          <fields>
+            <field>
+              <name>DC_EST_FORCE_PD</name>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>DC_EST_FORCE_PU</name>
+              <bitOffset>1</bitOffset>
+              <bitWidth>1</bitWidth>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>FFT_FORCE_PD</name>
+              <bitOffset>2</bitOffset>
+              <bitWidth>1</bitWidth>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>FFT_FORCE_PU</name>
+              <bitOffset>3</bitOffset>
+              <bitWidth>1</bitWidth>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+  </peripherals>
+</device>

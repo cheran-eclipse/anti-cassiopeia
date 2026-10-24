@@ -1,0 +1,16 @@
+{
+  "claim": {
+    "text": "the RNG peripheral's DATA register is mapped at offset 0xB0",
+    "domain": "fpga_embedded",
+    "context": {
+      "report_path": "evals/fixtures/esp32c2_register_map_excerpt.svd",
+      "metric": "register_offset",
+      "peripheral": "RNG",
+      "register": "DATA",
+      "comparator": "==",
+      "expected_value": "0xB0"
+    }
+  },
+  "expected_state": "confirmed",
+  "note": "Register-map support added this session, via a real CMSIS-SVD file (Espressif's official ESP32-C2 register description, see evals/fixtures/esp32c2_register_map_excerpt.svd's header for the exact fetch) rather than forcing it into Vivado's timing-report format, which genuinely carries no register/address data. 0xB0 is the real addressOffset stated in that file."
+}

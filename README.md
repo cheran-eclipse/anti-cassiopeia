@@ -1,13 +1,17 @@
 # Anti-Cassiopeia
 
-A domain-agnostic verification engine. Give it a claim, it gives you back
-one of exactly three things: **confirmed**, **contradicted**, or
-**undetermined** — never a confident-sounding guess standing in for the
-third one.
+A verification engine. Give it a claim, it gives you back one of exactly
+three things: **confirmed**, **contradicted**, or **undetermined** — never
+a confident-sounding guess standing in for the third one.
 
-Built for the Nebius x NVIDIA Global AI Hackathon, Personal AI track, as
-infrastructure other developers and AI systems can build on — not a single
-demo app.
+Built for the Nebius x NVIDIA Global AI Hackathon, Apps and Agents track:
+an app or agent you'd actually use, not a single demo script. Run it as
+a CLI, call it as an HTTP API, or wire it into another agent's tool-use
+loop as the claim-checking step before that agent commits to an answer —
+all three hit the same `VerificationEngine`. Runs on Nebius Token Factory
+(see `anticassiopeia/llm/nebius_client.py`); the NVIDIA Nemotron model
+swap and gpt-oss-120b baseline comparison are in progress — this line
+gets updated to state the final model choice once that lands, not before.
 
 ## Why "Anti-Cassiopeia"
 
@@ -33,27 +37,28 @@ Claim ──▶ VerificationEngine.verify()
         VerificationEngine._score()  ──▶  Verdict (state, confidence, reasoning, missing)
 ```
 
-One domain-agnostic engine, one shared `Verdict` contract. Everything
-domain-specific — what counts as a source, how to retrieve evidence, how
-much to trust it — lives in a `DomainAdapter` plugin. See
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full design and
-current build status.
+One verification engine, one shared `Verdict` contract — orchestrating
+independent, domain-specific evidence strategies, not running one unified
+reasoning algorithm across them. Everything domain-specific — what counts
+as a source, how to retrieve evidence, how much to trust it — lives in a
+`DomainAdapter` plugin. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+for the full design and current build status, and
+[`docs/DESIGN.md`](docs/DESIGN.md#related-work) for how this relates to
+FEVER, FActScore, SAFE, RARR, and FacTool.
 
 ## Four domains, all real
 
 | Domain | POV | Evidence traces back to | Status |
 |---|---|---|---|
-| `robotics` | physical/datasheet | real parts/datasheet facts extracted from Eclipse: Constellation's own research (BlueROV2, Bar30) | seeded, 2/4 researched parts sourced — [extraction provenance](docs/extracted/constellation-robotics-seed.md) |
+| `robotics` | physical/datasheet | real parts/datasheet facts, retrieved+verified against manufacturer sources (BlueROV2, Bar30, Bar100XT) | 3/4 researched parts sourced; the 4th (QuSpin QZFM Gen-3) has a confirmed real source stating NO rating exists — [extraction provenance](docs/extracted/constellation-robotics-seed.md) |
 | `ml_data` | ML | an actual re-computed statistic over a real CSV file | real, offline, no external dependency |
-| `fpga_embedded` | quantum | a real parsed timing/synthesis report | real, offline — parser format not yet verified against a real EDA tool's output, see module docstring |
-| `research_web` | existence/verification | an actually-fetched URL, verbatim-quote-checked | real, network-dependent — confirmed blocked in *this* build sandbox (proxy 403), works wherever outbound HTTPS is open |
+| `fpga_embedded` | quantum | a real parsed timing/synthesis report, or a real CMSIS-SVD register-map file | real, offline — timing parser verified against a real Vivado report; register-map parser verified against real ARM/Espressif SVD files, see module docstring |
+| `research_web` | existence/verification | an actually-fetched URL, verbatim-quote-checked | real, network-dependent — Tavily primary search backend, DDG+Wikipedia fallback |
 
 Every domain either returns real evidence with a real locator, or an
 honest, specific, named reason it can't yet — never a guess. See
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full per-piece
-status and known limitations stated plainly (not hidden), including a
-real one in `robotics.py`: stance is currently hardcoded to one claim
-framing, not polarity-aware.
+status and known limitations stated plainly, not hidden.
 
 ## See it run
 
@@ -80,7 +85,7 @@ mocked output. Example excerpt (robotics, on real sourced facts):
 PYTHONPATH=. python evals/run_evals.py
 ```
 
-10 real cases across all 4 domains, all passing as of this commit.
+30 real cases across all 4 domains, all passing as of this commit.
 
 ## Running the live API
 
@@ -120,9 +125,10 @@ docker build -t anticassiopeia .
 docker run -p 8000:8000 anticassiopeia
 ```
 
-**Not build-tested** — written and reasoned through, but this build
-sandbox had no Docker daemon to actually run `docker build` against. Test
-before relying on it for submission.
+**Build-tested for real**: `docker build` succeeds (the in-build eval
+suite passes inside the image), and the resulting container actually
+serves `/health`, `/domains`, and `POST /verify` — see
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for how this was verified.
 
 ## Repo layout
 
@@ -132,7 +138,7 @@ anticassiopeia/
   domains/     robotics, ml_data, fpga_embedded, research_web — all real
   llm/         Nebius Token Factory client (unverified endpoint, see docstring)
   api/         FastAPI surface (POST /verify, GET /health, GET /domains)
-evals/         10 real test cases + fixtures + the runner (run_evals.py)
+evals/         30 real test cases + fixtures + the runner (run_evals.py)
 scripts/       demo.py — judge-facing end-to-end demo
 docs/          architecture, design decisions, Constellation extraction provenance
 .github/workflows/evals.yml   CI: runs the eval suite on every push/PR
@@ -141,4 +147,5 @@ Dockerfile     untested (see above)
 
 ## License
 
-TBD.
+MPL 2.0 — see LICENSE. Copyright (c) 2026 Cheran N K (Eclipse Hovering).
+Commercial licensing available on request.

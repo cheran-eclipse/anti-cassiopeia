@@ -50,23 +50,544 @@ adapter should (see each adapter's `describe_gap()`).
 
 | Piece | Status |
 |---|---|
-| `core/verdict.py` — `Claim`, `Evidence`, `Verdict`, `VerdictState` | done |
-| `core/domain.py` — `DomainAdapter` interface | done |
-| `core/engine.py` — `VerificationEngine` scoring | done, deliberately simple (trust-weighted sum + fixed thresholds); now also handles `contested` evidence (excluded from scoring, surfaced in reasoning) |
-| `domains/robotics.py` | **real retrieve + propose + verify, end to end, LIVE ROUND TRIP CONFIRMED** — chunking, BM25, a real `extract.propose()` call against `NebiusTokenFactoryClient`, and `verify_proposal()` all run for real over a partial corpus of Constellation-sourced excerpts; nothing hand-authored stands in for the model's answer anymore. Verified two ways: offline against a scripted fake client (17 tests) that reproduces the real `propose()`→`verify_proposal()` code path without a network call, AND against the genuine live API — both `test_live_*` tests in `tests/test_domains_robotics.py` PASS for real (confirmed evidence accepted for a corpus fact; honest "not found" for a fact genuinely absent from the shown passages, not a hallucination). **Earlier non-determinism (found, diagnosed, fixed, not papered over):** an early live run showed the structured `kind` field ("rated"/"tested"/null) coming back inconsistent across repeated identical calls (~4/8). Root cause was `retrieval/extract.py`'s prompt, not the model: it named the three allowed values with no explanation of what they mean, so a model correctly refused to assert a classification it was never told how to make. Fixed by naming the distinction in the prompt itself — re-verified at 8/8 and 6/6 across two different models. `kind == "rated"` was never loosened to force this green. Stance is **derived per claim** (depth + survives/fails polarity from `Claim.context` or a narrow text grammar; spec re-parsed from the verified quote; bar→depth conversion with a 5% too-close-to-call margin). Bar100XT/QuSpin return an honest gap, both unsourced in Constellation itself. **Two more bugs found (by `stress_test/` Test #1, 2026-10-18) and fixed — see `stress_test/BUGS_FOUND.md` for full detail:** (1) a genuine-absence "not found" from `propose()` was accepted on the first try with no retry, so a transient/ambiguous miss could read as a real evidence gap; `_propose_with_retry()` now retries up to 3 attempts total but only on an actual `None` return, never on a real (even low-confidence) proposal — re-verified live, 30/30 reruns of the previously-dangerous "BlueROV2 survives 200 m depth" claim resolve UNDETERMINED. (2) the dominant cause, found only after that first fix still failed a live rerun: `_RETRIEVAL_QUERIES["bluerov2"]["DOC1_BlueROV2"]` asked about "aluminum acrylic housing" at once, and DOC1 genuinely contains two different rated-depth lines (Acrylic: 100 m, Aluminum: 300 m) that a live model picked between near-randomly (~40% wrong-line rate over 20 trials) — retrying does not fix a wrong-but-real answer. Fixed by dropping "acrylic" from the query to disambiguate; re-verified live, 25/25 reruns retrieve the Aluminum/300 m line every time. **Phase B addendum (personal manual review, 2026-10-19): a real, live-caught fabrication, not just a scripted one.** Every prior "fabricated quote/value is rejected" test used a scripted fake client told to lie — proving the logic works, never that a real model has ever actually tried it. Found a live, reproducible case: asking `propose()` an adversarial unit-conversion question against DOC1's real (meters-only) text makes the model sometimes attach a `value`/`unit` (e.g. 984.25 ft) that its own verbatim quote (300 m) does not state — confirmed at ~7.5% across two independent 20-sample live batches. `_spec_depth_m()` discards every one observed; proven by a new test, `test_live_adversarial_unit_conversion_fabrication_is_caught_not_trusted` (50 live samples, skips rather than fails if a given run observes zero — this is probabilistic live behavior, not a deterministic contract) |
-| `domains/ml_data.py` | **real, offline, tested, grown** — re-computes the claimed statistic from actual CSV(s) via stdlib `csv`+`statistics` only (no new dependency: `median()`/`quantiles()`/`correlation()` are all stdlib, `correlation` since Python 3.10, this project already requires >=3.11). Now: `median`/`p25`/`p75`/`correlation` alongside `mean`/`min`/`max`/`stdev`; multi-file datasets (`dataset_path` as a list, rows concatenated, a column missing from any one shard is a named mismatch); real AND-semantics compound claims (`"checks": [...]`) — CONFIRMED only if every sub-check holds, one genuine failure CONTRADICTS the whole claim (not averaged against the parts that held), a sub-check this adapter can't even evaluate makes it UNDETERMINED with that specific reason. **Bug fixed:** `stdev` (and now `p25`/`p75`/`correlation`) used to crash with an uncaught `StatisticsError` on too few data points — `_check_single()` now validates each stat's real minimum sample size. Confirmed via docs/DESIGN.md §5 that this adapter correctly stays outside `retrieval/` — there's no passage to search for, just a computation to run. **Another bug found (by `stress_test/` Test #1, 2026-10-18) and fixed — see `stress_test/BUGS_FOUND.md`:** a real UCI dataset (`auto_mpg.csv`) spells a missing value as the literal string `"NaN"`, which `float("NaN")` parses successfully (it doesn't raise) instead of failing like a genuinely malformed cell — silently corrupting `mean`/`median`/`p25`/`p75`/`correlation` and crashing `stdev` outright. `_read_column()`/`_read_column_pair()` now also require `math.isfinite(value)` after the parse, treating non-finite the same as unparseable; re-verified against the real file (mean/median/p25/p75/stdev/correlation on `horsepower` all correct, no crash) plus a regression test proving clean data is unaffected. **Security fix (external review, 2026-10-19, two review passes): path traversal / arbitrary file read.** `dataset_path` went straight into `Path(...).open()` with no containment check — since `Claim.context` is caller-supplied verbatim from a POST /verify body, this was an arbitrary local file read (`/etc/passwd`, `.env`, source code — not just a wrong-CSV bug). Fixed: every path is resolved (defeats both `..` traversal AND symlink escapes — checked on the real resolved path, not the literal string) and must land inside `allowed_base_dirs` (default: `evals/fixtures/`, `stress_test/data/`; constructor-injectable, same DI pattern as `RoboticsAdapter(client=...)`). **Follow-up review fixes:** (1) a null byte in a path made `Path.resolve()` raise `ValueError`, not `OSError` — only the latter was caught, so this 500'd instead of a clean rejection; both are now caught in `_path_safety.py`. (2) a `dataset_path` list's elements weren't checked to actually be strings — `Path(123)` crashed; now validated explicitly. (3) the rejection message used to print the server's real, absolute allowed-directory paths — an information-disclosure leak of filesystem layout; the message now only ever echoes the caller's own (unresolved) input, never the server's real paths. All proven by dedicated regression tests, not just manual checks. **Phase B addendum (personal manual review, 2026-10-19): percentile convention, stated explicitly.** `p25`/`p75` use `statistics.quantiles(..., method="exclusive")` (the default), which genuinely disagrees with numpy/pandas/Excel's own default (a linear-interpolation method) — a real product-trust risk affecting 300 of 2,504 `ml_data` manifest claims, never stated anywhere a user would see it before. Now documented in this module's own docstring and in the manifest's own p25/p75 claim text. **Also found (same review): a display-precision bug in `stress_test/claims/generate_manifest.py`** — claim text rounded `expected_value` to a fixed 6 significant figures while the structured value kept full precision; for 41 of 2,185 single-stat claims (30 labeled "confirmed") with very tight tolerances — not 2,504, a wording error caught on a second manual review (2026-10-21): the other ~320 ml_data claims (compound multi-check claims, two-shard combined-mean claims) use different text-generation code paths this specific bug never touched — the rounding error exceeded the tolerance, so the human-readable claim literally stated a different number than what was being verified — invisible to the real adapter (which never reads display text) but silently unfair to every baseline that only sees it. Fixed with a tolerance-aware formatter; verified zero remaining inconsistencies across the full manifest. **Disclosed, not fixed (second manual review, 2026-10-21): the `-200` missing-value sentinel.** `air_quality.csv`'s own UCI documentation defines `-200` as that dataset's missing-value marker across all its measurement columns; neither this adapter nor `stress_test/oracles/ml_data_oracle.py` implements that convention — both treat `-200` as a literal real reading. Claims are checked against columns' LITERAL values, not dataset-specific missing-value semantics a model may correctly apply from outside domain knowledge (confirmed: a code-exec claim computing `p75(NO2(GT))` after correctly excluding `-200` as missing got a different, equally defensible answer than this project's own ground truth, which includes it). At least 212 of 2,504 `ml_data` claims touch `air_quality.csv` and could plausibly be affected on other sentinel-bearing columns — not individually re-verified, see `stress_test/BUGS_FOUND.md` |
-| `domains/fpga_embedded.py` | **real, offline, tested, now against a REAL EDA tool format** — parses Xilinx/AMD Vivado's actual `report_timing_summary` output (Design Timing Summary: WNS/TNS/WHS/THS/WPWS/TPWS in Vivado's own fixed column order; Clock Summary: per-clock period/frequency, generated clocks indented under their source clock) instead of this adapter's previous invented `key: value` format. **Verified, not assumed:** the real column headers/table structure were copied from a real, fetched, open-source project's actual Vivado report (Elphel x393 — URL and fetch details in the module docstring), not guessed from memory. Now handles multi-corner reports via a `Corner: <NAME>` label line — stated explicitly as THIS ADAPTER'S OWN convention for concatenating several real per-corner blocks into one file, not itself copied from one official multi-corner sample (a real multi-corner `.sta.rpt` was found but sat behind a login wall that couldn't be gotten past). **Not extended** to register-map claims — `report_timing_summary` carries no register/address data at all, so forcing that in would not have fit the real format; an honest-gap test (`register_map_claim_undetermined.json`) proves this resolves to a named gap, not a crash or a guess. **Second manual review (2026-10-21): the same `:.6g` display-precision bug fixed in `ml_data.py`'s row below was never actually fixed here.** `stress_test/claims/generate_manifest.py`'s `_fpga_single()` displayed `expected_value` at a flat 6 significant figures, so its two boundary-adversarial claims per metric per file (`== real+1e-6`, `>= real+1e-6`, both "contradicted") rounded right back to text that looked identical to the real, confirmed value — 28 claims stating the file's exact true value in text while being graded "contradicted" over an invisible 1e-6 offset. Fixed with the same tolerance-aware formatter, scoped to just these two call sites; regenerated and diffed: 0 verdict/context diffs, 62 text diffs (28 confirmed genuinely fixed, 34 a harmless cosmetic sci-notation change). **Security fix (external review, 2026-10-19, two review passes): path traversal / arbitrary file read.** Same vulnerability and same fix as `ml_data.py`'s `dataset_path` above, including the follow-up null-byte and absolute-path-leak fixes — `report_path` now requires the resolved real path to land inside `allowed_base_dirs`, defeating `..` traversal and symlink escapes, with its own dedicated tests |
-| `domains/research_web.py` | **TWO modes, both real.** Mode 1 (unchanged): a pre-selected URL, fetched live, verbatim quote check. Evals/demo use a local fixture server (`evals/fixture_server.py`) so those verdicts can't rot; one separate live case against example.com (`live_example_com_drift`) accepts `contradicted` as a "page drifted" outcome. Mode 2 (**new**): genuine multi-candidate live research — no pre-selected URL, just a claim. Real keyless search (Wikipedia's API, confirmed working live; DuckDuckGo HTML, confirmed anti-bot-blocked from this dev sandbox — tried anyway, best-effort) finds candidate pages, which are fetched, chunked (`retrieval/chunking.py`), BM25-searched (one combined index, then grouped by source page so up to 3 distinct real sources are each independently checked — not just the single best-ranked chunk), run through the same live `extract.propose()` (`openai/gpt-oss-120b`) robotics.py uses, and independently `verify_proposal()`-checked. A real CONFIRMED, a real CONTRADICTED, and two differently-shaped real UNDETERMINED outcomes (no candidates found at all vs. candidates found but the fact genuinely absent) were each confirmed live, repeatedly, not assumed — see `evals/cases/research_web/live_multi_candidate_*.json`. The stance (supports/contradicts) for mode 2 is a bounded LLM judgment on an ALREADY-mechanically-verified quote, not a new source of fabrication risk — two purely mechanical approaches (strict substring, token-overlap ratio) were tried first and both failed on real live tests (see module docstring). **Near-duplicate guard:** checking multiple sources means two of them can be the same source in disguise (a mirror, a copy-pasted sentence) — `_is_near_duplicate_evidence()` (Jaccard token overlap >= 0.8) drops a second near-verbatim match before it ever reaches `core/engine.py`'s scoring, so a mirror can't be double-counted as independent confirmation; a genuinely differently-worded second source confirming the same fact still counts, proven by two offline tests against real local fixture pages (`test_multi_candidate_mirror_sources_count_as_one_not_two`, `test_multi_candidate_genuinely_different_sources_both_count`) — `core/engine.py` itself was not touched. **Security fix (external review, 2026-10-19, two review passes): SSRF.** Both fetch sites previously fetched any url with zero validation — a claim could point this at cloud metadata (169.254.169.254) or an internal service. `_is_safe_to_fetch()` resolves the hostname and rejects it unless every resolved address is `ip.is_global` (fail-closed on resolution failure) before any network call; on by default. **Follow-up review fixes:** (1) the first version enumerated specific ranges to block and MISSED carrier-grade NAT (100.64.0.0/10) — replaced with `not ip.is_global`, strict-by-default rather than enumerate-what-to-block. (2) the first version checked only the ORIGINAL url and then fetched with `follow_redirects=True` — a real SSRF-via-redirect bypass, not hypothetical; `_safe_fetch()` now sets `follow_redirects=False` and manually re-checks `_is_safe_to_fetch()` on EVERY redirect hop, up to 3, before following it. (3) no response-size cap — `_safe_fetch()` now streams and truncates at 5 MiB. Proven by 7 tests including one that simulates a real redirect-to-metadata-endpoint bypass attempt and one that proves the size cap actually truncates. **Third review pass, 4 more fixes:** (a) a malformed `Location` header (e.g. `"http://[::1"`) made `httpx.URL.join()` raise `httpx.InvalidURL`, which on httpx 0.28.1 is NOT an `httpx.HTTPError` subclass — neither caller caught it, an unhandled 500; now wrapped and converted to `_FetchRefused`. (b) a page truncated at the 5 MiB cap whose quote fell past the cut used to read as "not found" → a confident CONTRADICTS — mode 1 now downgrades this to an honest UNDETERMINED via a `truncated` flag threaded through `httpx.Response.extensions` (mode 2 was never affected — it never treats "not found in this chunk" as a contradiction at all). (c) httpx's own `timeout=` bounds only the gap between individual reads, not TOTAL time — a slow-trickle server could hold a connection open indefinitely while technically staying under that per-read limit; `_safe_fetch()` now wraps the whole multi-hop fetch in `asyncio.timeout()`, converted to `httpx.ReadTimeout` (already an `HTTPError` subclass) so neither caller needed a new except clause. All proven by tests, now 27 in this file. **Known, accepted gap, documented not fixed:** DNS rebinding — the hostname is resolved once for the safety check and again (independently) by httpx to connect; a rebinding attack could answer differently between the two. The real fix (connect directly to the validated IP, bypassing httpx's own resolution) is substantially more invasive; stated plainly in the module docstring as accepted risk, not silently handled. Only this project's own local-fixture tests opt out of the guard via `block_private_networks=False`, explicitly. **Phase B addendum (personal manual review, 2026-10-19): test hermeticity.** 7 of these tests used `https://example.com/...` as a stand-in "safe-looking" URL while testing something else entirely (block-page detection, the redirect/size-cap/InvalidURL/timeout fixes above) — but never stubbed DNS, so each one did a REAL network lookup of example.com before reaching its own mock. Fixed by faking DNS resolution for "example.com" specifically (to a real, fixed, globally-routable address, so `ip.is_global` still runs for real) rather than stubbing the safety check itself, which would have also defeated the redirect test's own real check of its unsafe second hop. Verified hermetic by running these 7 with real DNS resolution globally disabled (raises immediately if ever invoked) — all 7 still pass, in under a second |
-| `llm/nebius_client.py` — Token Factory client | **fully live-verified**. Base URL **corrected**: was `https://api.studio.nebius.ai/v1` (wrong domain and TLD), now `https://api.tokenfactory.nebius.com/v1` — confirmed with a real `GET /v1/models` call (200, 28 models). Model **set to `openai/gpt-oss-120b`** on measured benchmark data (a related project's Nebius model-selection benchmark: 100% strict-JSON extraction, 100% JSON-valid, 100% overall on a 27x3 run, 0.95s latency, for an equivalent "extract structured values" stage) — not the original guess (`meta-llama/Meta-Llama-3.1-70B-Instruct`, which isn't in the live catalog at all) and not picked for branding fit. Confirmed for this account/endpoint specifically: live in the catalog, a real chat-completions round trip works, and repeated real `propose()` calls against this project's own corpus returned correct `chunk_id`+verbatim `quote` every time (8/8, then 6/6 on a second doc pair). **Three bugs found and fixed:** (1) `python-dotenv` was a declared dependency but `load_dotenv()` was never called anywhere, so a `.env`-only setup (the README's own documented flow) silently never loaded the key; (2) the first fix used `load_dotenv()`'s default `override=False`, which kept a stale already-exported shell value even after `.env` was edited with a freshly rotated key — switched to `override=True`; (3) `retrieval/extract.py`'s prompt named `"kind": "rated" or "tested" or null` with no explanation of what those values mean — see `domains/robotics.py`'s row for what that caused and how it was found. Now used for real by `domains/robotics.py` |
-| `api/server.py` — `POST /verify`, `GET /health`, `GET /domains` | done, routes straight to the engine above. **Security fix (external review, 2026-10-19, two review passes):** `/verify` had no auth and no rate limiting at all despite being the Nebius-budget-burning endpoint. Fixed: a required `X-API-Key` header checked with `secrets.compare_digest` on bytes (constant-time), fail-closed (no `ANTICASSIOPEIA_API_KEY` configured means EVERY request is rejected, not "auth disabled"); a dependency-free in-memory token-bucket rate limit on `/verify`, plus a separate, stricter failed-auth throttle. `/health`/`/domains` stay open on purpose. **Follow-up review fixes:** (1) `secrets.compare_digest(str, str)` raises `TypeError` (a 500) for a non-ASCII header value — fixed by encoding both sides to bytes first. (2) the main rate limit was keyed on `request.client.host`, which collapses every caller behind a shared reverse-proxy IP into one bucket — rekeyed on the validated API key instead (honest caveat: with only one key currently supported, this is close to one global bucket today; the design pays off once/if multiple keys exist). (3) added a SEPARATE token bucket keyed by client IP specifically for failed auth attempts, so repeated wrong-key guesses get throttled (429) independently of the main limit. (4) `load_dotenv(override=True)` would let a stray `.env` silently out-rank a real platform-injected secret — switched to `override=False` for this file specifically (`nebius_client.py`'s own `override=True` is unchanged, a different deliberate fix for a different dev-workflow problem explained in its own docstring). A `.dockerignore` was also added (defense-in-depth — the current Dockerfile never `COPY`s `.env` anyway). **Third review pass, 1 more fix:** the bucket dicts added one entry per distinct API key / client IP forever with no eviction — a real memory-exhaustion DoS, cycling through many distinct keys/spoofed IPs. Fixed with a hard cap (`_MAX_TRACKED_BUCKETS`) plus idle-first eviction (`_BUCKET_IDLE_TTL_SECONDS`), checked right before a new entry would be added — proven to keep the dict bounded under a (monkeypatched, for the test) tiny cap, not just that the constants exist. All proven by 10 tests. Honest limitation: both bucket types are per-process state, not shared across multiple uvicorn workers — documented, not silently assumed away |
-| `scripts/demo.py` | real end-to-end demo, 6 claims across all 4 domains, no mocked output |
-| `Dockerfile` | **build-tested for real**: `docker build` succeeds (the in-build `evals/run_evals.py` step passes all 17 cases), and the resulting container actually serves — `/health`, `/domains`, and `POST /verify` all verified live against a running container |
-| `.github/workflows/evals.yml` | written, mirrors the exact local commands already verified to work (`pip install -e .` + `python evals/run_evals.py`) — CI run itself not observed |
-| `evals/` | 27 cases across all 4 domains, all passing (`PYTHONPATH=. python evals/run_evals.py`), live LLM/network calls included — robotics' live round trip confirmed stable after the `retrieval/extract.py` prompt fix (see `domains/robotics.py`'s row); ml_data (+3: multi-file, compound confirmed, compound one-part-false contradicted) and fpga_embedded (+4: real-format confirmed/contradicted, two real multi-corner cases, one register-map honest gap) grew this pass, both still fully offline and deterministic |
+| `core/verdict.py` | done |
+| `core/domain.py` | done |
+| `core/engine.py` | done — simple scoring, now redundancy-aware and confidence-capped |
+| `domains/robotics.py` | real, live-verified · 3/4 parts sourced, 4th confirmed-unratable |
+| `domains/ml_data.py` | real, offline, tested · known gaps disclosed below |
+| `domains/fpga_embedded.py` | real, offline, tested · timing-summary + real SVD register-map |
+| `domains/research_web.py` | real, two modes · Tavily primary search, DDG+Wikipedia fallback |
+| `llm/nebius_client.py` | live-verified Nebius Token Factory client |
+| `api/server.py` | done — auth + rate-limited |
+| `scripts/demo.py` | real end-to-end demo, 6 claims, all 4 domains |
+| `Dockerfile` | build-tested for real |
+| `.github/workflows/evals.yml` | written; CI run itself not observed |
+| `evals/` | 30 cases, all 4 domains, all passing |
 
-Nothing above claims to be more finished than this table says. That table
-itself is a claim this project would check against — keep it honest as
-pieces move from stub to real.
+(Rewritten to short cells after an external review noted the table was
+unreadable at a skim — paragraph-length history per cell. Nothing above
+claims to be more finished than this table says; the full history behind
+each status, not shortened or dropped, moved to the per-piece sections
+below.)
+
+### `core/engine.py` detail
+
+Deliberately simple trust-weighted sum against fixed thresholds
+(`DECISION_THRESHOLD`, `MIN_EVIDENCE_WEIGHT`) — a bone, not a finished
+spine; see docs/DESIGN.md §3. Handles `contested` evidence (excluded from
+scoring, surfaced in reasoning). **Three fixes from an external review of
+this exact scoring rule:** (1) confidence reached a full 1.00 off a
+SINGLE piece of evidence regardless of that source's own `trust` value —
+`SINGLE_SOURCE_CONFIDENCE_CAP` now caps confidence below full certainty
+when only one source contributes; two or more independent sources are
+unaffected (genuine corroboration still reaches 1.00). (2) two
+near-identical pieces of evidence from the SAME source used to sum like
+two independent confirmations — `_redundancy_collapsed_weight()` now
+takes the single highest-trust piece per source before summing across
+distinct sources. Time-decay (the other gap DESIGN.md names) is still
+NOT implemented: `Evidence` carries no timestamp field and no adapter
+attaches one, so there is no real data for a decay formula to act on —
+stated as open, not faked. (3) a source that returned an unusable (not
+`None`) answer used to vanish with no trace once another source alone
+was enough for a confident verdict — `DomainAdapter.describe_partial_gaps()`
+is now called unconditionally and appended to `Verdict.reasoning`
+regardless of final confidence (see `domains/robotics.py` for the first
+real override).
+
+### `domains/robotics.py` detail
+
+**Real retrieve + propose + verify, end to end, LIVE ROUND TRIP
+CONFIRMED** — chunking, BM25, a real `extract.propose()` call against
+`NebiusTokenFactoryClient`, and `verify_proposal()` all run for real over
+a partial corpus of Constellation-sourced excerpts; nothing hand-authored
+stands in for the model's answer anymore. Verified two ways: offline
+against a scripted fake client (17 tests) that reproduces the real
+`propose()`→`verify_proposal()` code path without a network call, AND
+against the genuine live API — both `test_live_*` tests in
+`tests/test_domains_robotics.py` PASS for real (confirmed evidence
+accepted for a corpus fact; honest "not found" for a fact genuinely
+absent from the shown passages, not a hallucination).
+
+**Earlier non-determinism (found, diagnosed, fixed, not papered over):**
+an early live run showed the structured `kind` field ("rated"/"tested"/
+null) coming back inconsistent across repeated identical calls (~4/8).
+Root cause was `retrieval/extract.py`'s prompt, not the model: it named
+the three allowed values with no explanation of what they mean, so a
+model correctly refused to assert a classification it was never told how
+to make. Fixed by naming the distinction in the prompt itself —
+re-verified at 8/8 and 6/6 across two different models. `kind == "rated"`
+was never loosened to force this green. Stance is **derived per claim**
+(depth + survives/fails polarity from `Claim.context` or a narrow text
+grammar; spec re-parsed from the verified quote; bar→depth conversion
+with a 5% too-close-to-call margin). Bar100XT/QuSpin return an honest
+gap, both unsourced in Constellation itself.
+
+**Two more bugs found (by `stress_test/` Test #1, 2026-10-18) and fixed —
+see `stress_test/BUGS_FOUND.md` for full detail:** (1) a genuine-absence
+"not found" from `propose()` was accepted on the first try with no
+retry, so a transient/ambiguous miss could read as a real evidence gap;
+`_propose_with_retry()` now retries up to 3 attempts total but only on an
+actual `None` return, never on a real (even low-confidence) proposal —
+re-verified live, 30/30 reruns of the previously-dangerous "BlueROV2
+survives 200 m depth" claim resolve UNDETERMINED. (2) the dominant cause,
+found only after that first fix still failed a live rerun:
+`_RETRIEVAL_QUERIES["bluerov2"]["DOC1_BlueROV2"]` asked about "aluminum
+acrylic housing" at once, and DOC1 genuinely contains two different
+rated-depth lines (Acrylic: 100 m, Aluminum: 300 m) that a live model
+picked between near-randomly (~40% wrong-line rate over 20 trials) —
+retrying does not fix a wrong-but-real answer. Fixed by dropping
+"acrylic" from the query to disambiguate; re-verified live, 25/25 reruns
+retrieve the Aluminum/300 m line every time.
+
+**Phase B addendum (personal manual review, 2026-10-19): a real,
+live-caught fabrication, not just a scripted one.** Every prior
+"fabricated quote/value is rejected" test used a scripted fake client
+told to lie — proving the logic works, never that a real model has ever
+actually tried it. Found a live, reproducible case: asking `propose()` an
+adversarial unit-conversion question against DOC1's real (meters-only)
+text makes the model sometimes attach a `value`/`unit` (e.g. 984.25 ft)
+that its own verbatim quote (300 m) does not state — confirmed at ~7.5%
+across two independent 20-sample live batches. `_spec_depth_m()`
+discards every one observed; proven by a new test,
+`test_live_adversarial_unit_conversion_fabrication_is_caught_not_trusted`
+(50 live samples, skips rather than fails if a given run observes zero —
+this is probabilistic live behavior, not a deterministic contract).
+
+**Fourth-round fixes (external review — fails-open bug, and rated-vs-
+survives conflation):** (1) a source that returned something (an
+incomplete, ambiguous, or verification-rejected answer, not a clean
+`None`) used to `continue` with no trace at all — once another source
+alone was enough for a confident verdict, that source's failure
+vanished completely. `gather_evidence()` now records WHY every such case
+was skipped in `partial_gaps`, returned via the new
+`describe_partial_gaps()` override and surfaced in every verdict's
+reasoning regardless of confidence (see `core/engine.py`'s detail
+above). (2) the sourced facts here are manufacturer RATINGS, never an
+observed destructive test, regardless of whether a claim's verb is
+"survives"/"fails" or "is rated for" — this was documented in this
+module's own docstring but never stated in the verdict a caller actually
+reads. Every accepted piece of evidence's snippet now says so explicitly
+("checked against the manufacturer's RATED limit (not an observed
+destructive test)"), so a verdict can't be misread as a destructive-test
+result just because the claim's wording implied one. A real claim-type
+split (survives vs. is-rated-for as genuinely different checks) is not
+implemented: there is no destructive-test data in this project's corpus
+to check a "survives" claim against even if the two were split, so
+splitting them would only turn every "survives"-phrased claim into an
+UNDETERMINED with the same underlying rating evidence — stating the
+conflation plainly in every verdict is the honest fix available without
+new source data.
+
+**Fifth-round addition (this session, 2026-10-24): Bar100XT sourced,
+QuSpin's absence confirmed, not assumed.** Fetched Blue Robotics' real,
+live BarXT product page (https://bluerobotics.com/?p=219055) — no
+separate PDF exists for this part; the page itself is the manufacturer's
+spec sheet. Real stated rating: 0-100 bar operating range (~995 m
+depth-equivalent via this project's existing seawater-density
+conversion). Now sourced as `DOC4_Bar100XT` in `_SOURCES`/
+`_RETRIEVAL_QUERIES`, same trust tier (0.85) as Bar30's chip datasheet,
+through the identical retrieve→propose→verify pipeline — live-verified
+the same way Bar30 was (`test_bar100xt_claim_produces_real_evidence_with_a_real_locator`,
+offline-fake-client; the project's standing live tests exercise the real
+API path the same way they already do for Bar30/BlueROV2). The
+destructive-limit figure the same page states (400 bar, under an
+explicit "highest pressure before permanent damage" footnote) is
+deliberately excluded from the corpus excerpt, same reasoning as Bar30's
+own exclusion — see `docs/extracted/constellation-robotics-seed.md` §3.
+Separately, also fetched QuSpin's real official QZFM Gen-3 page
+(https://quspin.com/qzfm-gen-3, confirmed: a blog post, not a formal
+datasheet, no PDF linked) and read the WHOLE page checking for any
+pressure/depth/submersion/waterproof/IP-rating wording — there is none
+at all. This CONFIRMS the previously-assumed hypothesis
+("QZFM Gen-3 has no submersion rating") as true, via a real checked
+source, but it's still not a number to compare a depth against, so a
+QuSpin depth claim correctly stays UNDETERMINED — `describe_gap()`'s
+QuSpin branch was rewritten to cite this real source and date instead of
+saying a datasheet still needs pulling. No corpus file was added for
+QuSpin: there's no numeric fact for the retrieve→propose→verify pipeline
+to route. See `docs/extracted/constellation-robotics-seed.md` §4.
+
+### `domains/ml_data.py` detail
+
+**Real, offline, tested, grown** — re-computes the claimed statistic
+from actual CSV(s) via stdlib `csv`+`statistics` only (no new dependency:
+`median()`/`quantiles()`/`correlation()` are all stdlib, `correlation`
+since Python 3.10, this project already requires >=3.11). Now:
+`median`/`p25`/`p75`/`correlation` alongside `mean`/`min`/`max`/`stdev`;
+multi-file datasets (`dataset_path` as a list, rows concatenated, a
+column missing from any one shard is a named mismatch); real
+AND-semantics compound claims (`"checks": [...]`) — CONFIRMED only if
+every sub-check holds, one genuine failure CONTRADICTS the whole claim
+(not averaged against the parts that held), a sub-check this adapter
+can't even evaluate makes it UNDETERMINED with that specific reason.
+
+**Bug fixed:** `stdev` (and now `p25`/`p75`/`correlation`) used to crash
+with an uncaught `StatisticsError` on too few data points —
+`_check_single()` now validates each stat's real minimum sample size.
+Confirmed via docs/DESIGN.md §5 that this adapter correctly stays outside
+`retrieval/` — there's no passage to search for, just a computation to
+run.
+
+**Another bug found (by `stress_test/` Test #1, 2026-10-18) and fixed —
+see `stress_test/BUGS_FOUND.md`:** a real UCI dataset (`auto_mpg.csv`)
+spells a missing value as the literal string `"NaN"`, which `float("NaN")`
+parses successfully (it doesn't raise) instead of failing like a
+genuinely malformed cell — silently corrupting `mean`/`median`/`p25`/
+`p75`/`correlation` and crashing `stdev` outright. `_read_column()`/
+`_read_column_pair()` now also require `math.isfinite(value)` after the
+parse, treating non-finite the same as unparseable; re-verified against
+the real file (mean/median/p25/p75/stdev/correlation on `horsepower` all
+correct, no crash) plus a regression test proving clean data is
+unaffected.
+
+**Security fix (external review, 2026-10-19, two review passes): path
+traversal / arbitrary file read.** `dataset_path` went straight into
+`Path(...).open()` with no containment check — since `Claim.context` is
+caller-supplied verbatim from a POST /verify body, this was an arbitrary
+local file read (`/etc/passwd`, `.env`, source code — not just a
+wrong-CSV bug). Fixed: every path is resolved (defeats both `..`
+traversal AND symlink escapes — checked on the real resolved path, not
+the literal string) and must land inside `allowed_base_dirs` (default:
+`evals/fixtures/`, `stress_test/data/`; constructor-injectable, same DI
+pattern as `RoboticsAdapter(client=...)`). **Follow-up review fixes:**
+(1) a null byte in a path made `Path.resolve()` raise `ValueError`, not
+`OSError` — only the latter was caught, so this 500'd instead of a clean
+rejection; both are now caught in `_path_safety.py`. (2) a `dataset_path`
+list's elements weren't checked to actually be strings — `Path(123)`
+crashed; now validated explicitly. (3) the rejection message used to
+print the server's real, absolute allowed-directory paths — an
+information-disclosure leak of filesystem layout; the message now only
+ever echoes the caller's own (unresolved) input, never the server's real
+paths. All proven by dedicated regression tests, not just manual checks.
+
+**Phase B addendum (personal manual review, 2026-10-19): percentile
+convention, stated explicitly.** `p25`/`p75` use
+`statistics.quantiles(..., method="exclusive")` (the default), which
+genuinely disagrees with numpy/pandas/Excel's own default (a
+linear-interpolation method) — a real product-trust risk affecting 300
+of 2,504 `ml_data` manifest claims, never stated anywhere a user would
+see it before. Now documented in this module's own docstring and in the
+manifest's own p25/p75 claim text. **Also found (same review): a
+display-precision bug in `stress_test/claims/generate_manifest.py`** —
+claim text rounded `expected_value` to a fixed 6 significant figures
+while the structured value kept full precision; for 41 of 2,185
+single-stat claims (30 labeled "confirmed") with very tight tolerances —
+not 2,504, a wording error caught on a second manual review (2026-10-21):
+the other ~320 ml_data claims (compound multi-check claims, two-shard
+combined-mean claims) use different text-generation code paths this
+specific bug never touched — the rounding error exceeded the tolerance,
+so the human-readable claim literally stated a different number than
+what was being verified — invisible to the real adapter (which never
+reads display text) but silently unfair to every baseline that only sees
+it. Fixed with a tolerance-aware formatter; verified zero remaining
+inconsistencies across the full manifest.
+
+**Disclosed, not fixed (second manual review, 2026-10-21): the `-200`
+missing-value sentinel.** `air_quality.csv`'s own UCI documentation
+defines `-200` as that dataset's missing-value marker across all its
+measurement columns; neither this adapter nor
+`stress_test/oracles/ml_data_oracle.py` implements that convention —
+both treat `-200` as a literal real reading. Claims are checked against
+columns' LITERAL values, not dataset-specific missing-value semantics a
+model may correctly apply from outside domain knowledge (confirmed: a
+code-exec claim computing `p75(NO2(GT))` after correctly excluding `-200`
+as missing got a different, equally defensible answer than this
+project's own ground truth, which includes it). At least 212 of 2,504
+`ml_data` claims touch `air_quality.csv` and could plausibly be affected
+on other sentinel-bearing columns — not individually re-verified, see
+`stress_test/BUGS_FOUND.md`.
+
+### `domains/fpga_embedded.py` detail
+
+**Real, offline, tested, now against a REAL EDA tool format** — parses
+Xilinx/AMD Vivado's actual `report_timing_summary` output (Design Timing
+Summary: WNS/TNS/WHS/THS/WPWS/TPWS in Vivado's own fixed column order;
+Clock Summary: per-clock period/frequency, generated clocks indented
+under their source clock) instead of this adapter's previous invented
+`key: value` format. **Verified, not assumed:** the real column
+headers/table structure were copied from a real, fetched, open-source
+project's actual Vivado report (Elphel x393 — URL and fetch details in
+the module docstring), not guessed from memory. Now handles multi-corner
+reports via a `Corner: <NAME>` label line — stated explicitly as THIS
+ADAPTER'S OWN convention for concatenating several real per-corner
+blocks into one file, not itself copied from one official multi-corner
+sample (a real multi-corner `.sta.rpt` was found but sat behind a login
+wall that couldn't be gotten past).
+
+**Register-map support landed this session (2026-10-24) — via a SECOND
+real file format, not forced into the first.** `report_timing_summary`
+still genuinely carries no register/address data at all (unchanged fact
+— `register_map_claim_undetermined.json` still proves that specific
+honest gap holds for a Vivado file). Register-map claims are instead
+routed to CMSIS-SVD (System View Description), a real, vendor-neutral
+XML register-map schema used across the embedded-systems industry —
+picked over a Xilinx/Vivado-specific export because no real Xilinx
+register-map sample was ever actually found/fetched (checked this
+session: searched for Xilinx IP-XACT `component.xml` examples, found
+only tooling docs and MathWorks material, nothing real and fetchable —
+see `fpga_embedded.py`'s module docstring), and SVD is the honestly
+generic choice for a domain meant to cover arbitrary submissions, not
+one vendor's toolchain. **Verified against two independently-sourced
+real files, not invented:** ARM's own CMSIS_5 `ARMCM4.svd` example
+(confirmed real but header-only, no peripherals — not usable as a
+register-data sample) and Espressif's officially published
+`svd/esp32c2.svd` (Apache-2.0, real peripherals with real addresses/
+offsets/bit layouts) — `evals/fixtures/esp32c2_register_map_excerpt.svd`
+keeps two complete, real, verbatim peripheral blocks (RNG, BB) from the
+latter, copied byte-for-byte, same "partial excerpt, real, not invented"
+convention `doc3_bar30_excerpt.txt` already uses. `_parse_svd_register_map()`
+scans the real one-tag-per-line SVD structure by nesting (peripheral→
+register→field), the same "known real format, position-based, not a
+generic XML tree walk" convention `_parse_report()` already uses for
+Vivado's tables — and tracks the exact source line number for every
+value it reads, so every register-map `Evidence.locator` points at a
+real, re-checkable line, not just a filename. New metrics:
+`peripheral_base_address`, `register_offset`, `register_size_bits`,
+`field_bit_offset`, `field_bit_width` — all STATIC facts an SVD actually
+states (never a runtime register's live contents, which no static file
+could honestly claim to know). Routed through entirely separate
+`_check_register`/`_gather_register_evidence` code paths from the
+Vivado timing logic (register claims have no "corner" concept at all);
+the SAME path-containment check (`is_path_within_allowed_dirs`) guards
+both. 15 new offline tests, all passing; see
+`evals/cases/fpga_embedded/svd_register_offset_confirmed.json` for a
+real end-to-end case.
+
+**Second manual review (2026-10-21): the same `:.6g` display-precision
+bug fixed in `ml_data.py`'s section above was never actually fixed here.**
+`stress_test/claims/generate_manifest.py`'s `_fpga_single()` displayed
+`expected_value` at a flat 6 significant figures, so its two
+boundary-adversarial claims per metric per file (`== real+1e-6`,
+`>= real+1e-6`, both "contradicted") rounded right back to text that
+looked identical to the real, confirmed value — 28 claims stating the
+file's exact true value in text while being graded "contradicted" over
+an invisible 1e-6 offset. Fixed with the same tolerance-aware formatter,
+scoped to just these two call sites; regenerated and diffed: 0
+verdict/context diffs, 62 text diffs (28 confirmed genuinely fixed, 34 a
+harmless cosmetic sci-notation change).
+
+**Security fix (external review, 2026-10-19, two review passes): path
+traversal / arbitrary file read.** Same vulnerability and same fix as
+`ml_data.py`'s `dataset_path` above, including the follow-up null-byte
+and absolute-path-leak fixes — `report_path` now requires the resolved
+real path to land inside `allowed_base_dirs`, defeating `..` traversal
+and symlink escapes, with its own dedicated tests.
+
+### `domains/research_web.py` detail
+
+**TWO modes, both real.** Mode 1 (unchanged): a pre-selected URL, fetched
+live, verbatim quote check. Evals/demo use a local fixture server
+(`evals/fixture_server.py`) so those verdicts can't rot; one separate
+live case against example.com (`live_example_com_drift`) accepts
+`contradicted` as a "page drifted" outcome. Mode 2 (**new**): genuine
+multi-candidate live research — no pre-selected URL, just a claim. Real
+keyless search (Wikipedia's API, confirmed working live; DuckDuckGo
+HTML, confirmed anti-bot-blocked from this dev sandbox — tried anyway,
+best-effort) finds candidate pages, which are fetched, chunked
+(`retrieval/chunking.py`), BM25-searched (one combined index, then
+grouped by source page so up to 3 distinct real sources are each
+independently checked — not just the single best-ranked chunk), run
+through the same live `extract.propose()` (`openai/gpt-oss-120b`)
+robotics.py uses, and independently `verify_proposal()`-checked. A real
+CONFIRMED, a real CONTRADICTED, and two differently-shaped real
+UNDETERMINED outcomes (no candidates found at all vs. candidates found
+but the fact genuinely absent) were each confirmed live, repeatedly, not
+assumed — see `evals/cases/research_web/live_multi_candidate_*.json`.
+The stance (supports/contradicts) for mode 2 is a bounded LLM judgment on
+an ALREADY-mechanically-verified quote, not a new source of fabrication
+risk — two purely mechanical approaches (strict substring, token-overlap
+ratio) were tried first and both failed on real live tests (see module
+docstring).
+
+**Near-duplicate guard:** checking multiple sources means two of them can
+be the same source in disguise (a mirror, a copy-pasted sentence) —
+`_is_near_duplicate_evidence()` (Jaccard token overlap >= 0.8) drops a
+second near-verbatim match before it ever reaches `core/engine.py`'s
+scoring, so a mirror can't be double-counted as independent confirmation;
+a genuinely differently-worded second source confirming the same fact
+still counts, proven by two offline tests against real local fixture
+pages (`test_multi_candidate_mirror_sources_count_as_one_not_two`,
+`test_multi_candidate_genuinely_different_sources_both_count`) —
+`core/engine.py` itself was not touched (its own, separate same-SOURCE
+redundancy fix is in the `core/engine.py` section above).
+
+**Security fix (external review, 2026-10-19, two review passes): SSRF.**
+Both fetch sites previously fetched any url with zero validation — a
+claim could point this at cloud metadata (169.254.169.254) or an
+internal service. `_is_safe_to_fetch()` resolves the hostname and
+rejects it unless every resolved address is `ip.is_global` (fail-closed
+on resolution failure) before any network call; on by default.
+**Follow-up review fixes:** (1) the first version enumerated specific
+ranges to block and MISSED carrier-grade NAT (100.64.0.0/10) — replaced
+with `not ip.is_global`, strict-by-default rather than
+enumerate-what-to-block. (2) the first version checked only the ORIGINAL
+url and then fetched with `follow_redirects=True` — a real
+SSRF-via-redirect bypass, not hypothetical; `_safe_fetch()` now sets
+`follow_redirects=False` and manually re-checks `_is_safe_to_fetch()` on
+EVERY redirect hop, up to 3, before following it. (3) no response-size
+cap — `_safe_fetch()` now streams and truncates at 5 MiB. Proven by 7
+tests including one that simulates a real redirect-to-metadata-endpoint
+bypass attempt and one that proves the size cap actually truncates.
+**Third review pass, 4 more fixes:** (a) a malformed `Location` header
+(e.g. `"http://[::1"`) made `httpx.URL.join()` raise `httpx.InvalidURL`,
+which on httpx 0.28.1 is NOT an `httpx.HTTPError` subclass — neither
+caller caught it, an unhandled 500; now wrapped and converted to
+`_FetchRefused`. (b) a page truncated at the 5 MiB cap whose quote fell
+past the cut used to read as "not found" → a confident CONTRADICTS —
+mode 1 now downgrades this to an honest UNDETERMINED via a `truncated`
+flag threaded through `httpx.Response.extensions` (mode 2 was never
+affected — it never treats "not found in this chunk" as a contradiction
+at all). (c) httpx's own `timeout=` bounds only the gap between
+individual reads, not TOTAL time — a slow-trickle server could hold a
+connection open indefinitely while technically staying under that
+per-read limit; `_safe_fetch()` now wraps the whole multi-hop fetch in
+`asyncio.timeout()`, converted to `httpx.ReadTimeout` (already an
+`HTTPError` subclass) so neither caller needed a new except clause. All
+proven by tests, now 27 in this file. **Known, accepted gap, documented
+not fixed:** DNS rebinding — the hostname is resolved once for the
+safety check and again (independently) by httpx to connect; a rebinding
+attack could answer differently between the two. The real fix (connect
+directly to the validated IP, bypassing httpx's own resolution) is
+substantially more invasive; stated plainly in the module docstring as
+accepted risk, not silently handled. Only this project's own
+local-fixture tests opt out of the guard via `block_private_networks=False`,
+explicitly.
+
+**Phase B addendum (personal manual review, 2026-10-19): test
+hermeticity.** 7 of these tests used `https://example.com/...` as a
+stand-in "safe-looking" URL while testing something else entirely
+(block-page detection, the redirect/size-cap/InvalidURL/timeout fixes
+above) — but never stubbed DNS, so each one did a REAL network lookup of
+example.com before reaching its own mock. Fixed by faking DNS resolution
+for "example.com" specifically (to a real, fixed, globally-routable
+address, so `ip.is_global` still runs for real) rather than stubbing the
+safety check itself, which would have also defeated the redirect test's
+own real check of its unsafe second hop. Verified hermetic by running
+these 7 with real DNS resolution globally disabled (raises immediately
+if ever invoked) — all 7 still pass, in under a second.
+
+**Tavily landed this session (2026-10-24) as the PRIMARY search backend**
+(resolves the "effectively Wikipedia-only" critique above) —
+`_tavily_search()` calls Tavily's real `/search` API (`TAVILY_API_KEY`
+in `.env`), a keyed search API built for feeding LLM pipelines, not a
+scraped HTML results page. DDG+Wikipedia are now a FALLBACK, tried only
+when Tavily returns zero URLs (missing key, a live failure, or a genuine
+zero-result query) — kept exactly as before so cloning this repo
+without a Tavily key still gets some real coverage. **Confirmed live to
+materially change real outcomes, not just added inertly:** the eval case
+for "BlueROV2 has a maximum operating time of 14 hours" used to resolve
+UNDETERMINED (no candidates at all — DDG blocked, no Wikipedia runtime
+figure) and now resolves CONTRADICTED, because Tavily surfaces a real
+Blue Robotics distributor page (sepcotech.com) stating a real run-time
+figure (~2-4 hours) that genuinely contradicts the claim — see
+`evals/cases/research_web/live_multi_candidate_contradicted_via_tavily_distributor_page.json`.
+A second case moved from "zero candidates" to "candidates found, fact
+absent" for the same reason (Tavily simply finds more than DDG+Wikipedia
+did) — both eval cases' notes were rewritten honestly rather than left
+stating a now-false "both backends return nothing" claim. 5 new offline
+tests (`_tavily_search`'s key-missing/success/non-200 paths, and the
+fallback-ordering logic) — all passing, no network call.
+
+### `llm/nebius_client.py` detail
+
+**Fully live-verified.** Base URL **corrected**: was
+`https://api.studio.nebius.ai/v1` (wrong domain and TLD), now
+`https://api.tokenfactory.nebius.com/v1` — confirmed with a real
+`GET /v1/models` call (200, 28 models). Model **set to
+`openai/gpt-oss-120b`** on measured benchmark data (a related project's
+Nebius model-selection benchmark: 100% strict-JSON extraction, 100%
+JSON-valid, 100% overall on a 27x3 run, 0.95s latency, for an equivalent
+"extract structured values" stage) — not the original guess
+(`meta-llama/Meta-Llama-3.1-70B-Instruct`, which isn't in the live
+catalog at all) and not picked for branding fit. Confirmed for this
+account/endpoint specifically: live in the catalog, a real
+chat-completions round trip works, and repeated real `propose()` calls
+against this project's own corpus returned correct `chunk_id`+verbatim
+`quote` every time (8/8, then 6/6 on a second doc pair).
+
+**Three bugs found and fixed:** (1) `python-dotenv` was a declared
+dependency but `load_dotenv()` was never called anywhere, so a
+`.env`-only setup (the README's own documented flow) silently never
+loaded the key; (2) the first fix used `load_dotenv()`'s default
+`override=False`, which kept a stale already-exported shell value even
+after `.env` was edited with a freshly rotated key — switched to
+`override=True`; (3) `retrieval/extract.py`'s prompt named
+`"kind": "rated" or "tested" or null` with no explanation of what those
+values mean — see `domains/robotics.py`'s section for what that caused
+and how it was found. Now used for real by `domains/robotics.py`.
+
+**Nemotron swap in progress** (Apps and Agents track requirement — at
+least one NVIDIA open model called in the real request path, not just
+mentioned): `nvidia/Nemotron-3-Ultra-550b-a55b`,
+`nvidia/nemotron-3-super-120b-a12b`, and
+`nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` are all confirmed live on this
+account's catalog. This section gets updated with the final model choice
+and a real before/after comparison once that work lands — not claimed
+done before it is.
+
+### `api/server.py` detail
+
+Done, routes straight to the engine above. **Security fix (external
+review, 2026-10-19, two review passes):** `/verify` had no auth and no
+rate limiting at all despite being the Nebius-budget-burning endpoint.
+Fixed: a required `X-API-Key` header checked with
+`secrets.compare_digest` on bytes (constant-time), fail-closed (no
+`ANTICASSIOPEIA_API_KEY` configured means EVERY request is rejected, not
+"auth disabled"); a dependency-free in-memory token-bucket rate limit on
+`/verify`, plus a separate, stricter failed-auth throttle. `/health`/
+`/domains` stay open on purpose. **Follow-up review fixes:** (1)
+`secrets.compare_digest(str, str)` raises `TypeError` (a 500) for a
+non-ASCII header value — fixed by encoding both sides to bytes first.
+(2) the main rate limit was keyed on `request.client.host`, which
+collapses every caller behind a shared reverse-proxy IP into one bucket —
+rekeyed on the validated API key instead (honest caveat: with only one
+key currently supported, this is close to one global bucket today; the
+design pays off once/if multiple keys exist). (3) added a SEPARATE token
+bucket keyed by client IP specifically for failed auth attempts, so
+repeated wrong-key guesses get throttled (429) independently of the main
+limit. (4) `load_dotenv(override=True)` would let a stray `.env`
+silently out-rank a real platform-injected secret — switched to
+`override=False` for this file specifically (`nebius_client.py`'s own
+`override=True` is unchanged, a different deliberate fix for a different
+dev-workflow problem explained in its own docstring). A `.dockerignore`
+was also added (defense-in-depth — the current Dockerfile never `COPY`s
+`.env` anyway). **Third review pass, 1 more fix:** the bucket dicts added
+one entry per distinct API key / client IP forever with no eviction — a
+real memory-exhaustion DoS, cycling through many distinct keys/spoofed
+IPs. Fixed with a hard cap (`_MAX_TRACKED_BUCKETS`) plus idle-first
+eviction (`_BUCKET_IDLE_TTL_SECONDS`), checked right before a new entry
+would be added — proven to keep the dict bounded under a (monkeypatched,
+for the test) tiny cap, not just that the constants exist. All proven by
+10 tests. Honest limitation: both bucket types are per-process state, not
+shared across multiple uvicorn workers — documented, not silently
+assumed away.
+
+### `scripts/demo.py`, `Dockerfile`, CI, `evals/` detail
+
+`scripts/demo.py`: real end-to-end demo, 6 claims across all 4 domains,
+no mocked output. `Dockerfile`: **build-tested for real** — `docker
+build` succeeds (the in-build `evals/run_evals.py` step passes the full
+suite), and the resulting container actually serves — `/health`,
+`/domains`, and `POST /verify` all verified live against a running
+container (not re-verified against the exact case count below; the
+build-test itself predates this session's additions, and the mechanism
+— eval suite as an in-build gate — is unaffected by how many cases it
+runs). `.github/workflows/evals.yml`: written, mirrors the exact
+local commands already verified to work (`pip install -e .` +
+`python evals/run_evals.py`) — CI run itself not observed. `evals/`: 30
+cases across all 4 domains, all passing (`PYTHONPATH=. python
+evals/run_evals.py`), live LLM/network calls included — robotics' live
+round trip confirmed stable after the `retrieval/extract.py` prompt fix;
+ml_data (+3: multi-file, compound confirmed, compound one-part-false
+contradicted) and fpga_embedded (+4: real-format confirmed/contradicted,
+two real multi-corner cases, one register-map honest gap) grew an
+earlier pass, both fully offline and deterministic; this session added
++1 robotics (Bar100XT confirmed + contradicted, replacing the old
+undetermined case — net +1 since one case was repurposed), +1
+fpga_embedded (a real SVD register-map confirmed case, alongside the
+pre-existing honest-gap case), and +1 research_web net (one case moved
+shape, one new contradicted-via-Tavily case added) — see each adapter's
+own detail section above for what changed and why.
 
 ## Open design decisions (not yet made)
 

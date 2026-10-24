@@ -1,0 +1,14 @@
+PARTIAL EXCERPT — Blue Robotics BarXT product page (DOC4), Bar100XT variant.
+Fetched live 2026-10-24 from https://bluerobotics.com/?p=219055. No separate
+PDF datasheet exists for this part; the product page itself is the
+manufacturer's spec sheet. Only the operating-rating lines are included
+below — the page's separate destructive-limit figure (a different,
+higher number, stated under a "highest pressure before permanent damage"
+footnote) is deliberately excluded, same reasoning as
+doc3_bar30_excerpt.txt's canary-line exclusion: it is not an operating
+rating, and robotics.py's gather_evidence() already needs the RATED
+figure, never a destructive one, to avoid the rated-vs-survives
+conflation this project's own fix addresses elsewhere.
+
+Operating Pressure Range: 0 to 100 bar
+Operating Range: 0 to 100 bar, -10 to +80 C

@@ -155,3 +155,60 @@ a reason to route the existing structured-metric lookups through it now.
 Team-coordination/build-split questions (which of the parallel Claude
 accounts builds which domain) belong in planning, not in this file — this
 file is architecture only.
+
+## Related work
+
+Named explicitly rather than left implicit (external review): where this
+project sits relative to existing claim-verification/factuality work, and
+how it genuinely differs, not just "we also check facts."
+
+- **FEVER** (Thorne et al., claim verification against Wikipedia) is the
+  closest prior work in *shape*: a 3-way label (SUPPORTED / REFUTED / NOT
+  ENOUGH INFO) that maps almost directly onto this project's CONFIRMED /
+  CONTRADICTED / UNDETERMINED. The real difference is scope and
+  grounding: FEVER is a single-domain (Wikipedia-text) benchmark+pipeline
+  with a trained entailment classifier picking the label; Anti-Cassiopeia
+  is domain-plural (datasheets, EDA reports, datasets, the open web) with
+  no classifier at all — every `Evidence` locator is a verbatim quote or
+  an exact recomputation a human could re-check by hand, not a learned
+  probability over a label.
+- **FActScore** (Min et al.) and **SAFE** (Wei et al., "long-form
+  factuality in large language models") both decompose long-form model
+  output into atomic facts and check each against retrieved evidence —
+  but both roll the per-fact results up into one continuous score (a
+  precision percentage). That's exactly the failure mode this project is
+  named against: a single number dressed up as measured confidence. This
+  project's own stress-test suite cites SAFE's 72% figure directly (see
+  `stress_test/results/TEST3_REPORT.md`) as context, not as a comparable
+  number — SAFE scores agreement with human annotators on open-ended
+  generated text against live web search, not fixed source documents, so
+  the two numbers answer different questions. SAFE's atomic-fact-then-
+  search-agent loop is architecturally close to `research_web.py`'s mode
+  2 (multi-candidate live search, each candidate independently checked);
+  the difference is this project keeps each claim resolving to one of
+  three states with a locator, never a blended score across many facts.
+- **RARR** (Gao et al., "retrofit attribution using research and
+  revision") retrieves evidence for a generated text's claims and then
+  *edits* the text to match the evidence, attaching attribution as it
+  goes. Its goal is revision, not verdicts — it never has to say "I don't
+  know and won't guess," because its job is to fix the text, not refuse
+  an answer. Anti-Cassiopeia never edits or rewrites a claim; it only
+  ever answers CONFIRMED/CONTRADICTED/UNDETERMINED about the claim as
+  given.
+- **FacTool** (Chern et al.) is the closest in spirit to the
+  domain-adapter idea: different task domains (KB-QA, code, math,
+  scientific review) get different "tools" to check claims against,
+  similar to this project's per-domain `DomainAdapter`s. The real
+  difference: FacTool's per-claim output is a binary factual/
+  non-factual judgment from an LLM weighing tool output, not a
+  three-state scheme with a first-class "insufficient evidence, refusing
+  to guess" outcome, and it doesn't require a verbatim-quote-level
+  locator the way `verify_proposal()` does here.
+
+None of this is a claim of novelty for novelty's sake — three-state
+verdicts and quote-grounded evidence are both small, specific choices,
+not a new paradigm. What's different here is applying both together,
+consistently, across structurally unrelated domains (a CSV, a timing
+report, a live web page) behind one shared contract, with every
+confident answer traceable to a locator a human can independently
+re-check.

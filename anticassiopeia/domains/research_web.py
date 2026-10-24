@@ -50,9 +50,14 @@ TWO modes, selected by `Claim.context`:
    text, so this has to happen here, before the list ever reaches it —
    engine.py itself is untouched.
 
-   Candidate discovery (`_search_candidate_urls`) is real, live, and
-   keyless — no API key, so it works the same way for anyone cloning this
-   repo. Two backends, merged:
+   Candidate discovery (`_search_candidate_urls`) is real and live.
+   PRIMARY backend, as of this session: Tavily's `/search` API (needs
+   `TAVILY_API_KEY` in `.env` — see `.env.example`), a real keyed search
+   API built for this exact use case (LLM-facing retrieval), not a
+   scraped HTML results page. FALLBACK, tried only when Tavily returns
+   zero URLs (missing key, a live Tavily failure, or a genuine
+   zero-result query) — kept exactly as before, still keyless so cloning
+   this repo without a Tavily key still gets *some* real coverage:
      - DuckDuckGo's HTML results page (broad coverage when it works).
        CONFIRMED UNRELIABLE from this project's own dev sandbox: every
        attempt returned an HTTP 202 anti-bot "anomaly" challenge page
@@ -64,8 +69,8 @@ TWO modes, selected by `Claim.context`:
        proper descriptive User-Agent (Wikipedia's API returns 403 without
        one — not a bug, their documented robots policy). Reliable but
        narrow: only finds candidates for topics with Wikipedia coverage.
-   If both backends return nothing, that's an honest "no live candidates"
-   gap — not a crash, not a silent zero-evidence shrug.
+   If Tavily AND both fallback backends return nothing, that's an honest
+   "no live candidates" gap — not a crash, not a silent zero-evidence shrug.
 
    Stance (supports/contradicts) for mode 2 is decided by `_judge_stance()`,
    a BOUNDED LLM judgment call on a quote that's ALREADY been independently,
@@ -151,6 +156,7 @@ from __future__ import annotations
 import asyncio
 import html as html_module
 import ipaddress
+import os
 import re
 import socket
 import urllib.parse
@@ -207,6 +213,8 @@ _SEARCH_USER_AGENT = (
 )
 _DDG_RESULT_LINK_RE = re.compile(r'class="result__a"[^>]+href="([^"]+)"')
 _DDG_REDIRECT_RE = re.compile(r"(?:^|//)duckduckgo\.com/l/\?uddg=([^&]+)")
+
+_TAVILY_ENDPOINT = "https://api.tavily.com/search"
 
 
 def _normalize(text: str) -> str:
@@ -456,11 +464,50 @@ async def _wikipedia_search(query: str, max_results: int) -> list[str]:
     ][:max_results]
 
 
+async def _tavily_search(query: str, max_results: int) -> list[str]:
+    """Tavily's `/search` API — real, live, keyed (`TAVILY_API_KEY`), a
+    search backend actually built for feeding LLM pipelines (unlike DDG's
+    HTML results page, which is scraped). Returns [] (never raises) if the
+    key isn't set, the call fails, or the response doesn't parse — same
+    "a backend being unavailable isn't this function's failure to report"
+    contract as `_ddg_search`/`_wikipedia_search`; `_search_candidate_urls`
+    below is what decides what happens when this returns nothing."""
+    api_key = os.environ.get("TAVILY_API_KEY")
+    if not api_key:
+        return []
+    try:
+        async with httpx.AsyncClient(timeout=_FETCH_TIMEOUT) as client:
+            resp = await client.post(
+                _TAVILY_ENDPOINT,
+                headers={"Authorization": f"Bearer {api_key}"},
+                json={"query": query, "max_results": max_results},
+            )
+    except httpx.HTTPError:
+        return []
+    if resp.status_code != 200:
+        return []
+    try:
+        results = resp.json().get("results", [])
+    except ValueError:
+        return []
+    urls: list[str] = []
+    for r in results:
+        url = r.get("url") if isinstance(r, dict) else None
+        if isinstance(url, str) and url and url not in urls:
+            urls.append(url)
+    return urls[:max_results]
+
+
 async def _search_candidate_urls(query: str, max_results: int = 5) -> list[str]:
-    """Real, live, keyless multi-backend search — "an existing search
-    capability", not a hand-rolled index over the whole web. Merges both
-    backends and dedupes; see module docstring for each backend's real,
-    observed reliability."""
+    """Tavily first (see module docstring's "Candidate discovery" section
+    for why it's primary now); DDG+Wikipedia are a fallback, tried ONLY
+    when Tavily contributes zero URLs — not merged in alongside Tavily
+    results, so a working Tavily call is never diluted by DDG's usual
+    anti-bot-blocked [] or Wikipedia's narrower coverage."""
+    tavily_urls = await _tavily_search(query, max_results)
+    if tavily_urls:
+        return tavily_urls[:max_results]
+
     ddg_urls = await _ddg_search(query, max_results)
     wiki_urls = await _wikipedia_search(query, max_results)
     seen: set[str] = set()

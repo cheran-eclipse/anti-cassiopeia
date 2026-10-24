@@ -144,6 +144,26 @@ verbatim across those duplicated snapshots.
   as if it were a datasheet locator; it is Constellation's own planning doc, one level removed
   from a primary source.
 
+**RESOLVED this session (2026-10-24):** fetched Blue Robotics' real, live BarXT product page —
+https://bluerobotics.com/?p=219055 ("BarXT Extended Submersion Depth/Pressure Sensors"). No
+separate PDF datasheet is linked from it; the page itself is the manufacturer's spec sheet for
+this part. Bar100XT's real, stated figures: **Operating Pressure Range: 0 to 100 bar**
+(dropdown and spec table agree), **Operating Depth: 0-1009 m** (spec table) / **~1000 m**
+(summary table — the page states both; the spec table's 1009 m assumes freshwater density per
+its own footnote 2, this project's conversion uses seawater per `robotics.py`'s existing
+convention, giving ~995 m — all three numbers describe the SAME real rating, not a
+discrepancy). A SEPARATE figure, **Maximum Mechanical Pressure: 400 bar**, is explicitly stated
+by the page's own footnote 1 as "the highest pressure the sensor can withstand before
+sustaining permanent damage" — a destructive limit, not an operating rating, and deliberately
+EXCLUDED from `anticassiopeia/corpus/doc4_bar100xt_excerpt.txt` for exactly the reason Bar30's
+own excerpt excludes its destructive-adjacent figure (see §2 above): citing it as if it were a
+"rated" value would reintroduce the rated-vs-survives conflation this project's own fix
+addresses. The page also states plainly: "The BarXT sensor is not fully waterproof. The front
+side is sealed... but the back side... is not sealed." — not itself a depth-rating fact, but
+worth recording since it's real, stated, and easy to otherwise overclaim. Now sourced in
+`_SOURCES`/`_RETRIEVAL_QUERIES` as `DOC4_Bar100XT`, same trust tier (0.85) as Bar30's chip
+datasheet.
+
 ---
 
 ## 4. QuSpin QZFM Gen-3 (zero-field optically-pumped quantum magnetometer)
@@ -168,6 +188,22 @@ search scope as above (including duplicated slices and `API_Testings/`); only on
   zero-field magnetometry) in general knowledge outside this repo, but nothing in
   Constellation itself backs it with a checkable locator. Needs a real QuSpin datasheet
   pulled before `gather_evidence()` can cite it as evidence rather than assumption.
+
+**RESOLVED this session (2026-10-24), but NOT the way the hypothesis above expected:**
+fetched QuSpin's real, live official product page — https://quspin.com/qzfm-gen-3. It is a
+blog post ("Home / Blog / QZFM Gen-3", dated June 20, 2021), not a formal datasheet, and no
+PDF datasheet or spec sheet is linked from it anywhere. The WHOLE page was read, specifically
+checking for any pressure/depth/submersion/waterproof/sealed/IP-rating wording — **there is
+none.** It states sensitivity figures only ("7-12 fT/√Hz in single-axis mode... 10-15 fT/√Hz
+in dual-axis mode" for the dual-axis variant) and nothing else relevant. So the hypothesis
+above ("a QZFM Gen-3 has no pressure/submersion rating stated by QuSpin") is now CONFIRMED
+true, by a real, citable, checked source — but it is still not a NUMBER `robotics.py` can
+compare a claimed depth against; there is nothing to compare. This means a "QuSpin survives/
+fails N m" claim correctly stays UNDETERMINED for any N, same outcome as before this session,
+but for a different, now fully-sourced reason: `describe_gap()` cites the real page and date
+instead of saying a datasheet still needs to be pulled. No corpus file was added for QuSpin
+(there is no numeric fact to route through the retrieve→propose→verify pipeline) — the fix
+lives entirely in `RoboticsAdapter.describe_gap()`'s QuSpin branch.
 
 ---
 
@@ -249,5 +285,5 @@ it.
 |---|---|---|
 | BlueROV2 housing | Yes — two conflicting manufacturer revisions, both located | Yes, with the DOC1-vs-DOC2 conflict carried through rather than resolved silently |
 | Bar30 | Yes, with one flagged fake (canary) value excluded | Yes, for the operating-range fact; absolute-max fact flagged as not independently re-verified |
-| Bar100XT | No | No — hypothesis only, needs a real datasheet pulled |
-| QuSpin QZFM Gen-3 | No | No — hypothesis only, needs a real datasheet pulled |
+| Bar100XT | **Yes, as of 2026-10-24** — Blue Robotics' real official BarXT page | **Yes** — DOC4_Bar100XT, same pipeline as Bar30 |
+| QuSpin QZFM Gen-3 | **Yes, as of 2026-10-24** — but the real source states NO rating at all | No numeric comparison possible (nothing to compare) — but the UNDETERMINED gap is now a cited, checked fact, not an assumption |

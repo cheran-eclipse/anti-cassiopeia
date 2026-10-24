@@ -53,9 +53,16 @@ and sourced (see docs/extracted/constellation-robotics-seed.md for full
 provenance). The Bar30 excerpt deliberately omits Constellation's
 canary-altered overpressure line entirely, not just avoids citing it.
 
-Bar100XT and QuSpin QZFM Gen-3 still have no corpus — Constellation never
-sourced them (narrative-only). Unchanged from before: an honest, specific
-gap, not a guess.
+Bar100XT: now sourced (this session) from Blue Robotics' real, live BarXT
+product page — see doc4_bar100xt_excerpt.txt and
+docs/extracted/constellation-robotics-seed.md §3 for the fetch. QuSpin
+QZFM Gen-3 still has no numeric rating to source: QuSpin's own official
+product page (fetched live this session, see §4) states no pressure/
+depth/submersion rating anywhere at all, confirmed by reading the whole
+page — a real, citable NEGATIVE finding now, not just an unsourced
+narrative gap. Neither change invents a number; Bar100XT's figure is a
+real manufacturer-stated rating, and QuSpin's "no rating stated" is a
+real, checked absence.
 
 Stance is derived per claim, not fixed at authoring time: the claim's depth
 condition and polarity are read (see `_parse_condition`), the numeric spec is
@@ -106,6 +113,10 @@ _SOURCES: dict[str, tuple[str, float]] = {
     "DOC1_BlueROV2": ("doc1_bluerov2_excerpt.txt", 0.8),
     "DOC2_BlueROV2": ("doc2_bluerov2_excerpt.txt", 0.7),
     "DOC3_Bar30": ("doc3_bar30_excerpt.txt", 0.85),
+    # Official manufacturer product page (no separate PDF datasheet exists for
+    # this part — see doc4_bar100xt_excerpt.txt's header), same trust tier as
+    # Bar30's chip datasheet: both are the manufacturer's own stated rating.
+    "DOC4_Bar100XT": ("doc4_bar100xt_excerpt.txt", 0.85),
 }
 
 _SEAWATER_DENSITY = 1025.0  # kg/m^3
@@ -253,6 +264,15 @@ _RETRIEVAL_QUERIES: dict[str, dict[str, str]] = {
     "bar30": {
         "DOC3_Bar30": "operating pressure range bar",
     },
+    # Deliberately NOT the same literal query string as "bar30"'s below, even
+    # though both ask essentially the same question of a similarly-shaped
+    # source — see tests/test_domains_robotics.py's _FakeClient, whose
+    # substring-marker lookup can't disambiguate two docs sharing one exact
+    # query string. Still shares enough real tokens ("operating"/"pressure"/
+    # "bar") with doc4_bar100xt_excerpt.txt's actual text to BM25-match it.
+    "bar100xt": {
+        "DOC4_Bar100XT": "maximum operating pressure rating bar",
+    },
 }
 
 
@@ -289,10 +309,13 @@ class RoboticsAdapter(DomainAdapter):
         part = None
         if "bluerov2" in text or "blue rov" in text or "blue rov2" in text:
             part = "bluerov2"
+        elif "bar100xt" in text or "bar 100xt" in text or "bar100" in text or "bar 100" in text:
+            part = "bar100xt"
         elif "bar30" in text or "bar 30" in text:
             part = "bar30"
-        # Bar100XT / QuSpin: no corpus, no queries — falls through to [] below,
-        # same as before; describe_gap() names the reason specifically.
+        # QuSpin: no numeric rating exists to source (confirmed live against
+        # QuSpin's own official page — see describe_gap() below) — falls
+        # through to [] below; describe_gap() names the reason specifically.
 
         if part is None:
             return []
@@ -308,6 +331,19 @@ class RoboticsAdapter(DomainAdapter):
 
         evidence: list[Evidence] = []
         propose_errors: list[str] = []
+        # FOUND BUG (external review): a source that returned something --
+        # just an incomplete, ambiguous, or verification-rejected answer,
+        # not a clean `None` -- used to `continue` with no trace at all.
+        # Once any OTHER source alone produced enough evidence for a
+        # confident verdict, that silently-dropped source vanished
+        # completely; nothing in the final Verdict said it had even been
+        # consulted. Every `continue` below that is NOT the genuine,
+        # repeatedly-confirmed "fact absent" case now records WHY first,
+        # via `partial_gaps`, surfaced unconditionally through
+        # `describe_partial_gaps()` regardless of how confident the final
+        # verdict ends up being (see core/domain.py's docstring for that
+        # method and core/engine.py's unconditional call to it).
+        partial_gaps: list[str] = []
         for doc_id, retrieval_query in _RETRIEVAL_QUERIES[part].items():
             _filename, trust = _SOURCES[doc_id]
             index = self._indexes[doc_id]
@@ -317,6 +353,11 @@ class RoboticsAdapter(DomainAdapter):
             # why this is a question about the document, not the claim text.
             hits = index.search(retrieval_query, top_k=3)
             if not hits:
+                partial_gaps.append(
+                    f"{doc_id}: expected as a source for '{part}' but BM25 found no chunk "
+                    f"matching the retrieval query {retrieval_query!r} — the source may still "
+                    "contain the relevant fact, phrased in a way this query didn't surface."
+                )
                 continue  # no chunk even matched the query — no evidence from this doc
 
             # REAL propose step: the model sees only these retrieved chunks and
@@ -328,32 +369,60 @@ class RoboticsAdapter(DomainAdapter):
                 proposal = await _propose_with_retry(retrieval_query, hits, self._client)
             except (NebiusClientError, httpx.HTTPError) as exc:
                 propose_errors.append(f"{doc_id}: LLM propose call failed: {exc}")
+                partial_gaps.append(f"{doc_id}: LLM propose call failed: {exc}")
                 continue
             if proposal is None:
+                # Genuinely absent, confirmed across every retry attempt — a real,
+                # intentional outcome (see _propose_with_retry's docstring), but
+                # still worth one line of record that this expected source was
+                # checked and came back empty, not silently skipped.
+                partial_gaps.append(
+                    f"{doc_id}: checked, but the model reported no matching fact across "
+                    f"{_PROPOSE_RETRY_ATTEMPTS} independent attempts — treated as genuinely absent."
+                )
                 continue  # model honestly, and REPEATEDLY, reported the fact isn't in these passages
 
             # The numeric spec is read from the quote text and must match the proposer's
             # value; stance follows from comparing it with THIS claim's condition.
-            spec_depth, converted, _problem = _spec_depth_m(proposal.quote, proposal)
+            spec_depth, converted, problem = _spec_depth_m(proposal.quote, proposal)
             if spec_depth is None or proposal.kind != "rated":
+                reason = problem or f"proposal.kind={proposal.kind!r}, expected 'rated'"
+                partial_gaps.append(f"{doc_id}: got an answer, but it wasn't usable: {reason}.")
                 continue  # not a usable rated depth figure — no evidence from this doc
             stance = _derive_stance(spec_depth, converted, condition)
 
             result = verify_proposal(proposal, self._chunks_by_id[doc_id], source=doc_id, stance=stance, trust=trust)
             if result.accepted and result.evidence:
                 ev = result.evidence
+                # Explicit about which claim shape this actually checks (external
+                # review, "rated vs. survives" conflation): the adapter only ever
+                # has RATED-limit data, never an observed destructive-test result,
+                # regardless of whether the claim says "survives"/"fails" or "is
+                # rated for" — stated here so the verdict itself says this, not
+                # just a code comment a caller never sees.
                 note = (
-                    f" [rating ~{spec_depth:.0f} m depth-equivalent vs claimed {condition.depth_m:g} m: "
-                    f"{'survives' if condition.survives else 'fails'} claim -> {stance}]"
+                    f" [checked against the manufacturer's RATED limit (not an observed "
+                    f"destructive test): ~{spec_depth:.0f} m depth-equivalent rating vs "
+                    f"claimed {condition.depth_m:g} m "
+                    f"({'survives' if condition.survives else 'fails'} claim) -> {stance}]"
                 )
                 evidence.append(replace(ev, snippet=ev.snippet + note))
+            elif not result.accepted:
+                partial_gaps.append(f"{doc_id}: proposed quote failed independent verification against the source chunk.")
 
         self._last_propose_errors = propose_errors
+        self._last_partial_gaps = partial_gaps
         return evidence
+
+    def describe_partial_gaps(self, claim: Claim) -> list[str]:
+        return list(getattr(self, "_last_partial_gaps", []))
 
     @staticmethod
     def _is_known_part(text: str) -> bool:
-        return any(k in text for k in ("bluerov2", "blue rov", "bar30", "bar 30"))
+        return any(
+            k in text
+            for k in ("bluerov2", "blue rov", "bar100xt", "bar 100xt", "bar100", "bar 100", "bar30", "bar 30")
+        )
 
     def describe_gap(self, claim: Claim, evidence: list[Evidence]) -> list[str]:
         if evidence:
@@ -375,19 +444,16 @@ class RoboticsAdapter(DomainAdapter):
                     "Part is in the corpus and the depth condition parses fine, but the live "
                     "LLM propose call failed for every source doc: " + "; ".join(propose_errors)
                 ]
-        if "bar100" in text or "bar 100" in text:
-            return [
-                "Bar100XT is a known revision-target part with NO sourced datasheet evidence "
-                f"anywhere in Constellation — only a planning narrative ({_SEED_DOC} §3). "
-                "A real Blue Robotics datasheet needs to be pulled before this can resolve "
-                "past UNDETERMINED."
-            ]
         if "quspin" in text or "qzfm" in text:
             return [
-                "QuSpin QZFM Gen-3 is a known candidate sensor with NO sourced datasheet evidence "
-                f"anywhere in Constellation — only a planning narrative ({_SEED_DOC} §4). "
-                "A real QuSpin datasheet needs to be pulled before this can resolve past "
-                "UNDETERMINED."
+                "QuSpin QZFM Gen-3 has NO pressure/depth/submersion rating anywhere on QuSpin's "
+                "own official product page (confirmed live, 2026-10-24, "
+                "https://quspin.com/qzfm-gen-3 — the whole page was read; it states sensitivity "
+                "figures but never mentions pressure, depth, submersion, waterproofing, or an IP "
+                f"rating) — see {_SEED_DOC} §4. This is a real, checked absence, not an unsourced "
+                "gap, but it still means no numeric comparison is possible for ANY claimed depth: "
+                "there is nothing to compare against, so this stays UNDETERMINED regardless of "
+                "the depth asked about."
             ]
         return [
             f"No datasheet or spec-sheet evidence found for this part/assembly claim in "
