@@ -210,6 +210,24 @@ async def test_proposal_value_that_disagrees_with_its_own_quote_is_dropped():
     assert ev == []
 
 
+async def test_malformed_json_response_is_a_named_gap_not_a_crash():
+    """FOUND BUG (Nemotron pivot pilot runs, see
+    stress_test/results/NEMOTRON_PIVOT_REPORT.md): a live Nemotron Ultra call
+    returned a `quote` field containing a huge, malformed raw-text dump that
+    broke extract.py's JSON parsing, raising a ValueError that propagated
+    uncaught out of gather_evidence() in the pilot harness. Fixed by adding
+    ValueError to this adapter's propose-call except clause -- this test
+    reproduces the failure shape directly (not valid JSON after fence
+    stripping) without needing a live call."""
+    not_json = "this is not valid json at all {broken"
+    adapter = RoboticsAdapter(client=_FakeClient({"operating pressure range bar": not_json}))
+    claim = Claim(text="Bar30 survives 500 m depth", domain="robotics")
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "LLM propose call failed" in gap[0]
+
+
 async def test_no_api_key_is_a_named_gap_not_a_crash(monkeypatch):
     """NEBIUS_API_KEY missing entirely must surface as a specific, honest gap —
     never a constructor crash and never silently treated the same as

@@ -367,7 +367,14 @@ class RoboticsAdapter(DomainAdapter):
             # "not found" is not trusted any more than a single quote's content is.
             try:
                 proposal = await _propose_with_retry(retrieval_query, hits, self._client)
-            except (NebiusClientError, httpx.HTTPError) as exc:
+            except (NebiusClientError, httpx.HTTPError, ValueError) as exc:
+                # ValueError added after the Nemotron pivot's pilot runs surfaced one
+                # live: extract.py's _parse_response() raises ValueError on a response
+                # that isn't valid JSON after fence-stripping (observed against
+                # Nemotron Ultra, whose quote field came back containing a huge,
+                # malformed raw-wikitext dump that broke JSON parsing) -- an honest
+                # named gap, same as any other live-call failure, not an uncaught
+                # crash reaching the engine. See stress_test/results/NEMOTRON_PIVOT_REPORT.md.
                 propose_errors.append(f"{doc_id}: LLM propose call failed: {exc}")
                 partial_gaps.append(f"{doc_id}: LLM propose call failed: {exc}")
                 continue

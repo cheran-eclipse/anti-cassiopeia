@@ -79,6 +79,23 @@ a rotated key) — and the stale shell-exported value silently kept winning,
 producing a confusing live 401 even with a fresh, valid key sitting
 unread in `.env`. `load_dotenv(override=True)` below makes the file the
 source of truth, as it should be for a secret that's expected to rotate.
+
+FIXED BUG #3 (found during the Nemotron pivot's pilot runs, see
+stress_test/results/NEMOTRON_PIVOT_REPORT.md): `complete()` returned
+`data["choices"][0]["message"]["content"]` with no check that it was
+actually a usable string. A reasoning-capable model (observed live
+against both Nemotron Super and Ultra) can consume its ENTIRE token
+budget on hidden reasoning/thinking content, leaving the visible
+`content` field literally `null` in an otherwise well-formed 200
+response — `KeyError`/`IndexError` don't catch that (the key is
+present, its value just isn't usable), so every caller's
+`raw.strip()` (extract.py's `_parse_response`, research_web.py's
+`_judge_stance()`) crashed with `AttributeError: 'NoneType' object
+has no attribute 'strip'` instead of getting a named failure. Fixed
+here, once, at the source: a non-string `content` now raises
+`NebiusClientError` (same exception type every caller already
+catches as a live-call failure) instead of returning `None` for a
+caller to crash on.
 """
 
 from __future__ import annotations
@@ -138,6 +155,15 @@ class NebiusTokenFactoryClient:
 
         data = resp.json()
         try:
-            return data["choices"][0]["message"]["content"]
+            content = data["choices"][0]["message"]["content"]
         except (KeyError, IndexError) as exc:
             raise NebiusClientError(f"Unexpected response shape from Nebius: {data}") from exc
+        if not isinstance(content, str):
+            finish_reason = data["choices"][0].get("finish_reason")
+            raise NebiusClientError(
+                f"Nebius response had no usable content (got {content!r}, finish_reason="
+                f"{finish_reason!r}) — likely truncated by the token limit (a reasoning model "
+                f"can spend its whole budget on hidden thinking tokens before producing visible "
+                f"output) before the model finished responding: {data!r}"
+            )
+        return content

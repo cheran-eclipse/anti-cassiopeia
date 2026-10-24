@@ -713,7 +713,14 @@ class ResearchWebAdapter(DomainAdapter):
         for source_url, source_hits in list(hits_by_source.items())[:_MAX_SOURCES_TO_CHECK]:
             try:
                 proposal = await propose(model_question, source_hits, self._client)
-            except (NebiusClientError, httpx.HTTPError) as exc:
+            except (NebiusClientError, httpx.HTTPError, ValueError) as exc:
+                # ValueError added after the Nemotron pivot's pilot runs surfaced one
+                # live, against Nemotron Ultra: extract.py's _parse_response() raises
+                # ValueError when the model's response isn't valid JSON after
+                # fence-stripping (here: a `quote` field containing a huge, malformed
+                # raw-wikitext dump that broke JSON parsing) -- an honest named gap,
+                # not an uncaught crash reaching the engine. See
+                # stress_test/results/NEMOTRON_PIVOT_REPORT.md.
                 problems.append(f"{source_url}: LLM propose call failed: {exc}")
                 continue
             if proposal is None:

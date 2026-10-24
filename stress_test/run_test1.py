@@ -114,8 +114,21 @@ def classify(predicted: str, truth: str) -> str:
     return "other"
 
 
-async def build_engine(tracker: UsageTracker, budget_usd: float = BUDGET_HARD_STOP_USD) -> VerificationEngine:
-    client = InstrumentedNebiusClient(tracker, budget_usd=budget_usd)
+async def build_engine(
+    tracker: UsageTracker,
+    budget_usd: float = BUDGET_HARD_STOP_USD,
+    model: str | None = None,
+    input_cost_per_m: float | None = None,
+    output_cost_per_m: float | None = None,
+) -> VerificationEngine:
+    """`model`/`input_cost_per_m`/`output_cost_per_m` are optional passthroughs
+    to InstrumentedNebiusClient, added for the Nemotron pivot's side-by-side
+    comparison (stress_test/run_nemotron_pivot.py) — every existing caller
+    (run_test1/2/3.py) omits them and gets EXACTLY the original gpt-oss-120b
+    behavior, unchanged."""
+    client = InstrumentedNebiusClient(
+        tracker, budget_usd=budget_usd, model=model, input_cost_per_m=input_cost_per_m, output_cost_per_m=output_cost_per_m
+    )
     domains = {
         "ml_data": MLDataAdapter(),
         "fpga_embedded": FPGAEmbeddedAdapter(),
@@ -133,13 +146,21 @@ async def run_batch(
     bugs_path: Path = BUGS_PATH,
     tracker: UsageTracker | None = None,
     budget_usd: float = BUDGET_HARD_STOP_USD,
+    model: str | None = None,
+    input_cost_per_m: float | None = None,
+    output_cost_per_m: float | None = None,
 ) -> list[dict]:
     """Runs `claims` through the real production pipeline. Defaults reproduce
     Test #1's exact original behavior (own tracker, own budget, own output
     paths); Test #2's pipeline path reuses this unchanged, just passing a
-    shared tracker/budget and its own output paths — no logic duplicated."""
+    shared tracker/budget and its own output paths — no logic duplicated.
+    `model`/`input_cost_per_m`/`output_cost_per_m` are optional passthroughs
+    to build_engine(), added for the Nemotron pivot; every pre-existing
+    caller omits them and is unaffected."""
     tracker = tracker if tracker is not None else UsageTracker()
-    engine = await build_engine(tracker, budget_usd=budget_usd)
+    engine = await build_engine(
+        tracker, budget_usd=budget_usd, model=model, input_cost_per_m=input_cost_per_m, output_cost_per_m=output_cost_per_m
+    )
 
     raw_results_path.parent.mkdir(parents=True, exist_ok=True)
 

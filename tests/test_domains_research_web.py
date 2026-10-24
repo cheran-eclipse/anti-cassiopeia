@@ -639,6 +639,32 @@ async def test_multi_candidate_propose_failure_is_a_named_gap_not_a_crash():
     assert "401" in gap[0]
 
 
+async def test_multi_candidate_malformed_json_response_is_a_named_gap_not_a_crash():
+    """FOUND BUG (Nemotron pivot pilot runs, see
+    stress_test/results/NEMOTRON_PIVOT_REPORT.md): a live Nemotron Ultra call
+    against a real Wikipedia candidate returned a `quote` field containing a
+    huge, malformed raw-wikitext dump that broke extract.py's JSON parsing --
+    the resulting ValueError propagated uncaught out of gather_evidence() in
+    the pilot harness instead of becoming a named "propose call failed" gap
+    like every other live-call failure already does. Fixed by adding
+    ValueError to this adapter's propose-call except clause too (research_web.py
+    has its own, separate from robotics.py's) -- reproduces the failure shape
+    directly here, without a live call."""
+    with serve_fixtures() as base_url:
+
+        async def fake_search(_query: str, _max: int) -> list[str]:
+            return [f"{base_url}/stable_page.html"]
+
+        not_json = "this is not valid json at all {broken"
+        adapter = ResearchWebAdapter(client=_FakeClient(not_json), search=fake_search, block_private_networks=False)
+        claim = Claim(text="the reference pump is rated for a maximum operating pressure of 12 bar", domain="research_web")
+        ev = await adapter.gather_evidence(claim)
+
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "propose call failed" in gap[0]
+
+
 # --- live tests: require a real, working NEBIUS_API_KEY and real network access.
 # Skipped (not run) when the var is entirely unset; FAIL for real (not skip) if the
 # var is set but something's actually broken — same policy as robotics.py's live
