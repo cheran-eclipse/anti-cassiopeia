@@ -55,17 +55,25 @@ from __future__ import annotations
 
 import os
 import secrets
+import shutil
+import tempfile
 import threading
 import time
+from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, File, Header, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from anticassiopeia.api.upload_store import UploadStore
+from anticassiopeia.api.upload_store import StoredDocument, UploadStore
 from anticassiopeia.core import Claim, UnknownDomainError, VerificationEngine
+from anticassiopeia.core.compound import SubClaimResult, rollup
 from anticassiopeia.domains import default_domains
+# Reused, not reimplemented, for /verify/project's domain sniffing below --
+# same "one place, not two that could drift" reasoning retrieval/stance.py's
+# own docstring already states for a different extraction.
+from anticassiopeia.domains.fpga_embedded import _DESIGN_TIMING_SUMMARY_HEADER_RE, _SVD_DEVICE_TAG_RE
 from anticassiopeia.retrieval import DocumentIngestError, extract_text
 from anticassiopeia.retrieval.document_ingest import SUPPORTED_EXTENSIONS
 
@@ -107,7 +115,24 @@ app.add_middleware(
     allow_headers=["Content-Type", "X-API-Key"],
 )
 
-engine = VerificationEngine(domains=default_domains())
+_REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+
+#: v2 /verify/project: ml_data.py/fpga_embedded.py are path-based adapters
+#: (dataset_path/report_path), unlike robotics.py's text-based BYOE --
+#: deliberately NOT refactored to also accept raw text (that would touch
+#: already-hardened, heavily-tested file-reading/line-locator code in both
+#: adapters for no real benefit). Instead, /verify/project writes a
+#: resolved document's REAL extracted text out to a real file under THIS
+#: one fixed, server-owned directory (added to those two adapters'
+#: allowed_base_dirs via default_domains()'s extra_allowed_base_dirs
+#: param below) -- scoped to one request via a per-call tempfile.mkdtemp()
+#: subdirectory, deleted in a finally block right after that request's
+#: claims finish, so nothing here accumulates across requests the way
+#: upload_store's 24h-TTL in-memory text does.
+_PROJECT_SCRATCH_DIR = _REPO_ROOT / "var" / "project_scratch"
+_PROJECT_SCRATCH_DIR.mkdir(parents=True, exist_ok=True)
+
+engine = VerificationEngine(domains=default_domains(extra_allowed_base_dirs=[_PROJECT_SCRATCH_DIR]))
 upload_store = UploadStore()
 
 #: v2 master build prompt §3.1: generous enough for a real datasheet/
@@ -271,10 +296,62 @@ def _enforce_upload_rate_limit(api_key: str) -> None:
         raise HTTPException(status_code=429, detail="Rate limit exceeded for /upload. Try again shortly.")
 
 
+# v2 /verify/project: its OWN rate limit, stricter than /verify's -- one
+# project call can trigger SEVERAL underlying engine.verify() calls (one
+# per claim in the batch), each of which can itself be a live,
+# Nebius-budget-burning LLM call. Same separate-bucket reasoning as
+# /upload's limiter above.
+_PROJECT_RATE_LIMIT_PER_SECOND = 0.1  # one project call every 10s, sustained
+_PROJECT_RATE_LIMIT_BURST = 2
+_project_buckets: dict[str, _TokenBucket] = {}
+_project_buckets_lock = threading.RLock()
+#: Hard cap on claims per /verify/project call -- bounds both the live-LLM
+#: fan-out above and the number of scratch files one call can write, same
+#: "a limit should exist and be stated, not implicit" discipline as every
+#: other cap in this file.
+_MAX_CLAIMS_PER_PROJECT = 20
+
+
+def _project_bucket_for(client_key: str) -> _TokenBucket:
+    with _project_buckets_lock:
+        bucket = _project_buckets.get(client_key)
+        if bucket is None:
+            _make_room_for_one_more(_project_buckets)
+            bucket = _TokenBucket(_PROJECT_RATE_LIMIT_PER_SECOND, _PROJECT_RATE_LIMIT_BURST)
+            _project_buckets[client_key] = bucket
+        return bucket
+
+
+def _enforce_project_rate_limit(api_key: str) -> None:
+    if not _project_bucket_for(api_key).allow():
+        raise HTTPException(status_code=429, detail="Rate limit exceeded for /verify/project. Try again shortly.")
+
+
 class VerifyRequest(BaseModel):
     text: str
     domain: str
     context: dict = {}
+
+
+class ProjectClaimRequest(BaseModel):
+    """One claim inside a /verify/project batch. `domain`, unlike plain
+    /verify, is OPTIONAL: when a `document_id` is given, the domain is
+    deterministically sniffed from the uploaded document (see
+    _sniff_domain_for_document below) rather than asked of the caller --
+    the whole point of the project endpoint is routing a bundle of mixed
+    documents without the caller having to pre-sort them by domain. A
+    claim with no document_id and no explicit domain defaults to
+    research_web (free-text, no-file claims are exactly what that domain
+    is for -- see the v2 master build prompt's scenario #4/#5)."""
+
+    text: str
+    document_id: str | None = None
+    domain: str | None = None
+    context: dict = {}
+
+
+class ProjectVerifyRequest(BaseModel):
+    claims: list[ProjectClaimRequest]
 
 
 @app.get("/health")
@@ -375,3 +452,157 @@ async def upload(file: UploadFile = File(...), api_key: str = Depends(_require_a
 
     doc = upload_store.put(filename=filename, text=text, size_bytes=len(raw_bytes))
     return {"document_id": doc.document_id, "filename": doc.filename, "size_bytes": doc.size_bytes}
+
+
+def _extension_of(filename: str) -> str:
+    idx = filename.rfind(".")
+    return filename[idx:].lower() if idx != -1 else ""
+
+
+def _sniff_domain_for_document(doc: StoredDocument) -> str:
+    """v2 master build prompt §4: deterministic, code-based sniffing --
+    NEVER an LLM guess about what a file format "probably" is, since code
+    can already tell for certain. Dispatches on the uploaded filename's
+    extension (already validated once, at /upload time, against
+    document_ingest.SUPPORTED_EXTENSIONS) plus, for the one genuinely
+    ambiguous extension (.xml -- could be a real CMSIS-SVD register map OR
+    just a generic XML document), the same real root-tag check
+    fpga_embedded.py's own _is_svd_file() uses.
+
+    Returns "ml_data" | "fpga_embedded" | "robotics" -- robotics.py's BYOE
+    path is the catch-all for any supported text-like format that isn't
+    one of the two structured ones, per the master prompt's own wording
+    ("otherwise robotics' BYOE path")."""
+    ext = _extension_of(doc.filename)
+    if ext == ".csv":
+        return "ml_data"
+    if ext == ".svd":
+        return "fpga_embedded"
+    if ext == ".xml":
+        return "fpga_embedded" if _SVD_DEVICE_TAG_RE.search(doc.text[:4000]) else "robotics"
+    if ext == ".rpt":
+        return "fpga_embedded" if _DESIGN_TIMING_SUMMARY_HEADER_RE.search(doc.text) else "robotics"
+    return "robotics"  # .txt/.md/.pdf/.docx -- free text, no structured shape to sniff
+
+
+@app.post("/verify/project")
+async def verify_project(req: ProjectVerifyRequest, api_key: str = Depends(_require_api_key)) -> dict:
+    """v2 master build prompt §4: a bundle of claims, each optionally tied
+    to a previously /upload'd document, auto-routed to the right domain
+    and rolled up with core.compound's existing AND-semantics
+    rollup() -- the SAME pure function item 20's LLM-decomposition path
+    uses, just fed real per-claim Verdicts this endpoint already computed
+    instead of LLM-decomposed sub-claims (this endpoint never calls
+    decompose_claim() at all: the caller already told us the distinct
+    claims and which document each belongs to, so there is nothing left
+    to decompose).
+
+    DELIBERATELY NOT done here, stated plainly rather than silently
+    assumed: core.compound.DECOMPOSABLE_DOMAINS (item 20's OWN
+    LLM-decomposition restriction to robotics/research_web) is NOT
+    loosened to include ml_data/fpga_embedded by this endpoint's
+    existence. decompose_claim() splits ONE free-text claim via an LLM
+    call that never sees any uploaded document at all -- a real project
+    scratch path existing HERE, for THIS endpoint's own explicitly-named
+    documents, gives decompose_claim() no way to know which (if any)
+    uploaded file a sub-claim it invents would even correspond to.
+    Loosening that restriction would reintroduce exactly the
+    fabricated-file-path risk item 20 was built to close. If a future
+    round wants an LLM to decompose a claim AND route parts to ml_data/
+    fpga_embedded, it needs its own explicit per-part document binding,
+    not a relaxed domain set on the existing LLM-decomposition path.
+    """
+    _enforce_project_rate_limit(api_key)
+
+    if not req.claims:
+        raise HTTPException(status_code=400, detail="'claims' must be a non-empty list.")
+    if len(req.claims) > _MAX_CLAIMS_PER_PROJECT:
+        raise HTTPException(
+            status_code=400,
+            detail=f"'claims' has {len(req.claims)} entries; at most {_MAX_CLAIMS_PER_PROJECT} per /verify/project call.",
+        )
+
+    scratch_dir = Path(tempfile.mkdtemp(dir=_PROJECT_SCRATCH_DIR))
+    try:
+        results: list[dict] = []
+        sub_results: list[SubClaimResult] = []
+        for claim_req in req.claims:
+            result = await _run_one_project_claim(claim_req, scratch_dir)
+            results.append(result)
+            sub_results.append(
+                SubClaimResult(
+                    text=claim_req.text,
+                    domain=result["domain"] or "unsupported",
+                    verdict=result["verdict_obj"],
+                )
+            )
+    finally:
+        shutil.rmtree(scratch_dir, ignore_errors=True)
+
+    state, confidence, reasoning = rollup(sub_results)
+    return {
+        "claims": [{k: v for k, v in r.items() if k != "verdict_obj"} for r in results],
+        "rollup": {"state": state.value, "confidence": confidence, "reasoning": reasoning},
+    }
+
+
+async def _run_one_project_claim(claim_req: ProjectClaimRequest, scratch_dir: Path) -> dict:
+    """Runs one claim of a /verify/project batch to completion (or to a
+    named, honest per-claim error) -- NEVER raises; a problem with one
+    claim (bad document_id, nothing routable, a bad file for its sniffed
+    domain) must not abort the other claims in the same batch, same
+    "one false part falsifies the whole AND, but a different kind of
+    problem must still be visible" principle core.compound.rollup()
+    itself already documents."""
+    base_result = {"text": claim_req.text, "document_id": claim_req.document_id, "domain": None, "verdict_obj": None, "verdict": None, "error": None}
+
+    context = dict(claim_req.context)
+    domain = claim_req.domain
+
+    if claim_req.document_id is not None:
+        doc = upload_store.get(claim_req.document_id)
+        if doc is None:
+            return {**base_result, "error": f"Unknown or expired document_id: {claim_req.document_id!r}."}
+        if domain is None:
+            domain = _sniff_domain_for_document(doc)
+
+        if domain == "robotics":
+            context["document_text"] = doc.text
+            context.setdefault("document_filename", doc.filename)
+        elif domain in ("ml_data", "fpga_embedded"):
+            # write the REAL extracted text to a REAL file under this
+            # request's own scratch subdirectory (already in both adapters'
+            # allowed_base_dirs -- see default_domains()'s
+            # extra_allowed_base_dirs), then point the existing, unmodified
+            # path-based context field at it. The caller still supplies
+            # every structured field those adapters actually need (column/
+            # stat/expected_value, or peripheral/metric/comparator/
+            # expected_value) via claim_req.context -- this endpoint
+            # fabricates NOTHING, it only auto-fills the one field it
+            # legitimately knows: which real file this document_id
+            # corresponds to.
+            scratch_path = scratch_dir / f"{claim_req.document_id}{_extension_of(doc.filename) or '.txt'}"
+            scratch_path.write_text(doc.text)
+            key = "dataset_path" if domain == "ml_data" else "report_path"
+            context[key] = str(scratch_path)
+        else:
+            # A document tied to a domain that has no defined way to consume
+            # one (research_web's two modes are URL-fetch or live search,
+            # neither of which is "here is a document's already-extracted
+            # text") -- an honest, named per-claim error, not a silently
+            # ignored document or a meaningless context key.
+            return {
+                **base_result,
+                "domain": domain,
+                "error": f"domain {domain!r} does not support a document_id-linked claim in this endpoint.",
+            }
+    elif domain is None:
+        domain = "research_web"  # no document, no explicit domain -- free-text default (see model docstring)
+
+    claim = Claim(text=claim_req.text, domain=domain, context=context)
+    try:
+        verdict = await engine.verify(claim)
+    except UnknownDomainError as exc:
+        return {**base_result, "domain": domain, "error": str(exc)}
+
+    return {**base_result, "domain": domain, "verdict_obj": verdict, "verdict": verdict.to_dict()}

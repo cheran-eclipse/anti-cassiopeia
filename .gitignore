@@ -11,3 +11,7 @@ build/
 .DS_Store
 stress_test/data/
 *.zip
+# v2 /verify/project's per-request scratch files (see server.py's
+# _PROJECT_SCRATCH_DIR) -- created at runtime, deleted per-request, never
+# meant to be committed.
+/var/
