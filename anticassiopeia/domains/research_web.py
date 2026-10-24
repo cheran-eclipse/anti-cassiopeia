@@ -20,7 +20,7 @@ TWO modes, selected by `Claim.context`:
    Chunks from ALL successfully fetched candidate pages are pooled into one
    combined BM25 index (there's no "the right doc" to pick ahead of time
    here, unlike robotics' per-part corpus), but the resulting hits are then
-   GROUPED BY SOURCE PAGE — propose()/verify()/_judge_stance() run once per
+   GROUPED BY SOURCE PAGE — propose()/verify()/judge_stance() run once per
    distinct source (up to `_MAX_SOURCES_TO_CHECK`), so a claim can collect
    independent Evidence from SEVERAL real sources, not just the single
    best-ranked chunk. This is what makes "multi-candidate" actually mean
@@ -72,18 +72,20 @@ TWO modes, selected by `Claim.context`:
    If Tavily AND both fallback backends return nothing, that's an honest
    "no live candidates" gap — not a crash, not a silent zero-evidence shrug.
 
-   Stance (supports/contradicts) for mode 2 is decided by `_judge_stance()`,
-   a BOUNDED LLM judgment call on a quote that's ALREADY been independently,
-   mechanically confirmed to exist verbatim on a real page — this never runs
-   on an unverified claim, so it isn't a new source of fabrication risk.
-   Two purely mechanical alternatives were tried FIRST and both failed on
-   real live tests: a strict substring check broke on real paraphrasing
-   (a true claim's confirming sentence had extra clauses that broke
-   containment); a token-overlap ratio broke the other way (a FALSE claim
-   scored "supports" because common words dominated the ratio while the one
-   word that actually mattered was noise). See `_judge_stance()`'s own
-   comment for both failures in detail — they're why this ended up as a
-   bounded model judgment instead of a formula.
+   Stance (supports/contradicts) for mode 2 is decided by
+   `retrieval.stance.judge_stance()` (shared with robotics.py's BYOE path,
+   see that module), a BOUNDED LLM judgment call on a quote that's ALREADY
+   been independently, mechanically confirmed to exist verbatim on a real
+   page — this never runs on an unverified claim, so it isn't a new source
+   of fabrication risk. Two purely mechanical alternatives were tried FIRST
+   and both failed on real live tests: a strict substring check broke on
+   real paraphrasing (a true claim's confirming sentence had extra clauses
+   that broke containment); a token-overlap ratio broke the other way (a
+   FALSE claim scored "supports" because common words dominated the ratio
+   while the one word that actually mattered was noise). See
+   `retrieval/stance.py`'s own comment for both failures in detail —
+   they're why this ended up as a bounded model judgment instead of a
+   formula.
 
 The HTML-to-text extraction (`_strip_html`) is a plain regex tag-stripper,
 not a real HTML parser — it will mis-handle `<script>`/`<style>` content
@@ -178,6 +180,7 @@ from anticassiopeia.llm.nebius_client import NebiusClientError, NebiusTokenFacto
 from anticassiopeia.retrieval import BM25Index, Chunk, ScoredChunk, chunk_document, verify_proposal
 from anticassiopeia.retrieval.bm25 import tokenize
 from anticassiopeia.retrieval.extract import propose
+from anticassiopeia.retrieval.stance import judge_stance
 
 _TAG_RE = re.compile(r"<[^>]+>")
 _WS_RE = re.compile(r"\s+")
@@ -824,7 +827,7 @@ class ResearchWebAdapter(DomainAdapter):
                 continue
 
             try:
-                stance = await _judge_stance(self._client, claim.text, proposal.quote)
+                stance = await judge_stance(self._client, claim.text, proposal.quote)
             except (NebiusClientError, httpx.HTTPError) as exc:
                 problems.append(f"{source_url}: stance-judging call failed: {exc}")
                 continue
@@ -880,59 +883,13 @@ class ResearchWebAdapter(DomainAdapter):
         return None
 
 
-# Decides supports/contradicts/unrelated for an ALREADY-mechanically-verified
-# quote (verify_proposal() has already confirmed it's real, verbatim text from
-# a real fetched page — this never runs on an unverified claim). Two mechanical
-# approaches were tried first and both failed on real live tests, not
-# hypothetically:
-#   1. Strict substring check: broke on a true claim whose real confirming
-#      sentence had extra clauses ("(ROV)", "the American marine robotics
-#      company") — substring containment doesn't survive real paraphrasing.
-#   2. Token-overlap ratio: broke the OTHER way — "BlueROV2 was developed by
-#      OpenROV" (false) scored "supports" against the real "...developed by
-#      ...Blue Robotics" sentence, because common words ("bluerov2",
-#      "developed", "by") dominated the overlap score while the one word that
-#      actually matters (OpenROV vs Blue Robotics) was just noise in the ratio.
-# A bounded LLM judgment on the already-verified pair is what's actually used
-# below — the fabrication risk this project exists to catch (an unverified
-# quote) stays fully mechanical; only "do these two verified texts agree" is
-# the model's job, which is what it's actually good at.
-_STANCE_SYSTEM_PROMPT = """You will be given a CLAIM and a PASSAGE. The passage has already been \
-independently confirmed to be real, verbatim text from a live web page — your only job is to decide \
-how it relates to the claim's SPECIFIC assertion, not just whether they share a general topic.
-
-FOUND BUG (external review, live, during the Nemotron pivot's pilot runs — not hypothetical): a
-passage about the ESP32-S31 ("Espressif Systems has officially started mass production of its new
-ESP32-S31 wireless microcontroller") was judged "supports" for a claim about the plain ESP32 — a
-DIFFERENT, newer chip that merely shares most of its name. This produced a false tie against a
-correct "contradicts" from a real source, pulling a verdict to UNDETERMINED that should have been a
-clean CONTRADICTED. FIRST check whether the passage is actually about the SAME specific entity the
-claim names — a product, model, version, or variant can share most of a name with a different one \
-(ESP32 vs ESP32-S31; "iPhone 15" vs "iPhone 15 Pro") while being a genuinely different thing with its \
-own facts. A passage about a DIFFERENT specific entity than the one the claim names is "unrelated", \
-even if it uses similar or identical wording about that different entity, and even if it would \
-otherwise seem to support or contradict the claim's general shape — do not let topical similarity \
-substitute for actually checking the subject is the same one the claim names.
-
-Reply with EXACTLY one word, nothing else:
-supports — the passage confirms the claim's specific assertion is true, about the SAME entity the \
-claim names
-contradicts — the passage states something that conflicts with the claim's specific assertion \
-(e.g. a different name, number, date, or entity for the same question), about the SAME entity the \
-claim names
-unrelated — the passage is on the same general topic but does not actually address this specific \
-assertion either way, OR is about a different specific entity than the one the claim names"""
-
-
-async def _judge_stance(client: NebiusTokenFactoryClient, claim_text: str, verified_quote: str) -> str:
-    prompt = f"CLAIM: {claim_text}\n\nPASSAGE: {verified_quote}"
-    raw = await client.complete(prompt, system=_STANCE_SYSTEM_PROMPT, temperature=0.0)
-    word = raw.strip().lower()
-    if "contradict" in word:
-        return "contradicts"
-    if "support" in word:
-        return "supports"
-    return "unrelated"
+# Stance judgment (supports/contradicts/unrelated for an ALREADY-mechanically-
+# verified quote) moved to retrieval/stance.py (2026-10-25, v2 build) so
+# domains/robotics.py's new free-text BYOE path can use the exact same
+# judgment logic instead of a second hand-copied prompt. See that module's
+# docstring for the two mechanical approaches that were tried here first and
+# both failed on real live tests (substring check, token-overlap ratio), and
+# for the ESP32/ESP32-S31 FOUND BUG that shaped the current prompt.
 
 
 #: Jaccard token-overlap threshold above which two accepted Evidence quotes

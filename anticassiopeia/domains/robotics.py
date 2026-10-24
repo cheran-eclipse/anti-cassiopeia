@@ -91,6 +91,21 @@ Anything outside that grammar (negated verbs like "does not fail", other
 units, no depth at all) is NOT guessed at: it returns no evidence and
 describe_gap() names exactly what is missing.
 
+v2 BYOE ("bring your own evidence"): if Claim.context["document_text"] is
+present (set by api/server.py's /verify handler, which resolves a caller-
+supplied "document_id" through api/upload_store.UploadStore BEFORE this
+adapter ever runs — this module never imports the upload store itself,
+keeping the domain/api layering clean), it TAKES OVER ENTIRELY for that
+request: the fixed corpus and the depth-specific regex/bar-conversion
+parser above are not consulted at all, even if depth_m/polarity are also
+present. An uploaded document can be about anything, not just a rated
+depth — see `_gather_byoe()` for the general free-text retrieve->propose->
+verify->judge_stance pipeline this runs instead (the same shape
+research_web.py's multi-candidate mode uses, minus the "search the live
+web" step, since the caller already named the one document to check).
+When document_text is absent, behavior is byte-for-byte the pre-v2 fixed-
+corpus path below — no regression for existing callers.
+
 Semantics, stated plainly: the sourced facts are RATINGS. "survives N m"
 means N m is within the part's rated limit; "fails at N m" means N m exceeds
 it. A rating is not a destructive test, so "fails" here means "beyond rated
@@ -115,7 +130,7 @@ import httpx
 from anticassiopeia.core.domain import DomainAdapter
 from anticassiopeia.core.verdict import Claim, Evidence
 from anticassiopeia.llm.nebius_client import NebiusClientError, NebiusTokenFactoryClient
-from anticassiopeia.retrieval import BM25Index, Proposal, ScoredChunk, chunk_document, verify_proposal
+from anticassiopeia.retrieval import BM25Index, Proposal, ScoredChunk, chunk_document, judge_stance, verify_proposal
 from anticassiopeia.retrieval.extract import propose
 
 _CORPUS_DIR = Path(__file__).parent.parent / "corpus"
@@ -153,6 +168,19 @@ _BAR_TO_PA = 1e5
 #: A bar-derived depth within this fraction of the claimed depth is too close to call
 #: given the gauge/absolute ambiguity — recorded as neutral, not guessed.
 _CONVERSION_MARGIN = 0.05
+
+#: v2 BYOE: how many BM25-retrieved chunks of the uploaded document are shown
+#: to the model in one propose() call -- same order of magnitude as the
+#: fixed-corpus path's `top_k=3` per doc, a little higher since a BYOE upload
+#: is one unstructured document rather than a hand-curated excerpt, so the
+#: fact might be phrased further from the claim's own wording.
+_BYOE_TOP_K = 5
+#: Trust for BYOE evidence: same tier as research_web.py's live-fetched-page
+#: evidence (0.75) -- a caller-supplied document is "a real source, mechanically
+#: verified", the same epistemic status as a live-fetched web page, not the
+#: higher 0.8/0.85 given to this project's own hand-curated, provenance-checked
+#: corpus docs (see _SOURCES above) nor a blind trust-anything value.
+_BYOE_TRUST = 0.75
 
 _SPEC_RE = re.compile(r"(\d+(?:\.\d+)?)\s*(m|bar)\b", re.IGNORECASE)
 
@@ -345,6 +373,21 @@ class RoboticsAdapter(DomainAdapter):
                 self._client_error = str(exc)
 
     async def gather_evidence(self, claim: Claim) -> list[Evidence]:
+        # v2 "bring your own evidence": a resolved document_id/document_text
+        # on the claim's context (server.py resolves document_id -> text via
+        # UploadStore BEFORE this adapter ever sees it -- see that module's
+        # docstring; this adapter never imports UploadStore itself) takes
+        # over ENTIRELY for this request. Deliberately does NOT fall through
+        # to the fixed-corpus/depth-condition path below even if depth_m/
+        # polarity are also present in context -- see this module's own
+        # docstring and the v2 master build prompt: an uploaded document
+        # could be about anything, so BYOE mode never forces the claim
+        # through the depth-specific regex/bar-to-metre parser, which was
+        # built narrowly for the 4 known corpus parts.
+        document_text = claim.context.get("document_text")
+        if document_text:
+            return await self._gather_byoe(claim, document_text)
+
         text = claim.text.lower()
         part = None
         if "bluerov2" in text or "blue rov" in text or "blue rov2" in text:
@@ -461,6 +504,82 @@ class RoboticsAdapter(DomainAdapter):
         _partial_gaps_var.set(partial_gaps)
         return evidence
 
+    # v2 "bring your own evidence": a one-off BM25 index over the uploaded
+    # document's text, same shape as research_web.py's _gather_multi_candidate
+    # (chunk -> BM25 search -> propose -> verify -> judge_stance) but with the
+    # "search the live web for candidate pages" step removed entirely -- there
+    # IS no candidate selection here, the caller already told us exactly which
+    # document to check against by uploading it. Unlike research_web's
+    # multi-source loop, there is only ever ONE source for this call, so this
+    # makes exactly one propose() call (retried on genuine absence, same
+    # _propose_with_retry used by the fixed-corpus path above -- the "model
+    # reports absent ~1 in 10 times on a genuinely-present fact" bug this
+    # guards against is about live model behavior, not specific to the corpus
+    # docs it was first found on).
+    async def _gather_byoe(self, claim: Claim, document_text: str) -> list[Evidence]:
+        partial_gaps: list[str] = []
+        filename = claim.context.get("document_filename") or "uploaded document"
+
+        if self._client is None:
+            partial_gaps.append(f"LLM propose step can't run: {self._client_error}")
+            _partial_gaps_var.set(partial_gaps)
+            return []
+
+        chunks = chunk_document("uploaded", document_text, chunk_size=300, overlap=50)
+        chunks_by_id = {c.chunk_id: c for c in chunks}
+        index = BM25Index(chunks)
+        hits = index.search(claim.text, top_k=_BYOE_TOP_K)
+        if not hits:
+            partial_gaps.append(
+                f"'{filename}': BM25 found no passage matching this claim's terms at all "
+                "(zero keyword overlap) — the document may still be relevant, phrased in a "
+                "way this search didn't surface."
+            )
+            _partial_gaps_var.set(partial_gaps)
+            return []
+
+        # Phrased exactly like research_web.py's model_question (same reasoning:
+        # a real document doesn't restate the claim being checked, it states
+        # facts -- asking for "the actual relevant fact, even if it conflicts"
+        # surfaces a genuine contradiction instead of a false "not found").
+        model_question = (
+            f"{claim.text} -- quote the passage that states the actual relevant fact, "
+            "even if it states a different value than this claim asserts."
+        )
+        try:
+            proposal = await _propose_with_retry(model_question, hits, self._client)
+        except (NebiusClientError, httpx.HTTPError, ValueError) as exc:
+            partial_gaps.append(f"'{filename}': LLM propose call failed: {exc}")
+            _partial_gaps_var.set(partial_gaps)
+            return []
+        if proposal is None:
+            partial_gaps.append(
+                f"'{filename}': checked, but the model reported no matching fact across "
+                f"{_PROPOSE_RETRY_ATTEMPTS} independent attempts — treated as genuinely absent."
+            )
+            _partial_gaps_var.set(partial_gaps)
+            return []
+
+        result = verify_proposal(proposal, chunks_by_id, source=filename, stance="supports", trust=_BYOE_TRUST)
+        if not result.accepted or result.evidence is None:
+            partial_gaps.append(f"'{filename}': proposed quote failed independent verification ({result.reason}).")
+            _partial_gaps_var.set(partial_gaps)
+            return []
+
+        try:
+            stance = await judge_stance(self._client, claim.text, proposal.quote)
+        except (NebiusClientError, httpx.HTTPError) as exc:
+            partial_gaps.append(f"'{filename}': stance-judging call failed: {exc}")
+            _partial_gaps_var.set(partial_gaps)
+            return []
+        if stance == "unrelated":
+            partial_gaps.append(f"'{filename}': real verified quote found, but doesn't address this specific claim.")
+            _partial_gaps_var.set(partial_gaps)
+            return []
+
+        _partial_gaps_var.set(partial_gaps)
+        return [replace(result.evidence, stance=stance)]
+
     def describe_partial_gaps(self, claim: Claim) -> list[str]:
         return list(_partial_gaps_var.get())
 
@@ -474,6 +593,16 @@ class RoboticsAdapter(DomainAdapter):
     def describe_gap(self, claim: Claim, evidence: list[Evidence]) -> list[str]:
         if evidence:
             return super().describe_gap(claim, evidence)
+
+        if claim.context.get("document_text"):
+            gaps = _partial_gaps_var.get()
+            if gaps:
+                return gaps
+            return [
+                "No passage in the uploaded document matched this claim, after independent "
+                "verification. A plausible-sounding citation is not evidence until it's "
+                "actually retrieved."
+            ]
 
         text = claim.text.lower()
         if self._is_known_part(text):

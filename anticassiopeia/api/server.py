@@ -297,12 +297,41 @@ async def domains() -> dict:
 @app.post("/verify")
 async def verify(req: VerifyRequest, api_key: str = Depends(_require_api_key)) -> dict:
     _enforce_rate_limit(api_key)
-    claim = Claim(text=req.text, domain=req.domain, context=req.context)
+    context = _resolve_document_context(req.context)
+    claim = Claim(text=req.text, domain=req.domain, context=context)
     try:
         verdict = await engine.verify(claim)
     except UnknownDomainError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return verdict.to_dict()
+
+
+def _resolve_document_context(context: dict) -> dict:
+    """v2 master build prompt §3.2: if the caller's context names a
+    document_id (from a prior /upload), resolve it to the real extracted
+    text HERE, in the API layer, before any domain adapter ever sees the
+    claim -- robotics.py's BYOE path only ever reads context["document_text"]/
+    context["document_filename"], never document_id or the upload store
+    itself (see robotics.py's own docstring for why that layering is kept
+    clean). An unknown or expired document_id is a clean, explicit 400 --
+    NOT a silent fall-through to the fixed-corpus behavior a caller who
+    explicitly asked to check against their own document would never want
+    and would have no way to notice happened.
+
+    `context` is a plain dict here (Pydantic already validated VerifyRequest.
+    context as `dict`), so a non-string document_id (an int, a list, ...)
+    simply never matches anything in the store and resolves to the same
+    clean 400 below -- no separate type check needed."""
+    document_id = context.get("document_id")
+    if document_id is None:
+        return context
+    doc = upload_store.get(document_id) if isinstance(document_id, str) else None
+    if doc is None:
+        raise HTTPException(status_code=400, detail=f"Unknown or expired document_id: {document_id!r}.")
+    resolved = dict(context)
+    resolved["document_text"] = doc.text
+    resolved.setdefault("document_filename", doc.filename)
+    return resolved
 
 
 @app.post("/upload")
