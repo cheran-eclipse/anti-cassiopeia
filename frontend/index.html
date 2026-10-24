@@ -1,0 +1,1030 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Anti-Cassiopeia — Fact-Verification Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0a0c;
+    --bg-elevated: #121216;
+    --bg-elevated-2: #17171c;
+    --border: rgba(255,255,255,0.08);
+    --border-strong: rgba(255,255,255,0.14);
+    --text: #e8e8ee;
+    --text-muted: #9a9aa8;
+    --text-faint: #6b6b78;
+    --violet: #7c7ff2;
+    --violet-dim: #6366f1;
+    --violet-glow: rgba(124,127,242,0.35);
+    --lime: #c3f53a;
+    --lime-dim: #a8f22e;
+    --red: #e8534f;
+    --red-soft: #f0625f;
+    --amber: #e8b84a;
+    --amber-soft: #f0c75a;
+    --radius: 10px;
+    --mono: 'JetBrains Mono', ui-monospace, 'IBM Plex Mono', monospace;
+    --sans: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    min-height: 100vh;
+    padding: 24px 16px 64px;
+  }
+
+  .wrap {
+    max-width: 880px;
+    margin: 0 auto;
+  }
+
+  /* ---------- header ---------- */
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+
+  .brand h1 {
+    margin: 0;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--violet);
+    letter-spacing: -0.02em;
+  }
+
+  .brand .subtitle {
+    margin: 4px 0 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-family: var(--mono);
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-elevated);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--text-faint);
+    flex-shrink: 0;
+  }
+  .dot.ok { background: var(--lime-dim); box-shadow: 0 0 6px var(--lime-dim); }
+  .dot.bad { background: var(--red); box-shadow: 0 0 6px var(--red); }
+  .dot.pending { background: var(--amber); animation: pulse 1.2s ease-in-out infinite; }
+
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+
+  /* ---------- cards / sections ---------- */
+
+  .card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 18px;
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-faint);
+    margin: 0 0 10px;
+  }
+
+  /* ---------- presets ---------- */
+
+  .presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .preset-pill {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--violet);
+    background: rgba(124,127,242,0.08);
+    border: 1px solid rgba(124,127,242,0.3);
+    border-radius: 999px;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    max-width: 100%;
+    text-align: left;
+  }
+  .preset-pill:hover {
+    background: rgba(124,127,242,0.16);
+    border-color: var(--violet);
+  }
+  .preset-pill .domain-tag {
+    color: var(--text-faint);
+    margin-left: 6px;
+  }
+
+  /* ---------- form controls ---------- */
+
+  label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  .field-note {
+    font-size: 0.72rem;
+    color: var(--text-faint);
+    margin-top: 6px;
+    font-family: var(--mono);
+  }
+
+  input[type="password"], select, textarea {
+    width: 100%;
+    background: var(--bg-elevated-2);
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    font-family: var(--sans);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  input[type="password"]:focus, select:focus, textarea:focus {
+    border-color: var(--violet);
+    box-shadow: 0 0 0 3px var(--violet-glow);
+  }
+
+  .prompt-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background: var(--bg-elevated-2);
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    padding: 10px 12px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .prompt-row:focus-within {
+    border-color: var(--violet);
+    box-shadow: 0 0 0 3px var(--violet-glow);
+  }
+
+  .prompt-glyph {
+    color: var(--violet);
+    font-family: var(--mono);
+    font-weight: 600;
+    padding-top: 2px;
+    user-select: none;
+  }
+
+  .prompt-row textarea {
+    border: none;
+    background: transparent;
+    padding: 0;
+    resize: vertical;
+    min-height: 44px;
+    font-family: var(--mono);
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+  .prompt-row textarea:focus { box-shadow: none; }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 200px;
+    gap: 12px;
+    margin-top: 12px;
+  }
+  @media (max-width: 560px) {
+    .form-grid { grid-template-columns: 1fr; }
+  }
+
+  .implemented-badge {
+    color: var(--amber);
+  }
+
+  button.run-btn {
+    appearance: none;
+    border: none;
+    border-radius: 8px;
+    background: var(--violet-dim);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 11px 16px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    font-family: var(--sans);
+  }
+  button.run-btn:hover:not(:disabled) { background: var(--violet); }
+  button.run-btn:active:not(:disabled) { transform: scale(0.98); }
+  button.run-btn:disabled {
+    background: var(--bg-elevated-2);
+    color: var(--text-faint);
+    cursor: not-allowed;
+    border: 1px solid var(--border);
+  }
+
+  .run-row { margin-top: 14px; display: flex; align-items: center; gap: 12px; }
+
+  .spinner {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--border-strong);
+    border-top-color: var(--violet);
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+  .spinner.show { display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---------- verdict card ---------- */
+
+  .verdict-card {
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 18px;
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+  }
+  .verdict-card.confirmed { border-color: rgba(195,245,58,0.35); background: linear-gradient(180deg, rgba(195,245,58,0.07), var(--bg-elevated) 60%); }
+  .verdict-card.contradicted { border-color: rgba(232,83,79,0.35); background: linear-gradient(180deg, rgba(232,83,79,0.08), var(--bg-elevated) 60%); }
+  .verdict-card.undetermined { border-color: rgba(232,184,74,0.35); background: linear-gradient(180deg, rgba(232,184,74,0.08), var(--bg-elevated) 60%); }
+
+  .verdict-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .verdict-claim-text {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0 0 10px;
+    word-break: break-word;
+  }
+
+  .verdict-state {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  .verdict-state.confirmed { color: var(--lime-dim); }
+  .verdict-state.contradicted { color: var(--red-soft); }
+  .verdict-state.undetermined { color: var(--amber-soft); }
+
+  .verdict-meta {
+    display: flex;
+    gap: 18px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+  .verdict-meta b { color: var(--text); font-weight: 600; }
+
+  /* ---------- missing callout ---------- */
+
+  .missing-callout {
+    border: 1px solid rgba(232,184,74,0.4);
+    background: rgba(232,184,74,0.08);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 18px;
+  }
+  .missing-callout h3 {
+    margin: 0 0 8px;
+    color: var(--amber-soft);
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .missing-callout ul {
+    margin: 0;
+    padding-left: 20px;
+    color: var(--text);
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+
+  /* ---------- evidence ---------- */
+
+  .evidence-item {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elevated-2);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+
+  .evidence-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+
+  .stance-pill {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+  .stance-supports { background: rgba(195,245,58,0.14); color: var(--lime-dim); }
+  .stance-contradicts { background: rgba(232,83,79,0.14); color: var(--red-soft); }
+  .stance-neutral { background: rgba(255,255,255,0.08); color: var(--text-muted); }
+  .stance-contested { background: rgba(232,184,74,0.14); color: var(--amber-soft); }
+
+  .evidence-source {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    color: var(--violet);
+    word-break: break-all;
+    text-decoration: none;
+  }
+  .evidence-source:hover { text-decoration: underline; }
+
+  .evidence-snippet {
+    font-family: var(--mono);
+    font-size: 0.84rem;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin: 8px 0;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .evidence-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+  }
+
+  .evidence-locator {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--text-faint);
+  }
+
+  .trust-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--text-faint);
+  }
+  .trust-bar {
+    width: 56px;
+    height: 5px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.08);
+    overflow: hidden;
+  }
+  .trust-bar-fill {
+    height: 100%;
+    background: var(--violet);
+  }
+
+  .evidence-timestamp {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--text-faint);
+  }
+
+  /* ---------- reasoning ---------- */
+
+  details.reasoning-block {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elevated);
+    padding: 0;
+    margin-bottom: 18px;
+    overflow: hidden;
+  }
+  details.reasoning-block summary {
+    cursor: pointer;
+    padding: 14px 18px;
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    list-style: none;
+    user-select: none;
+  }
+  details.reasoning-block summary::-webkit-details-marker { display: none; }
+  details.reasoning-block summary::before {
+    content: "▸ ";
+    color: var(--violet);
+  }
+  details.reasoning-block[open] summary::before {
+    content: "▾ ";
+  }
+  .reasoning-lines {
+    padding: 0 18px 16px;
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    color: var(--text);
+    line-height: 1.7;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+  }
+  .reasoning-lines div { margin-bottom: 4px; }
+  .reasoning-lines div::before { content: "$ "; color: var(--text-faint); }
+
+  /* ---------- errors ---------- */
+
+  .error-banner {
+    border: 1px solid rgba(232,83,79,0.4);
+    background: rgba(232,83,79,0.1);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .error-banner p {
+    margin: 0;
+    font-size: 0.88rem;
+    color: var(--red-soft);
+    font-family: var(--mono);
+  }
+  .error-banner button {
+    appearance: none;
+    border: 1px solid rgba(232,83,79,0.5);
+    background: transparent;
+    color: var(--red-soft);
+    border-radius: 6px;
+    padding: 7px 12px;
+    font-size: 0.78rem;
+    font-family: var(--mono);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .error-banner button:hover { background: rgba(232,83,79,0.15); }
+
+  .hidden { display: none !important; }
+
+  footer {
+    margin-top: 32px;
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--text-faint);
+    font-family: var(--mono);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <h1>Anti-Cassiopeia</h1>
+      <p class="subtitle">Fact-Verification Engine</p>
+    </div>
+    <div class="status-pill" id="statusPill">
+      <span class="dot pending" id="statusDot"></span>
+      <span id="statusText">checking backend…</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <p class="section-label">Quick verify</p>
+    <div class="presets" id="presets"></div>
+  </section>
+
+  <section class="card">
+    <label for="apiKeyInput">API Key</label>
+    <input type="password" id="apiKeyInput" autocomplete="off" placeholder="sk-…" />
+    <p class="field-note">Stored only in this browser tab's session.</p>
+  </section>
+
+  <section class="card">
+    <p class="section-label">Claim</p>
+    <div class="prompt-row">
+      <span class="prompt-glyph">&gt; verify:</span>
+      <textarea id="claimText" placeholder="Enter a claim to check against real evidence…" rows="2"></textarea>
+    </div>
+    <div class="form-grid">
+      <div>
+        <label for="domainSelect" style="margin-top:12px;">Domain</label>
+        <select id="domainSelect"><option value="">Loading domains…</option></select>
+      </div>
+      <div></div>
+    </div>
+    <div class="run-row">
+      <button class="run-btn" id="runBtn">Run</button>
+      <span class="spinner" id="spinner"></span>
+      <span id="runStatusText" style="font-family: var(--mono); font-size: 0.82rem; color: var(--text-muted);"></span>
+    </div>
+  </section>
+
+  <div id="errorArea"></div>
+  <div id="resultArea"></div>
+
+  <footer>anti-cassiopeia-221333847588.asia-south1.run.app</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var API_BASE = "https://anti-cassiopeia-221333847588.asia-south1.run.app";
+  var SESSION_KEY_NAME = "ac_api_key";
+
+  var PRESETS = [
+    { label: "Bar30 survives 500m depth", text: "The Bar30 pressure sensor survives at 500m depth.", domain: "robotics" },
+    { label: "BlueROV2 Heavy housing", text: "The BlueROV2 Heavy shares the same housing options as the base BlueROV2.", domain: "robotics" },
+    { label: "Rust origin", text: "Rust is a systems programming language originally developed at Mozilla.", domain: "research_web" },
+    { label: "Z-Wave frequency", text: "The Z-Wave protocol operates in the 2.4GHz ISM band.", domain: "research_web" },
+    { label: "Dataset mean, no context", text: "The dataset's average column value is 5.0.", domain: "ml_data" }
+  ];
+
+  var statusDot = document.getElementById("statusDot");
+  var statusText = document.getElementById("statusText");
+  var presetsEl = document.getElementById("presets");
+  var apiKeyInput = document.getElementById("apiKeyInput");
+  var claimText = document.getElementById("claimText");
+  var domainSelect = document.getElementById("domainSelect");
+  var runBtn = document.getElementById("runBtn");
+  var spinner = document.getElementById("spinner");
+  var runStatusText = document.getElementById("runStatusText");
+  var errorArea = document.getElementById("errorArea");
+  var resultArea = document.getElementById("resultArea");
+
+  var lastSubmission = null; // { text, domain } -- for retry
+
+  // ---------- helpers ----------
+
+  function escapeHtml(s) {
+    var div = document.createElement("div");
+    div.textContent = s == null ? "" : String(s);
+    return div.innerHTML;
+  }
+
+  function formatTimestamp(iso) {
+    if (!iso) return null;
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return d.toLocaleString() + "  (" + iso + ")";
+  }
+
+  function clearChildren(el) {
+    while (el.firstChild) el.removeChild(el.firstChild);
+  }
+
+  // ---------- API key persistence ----------
+
+  try {
+    var savedKey = sessionStorage.getItem(SESSION_KEY_NAME);
+    if (savedKey) apiKeyInput.value = savedKey;
+  } catch (e) { /* sessionStorage unavailable -- degrade silently */ }
+
+  apiKeyInput.addEventListener("input", function () {
+    try { sessionStorage.setItem(SESSION_KEY_NAME, apiKeyInput.value); } catch (e) {}
+  });
+
+  // ---------- health check ----------
+
+  function checkHealth() {
+    fetch(API_BASE + "/health")
+      .then(function (res) {
+        if (!res.ok) throw new Error("status " + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        statusDot.className = "dot ok";
+        var domainCount = Array.isArray(data.domains) ? data.domains.length : null;
+        statusText.textContent = "online" + (domainCount != null ? " · " + domainCount + " domains" : "");
+      })
+      .catch(function () {
+        statusDot.className = "dot bad";
+        statusText.textContent = "offline — cannot reach backend";
+      });
+  }
+
+  // ---------- domains ----------
+
+  function loadDomains() {
+    fetch(API_BASE + "/domains")
+      .then(function (res) {
+        if (!res.ok) throw new Error("status " + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        clearChildren(domainSelect);
+        var names = Object.keys(data || {});
+        if (names.length === 0) {
+          var opt = document.createElement("option");
+          opt.value = "";
+          opt.textContent = "No domains available";
+          domainSelect.appendChild(opt);
+          return;
+        }
+        names.forEach(function (name) {
+          var info = data[name] || {};
+          var opt = document.createElement("option");
+          opt.value = name;
+          opt.textContent = name + (info.implemented === false ? " (not implemented)" : "");
+          domainSelect.appendChild(opt);
+        });
+        applyPresetDomainIfPending();
+      })
+      .catch(function () {
+        clearChildren(domainSelect);
+        var opt = document.createElement("option");
+        opt.value = "";
+        opt.textContent = "Could not load domains";
+        domainSelect.appendChild(opt);
+      });
+  }
+
+  var pendingPresetDomain = null;
+  function applyPresetDomainIfPending() {
+    if (pendingPresetDomain && domainSelectHasOption(pendingPresetDomain)) {
+      domainSelect.value = pendingPresetDomain;
+      pendingPresetDomain = null;
+    }
+  }
+  function domainSelectHasOption(value) {
+    for (var i = 0; i < domainSelect.options.length; i++) {
+      if (domainSelect.options[i].value === value) return true;
+    }
+    return false;
+  }
+
+  // ---------- presets ----------
+
+  function renderPresets() {
+    clearChildren(presetsEl);
+    PRESETS.forEach(function (p) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "preset-pill";
+      btn.innerHTML = "$ " + escapeHtml(p.label) + "<span class='domain-tag'>[" + escapeHtml(p.domain) + "]</span>";
+      btn.addEventListener("click", function () {
+        claimText.value = p.text;
+        if (domainSelectHasOption(p.domain)) {
+          domainSelect.value = p.domain;
+        } else {
+          pendingPresetDomain = p.domain;
+        }
+        claimText.focus();
+      });
+      presetsEl.appendChild(btn);
+    });
+  }
+
+  // ---------- error message extraction ----------
+
+  function extractErrorMessage(res, body) {
+    if (body && typeof body === "object") {
+      if (typeof body.detail === "string") return body.detail;
+      if (typeof body.message === "string") return body.message;
+      if (typeof body.error === "string") return body.error;
+    }
+    return res.statusText || ("HTTP " + res.status);
+  }
+
+  function showError(message, opts) {
+    opts = opts || {};
+    clearChildren(errorArea);
+    var banner = document.createElement("div");
+    banner.className = "error-banner";
+    var p = document.createElement("p");
+    p.textContent = message;
+    banner.appendChild(p);
+    if (opts.retry) {
+      var btn = document.createElement("button");
+      btn.textContent = "Retry";
+      btn.addEventListener("click", function () {
+        clearChildren(errorArea);
+        runVerification(true);
+      });
+      banner.appendChild(btn);
+    }
+    errorArea.appendChild(banner);
+  }
+
+  function clearError() {
+    clearChildren(errorArea);
+  }
+
+  // ---------- verdict rendering ----------
+
+  function stanceClass(stance) {
+    if (stance === "supports") return "stance-supports";
+    if (stance === "contradicts") return "stance-contradicts";
+    if (stance === "contested") return "stance-contested";
+    return "stance-neutral";
+  }
+
+  function renderResult(data) {
+    clearChildren(resultArea);
+
+    var state = data.state || "undetermined";
+
+    var verdictCard = document.createElement("div");
+    verdictCard.className = "verdict-card " + state;
+
+    var top = document.createElement("div");
+    top.className = "verdict-top";
+
+    var left = document.createElement("div");
+    var claimP = document.createElement("p");
+    claimP.className = "verdict-claim-text";
+    claimP.textContent = (data.claim && data.claim.text) || "";
+    left.appendChild(claimP);
+
+    var stateDiv = document.createElement("div");
+    stateDiv.className = "verdict-state " + state;
+    stateDiv.textContent = state;
+    left.appendChild(stateDiv);
+
+    top.appendChild(left);
+    verdictCard.appendChild(top);
+
+    var meta = document.createElement("div");
+    meta.className = "verdict-meta";
+
+    var confSpan = document.createElement("span");
+    var confVal = (typeof data.confidence === "number")
+      ? Math.round(data.confidence * 100) + "%"
+      : "—";
+    confSpan.innerHTML = "confidence: <b>" + escapeHtml(confVal) + "</b>";
+    meta.appendChild(confSpan);
+
+    if (data.checked_at) {
+      var checkedSpan = document.createElement("span");
+      checkedSpan.innerHTML = "checked_at: <b>" + escapeHtml(data.checked_at) + "</b>";
+      meta.appendChild(checkedSpan);
+    }
+
+    if (data.claim && data.claim.domain) {
+      var domSpan = document.createElement("span");
+      domSpan.innerHTML = "domain: <b>" + escapeHtml(data.claim.domain) + "</b>";
+      meta.appendChild(domSpan);
+    }
+
+    verdictCard.appendChild(meta);
+    resultArea.appendChild(verdictCard);
+
+    // missing callout
+    if (Array.isArray(data.missing) && data.missing.length > 0) {
+      var callout = document.createElement("div");
+      callout.className = "missing-callout";
+      var h3 = document.createElement("h3");
+      h3.textContent = "⚠ Why this isn't confirmed";
+      callout.appendChild(h3);
+      var ul = document.createElement("ul");
+      data.missing.forEach(function (m) {
+        var li = document.createElement("li");
+        li.textContent = m;
+        ul.appendChild(li);
+      });
+      callout.appendChild(ul);
+      resultArea.appendChild(callout);
+    }
+
+    // evidence
+    if (Array.isArray(data.evidence) && data.evidence.length > 0) {
+      var evSection = document.createElement("div");
+      var evLabel = document.createElement("p");
+      evLabel.className = "section-label";
+      evLabel.textContent = "Evidence (" + data.evidence.length + ")";
+      evSection.appendChild(evLabel);
+
+      data.evidence.forEach(function (ev) {
+        var item = document.createElement("div");
+        item.className = "evidence-item";
+
+        var head = document.createElement("div");
+        head.className = "evidence-head";
+
+        var stancePill = document.createElement("span");
+        stancePill.className = "stance-pill " + stanceClass(ev.stance);
+        stancePill.textContent = ev.stance || "neutral";
+        head.appendChild(stancePill);
+
+        var sourceEl;
+        if (typeof ev.source === "string" && /^https?:\/\//i.test(ev.source)) {
+          sourceEl = document.createElement("a");
+          sourceEl.href = ev.source;
+          sourceEl.target = "_blank";
+          sourceEl.rel = "noopener noreferrer";
+        } else {
+          sourceEl = document.createElement("span");
+        }
+        sourceEl.className = "evidence-source";
+        sourceEl.textContent = ev.source || "";
+        head.appendChild(sourceEl);
+
+        item.appendChild(head);
+
+        var snippet = document.createElement("div");
+        snippet.className = "evidence-snippet";
+        snippet.textContent = ev.snippet || "";
+        item.appendChild(snippet);
+
+        var foot = document.createElement("div");
+        foot.className = "evidence-foot";
+
+        var locatorEl = document.createElement("span");
+        locatorEl.className = "evidence-locator";
+        locatorEl.textContent = ev.locator ? ("@ " + ev.locator) : "";
+        foot.appendChild(locatorEl);
+
+        var rightFoot = document.createElement("div");
+        rightFoot.style.display = "flex";
+        rightFoot.style.gap = "14px";
+        rightFoot.style.alignItems = "center";
+
+        if (typeof ev.trust === "number") {
+          var trustWrap = document.createElement("div");
+          trustWrap.className = "trust-wrap";
+          var bar = document.createElement("div");
+          bar.className = "trust-bar";
+          var fill = document.createElement("div");
+          fill.className = "trust-bar-fill";
+          fill.style.width = Math.max(0, Math.min(100, ev.trust * 100)) + "%";
+          bar.appendChild(fill);
+          trustWrap.appendChild(document.createTextNode("trust " + ev.trust.toFixed(2)));
+          trustWrap.appendChild(bar);
+          rightFoot.appendChild(trustWrap);
+        }
+
+        if (ev.timestamp) {
+          var tsEl = document.createElement("span");
+          tsEl.className = "evidence-timestamp";
+          tsEl.textContent = ev.timestamp;
+          rightFoot.appendChild(tsEl);
+        }
+
+        foot.appendChild(rightFoot);
+        item.appendChild(foot);
+
+        evSection.appendChild(item);
+      });
+
+      resultArea.appendChild(evSection);
+    }
+
+    // reasoning trace
+    if (Array.isArray(data.reasoning) && data.reasoning.length > 0) {
+      var details = document.createElement("details");
+      details.className = "reasoning-block";
+      var summary = document.createElement("summary");
+      summary.textContent = "Reasoning trace (" + data.reasoning.length + " steps)";
+      details.appendChild(summary);
+      var linesWrap = document.createElement("div");
+      linesWrap.className = "reasoning-lines";
+      data.reasoning.forEach(function (line) {
+        var div = document.createElement("div");
+        div.textContent = line;
+        linesWrap.appendChild(div);
+      });
+      details.appendChild(linesWrap);
+      resultArea.appendChild(details);
+    }
+  }
+
+  // ---------- run verification ----------
+
+  function setRunning(running) {
+    runBtn.disabled = running;
+    spinner.classList.toggle("show", running);
+    runStatusText.textContent = running ? "Verifying…" : "";
+  }
+
+  function runVerification(isRetry) {
+    var text = isRetry && lastSubmission ? lastSubmission.text : claimText.value.trim();
+    var domain = isRetry && lastSubmission ? lastSubmission.domain : domainSelect.value;
+    var apiKey = apiKeyInput.value;
+
+    if (!text) {
+      showError("Enter a claim to verify first.");
+      return;
+    }
+    if (!domain) {
+      showError("Select a domain first.");
+      return;
+    }
+    if (!apiKey) {
+      showError("Enter an API key first.");
+      return;
+    }
+
+    lastSubmission = { text: text, domain: domain };
+
+    clearError();
+    clearChildren(resultArea);
+    setRunning(true);
+
+    fetch(API_BASE + "/verify", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-Key": apiKey
+      },
+      body: JSON.stringify({ text: text, domain: domain })
+    })
+      .then(function (res) {
+        return res.json().catch(function () { return null; }).then(function (body) {
+          return { res: res, body: body };
+        });
+      })
+      .then(function (pair) {
+        var res = pair.res, body = pair.body;
+        if (res.ok) {
+          renderResult(body);
+          return;
+        }
+        if (res.status === 401) {
+          showError("Invalid or missing API key.", { retry: false });
+          apiKeyInput.focus();
+          return;
+        }
+        if (res.status === 429) {
+          showError(extractErrorMessage(res, body), { retry: true });
+          return;
+        }
+        if (res.status === 400) {
+          showError(extractErrorMessage(res, body), { retry: false });
+          return;
+        }
+        showError("Server error (" + res.status + "): " + extractErrorMessage(res, body), { retry: true });
+      })
+      .catch(function () {
+        showError("Network error — could not reach the verification engine.", { retry: true });
+      })
+      .then(function () {
+        setRunning(false);
+      });
+  }
+
+  runBtn.addEventListener("click", function () { runVerification(false); });
+
+  // ---------- init ----------
+
+  renderPresets();
+  checkHealth();
+  loadDomains();
+})();
+</script>
+</body>
+</html>
