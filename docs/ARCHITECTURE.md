@@ -660,11 +660,46 @@ only in `docs/extracted/constellation-robotics-seed.md` §4 and not
 locked in by a test) — see each adapter's own detail section above for
 what changed and why.
 
+## Item 20: claim decomposition (external review, 2-hour-budgeted round)
+
+**Built, real, tested:** `anticassiopeia/core/compound.py` —
+`decompose_claim()` (one LLM call splitting "A and B" into independent
+parts, each classified `robotics`/`research_web`/`unsupported`;
+`unsupported` covers anything needing `ml_data`/`fpga_embedded`'s real
+file-path context, which decomposition explicitly refuses to fabricate),
+`rollup()` (pure AND-semantics: all-`CONFIRMED` parts → `CONFIRMED` at
+the MINIMUM confidence among them — the AND is only as sure as its
+weakest part; any `CONTRADICTED` part → `CONTRADICTED` at the MAXIMUM
+confidence among the contradicting parts — only one needs to be false;
+anything else → `UNDETERMINED`), and `verify_compound()` orchestrating
+both through the real, completely unmodified `VerificationEngine` and
+its real adapters — no engine/adapter code changed for this feature.
+19 tests in `tests/test_compound.py`: JSON-shape validation (well-formed,
+code-fenced, malformed, missing/empty fields), `rollup()`'s math against
+every state combination including the empty/all-unsupported edge cases,
+and `verify_compound()` end-to-end against a fake LLM client + a real
+`VerificationEngine` — confirms-all, contradicts-on-one-part, the
+`ml_data`-sub-claim-never-fabricated case, a non-compound single-part
+claim, and a dead decomposition call resolving `UNDETERMINED` rather
+than crashing.
+
+**Deliberately NOT built this round:** no `/verify/compound` HTTP
+endpoint — `server.py` does not import this module at all, so it is
+real, reachable Python (`from anticassiopeia.core.compound import
+verify_compound`) but not reachable over the network in this build. Per
+the task's own instruction (partial-but-reachable is worse than
+honestly-incomplete-and-documented): the core decompose→verify→rollup
+logic was finished and tested cleanly within budget; the endpoint itself
+— its own request/response schema, auth/rate-limit wiring consistent
+with `/verify` (a compound request is MORE expensive than a plain one:
+one decomposition call plus N sub-verifies, each potentially its own
+LLM call — the existing per-key bucket sizes were never evaluated against
+that), and its own endpoint-level tests — was left for a later round
+rather than wired in half-finished. `docs/DESIGN.md` §2 has the original
+design reasoning this followed.
+
 ## Open design decisions (not yet made)
 
-- Claim decomposition: should the engine (or an LLM pass) break a complex
-  claim into sub-claims before routing, or does every `Claim` stay atomic
-  by convention? Currently: atomic by convention, no decomposition step.
 - Evidence retrieval inside each domain adapter: web search? local
   datasheet index? direct API calls (synthesis tool output, dataset
   files)? Each domain will likely need a different answer.

@@ -32,10 +32,11 @@ already-verified parts/datasheet facts exist from Constellation's research
 prompt in the repo root conversation — those facts, with their datasheet
 provenance intact, are the natural seed for `robotics`' evidence source.
 
-## 2. Claim decomposition — still open
+## 2. Claim decomposition — option (b) now built as a library, NOT yet wired to HTTP
 
 A claim like "this robot survives the mission" is not atomic — it's really
-N per-part claims plus one whole-assembly claim. Two options:
+N per-part claims plus one whole-assembly claim. Two options were
+considered:
 
 - **(a)** Caller's responsibility: the API contract stays atomic claims
   only; whoever calls `/verify` must already have broken "survives the
@@ -43,17 +44,27 @@ N per-part claims plus one whole-assembly claim. Two options:
   housing X", etc., and calls `/verify` once per sub-claim.
 - **(b)** Engine's responsibility: an LLM decomposition pass (via the
   Nebius client) turns one compound claim into sub-claims, verifies each,
-  then rolls them up (`CONFIRMED` only if every sub-claim is `CONFIRMED`;
-  any `CONTRADICTED` sub-claim contradicts the whole; otherwise
-  `UNDETERMINED`).
+  then rolls them up.
 
-(b) is more impressive as a demo and matches "extensible infrastructure"
-positioning better, but adds a real failure surface — a bad decomposition
-silently changes what's actually being checked, which is the exact kind
-of ungrounded confidence this project exists to avoid introducing into
-itself. **Leaning (a) for the bone framework, (b) as an explicit opt-in
-later (`/verify/compound`), not the default path.** Not locked — revisit
-once a real adapter exists to test either option against.
+**Item 20 (external review, 2-hour-budgeted round): (b) is now real,
+tested code — `anticassiopeia/core/compound.py` — but deliberately NOT
+wired to an HTTP endpoint yet.** What's built: `decompose_claim()` (one
+LLM call, strict JSON-shape validation, same code-fence-stripping/error
+conventions as `retrieval/extract.py`'s `propose()`), `rollup()` (pure,
+no I/O — exactly the semantics sketched above: `CONFIRMED` only if every
+verified sub-claim is `CONFIRMED`, any `CONTRADICTED` sub-claim
+contradicts the whole, otherwise `UNDETERMINED`), and `verify_compound()`
+orchestrating both through the REAL, unmodified engine/adapters. The
+real failure surface this section worried about — "a bad decomposition
+silently changes what's actually being checked" — is addressed directly:
+decomposition is restricted to classifying each sub-claim into
+`robotics`/`research_web` only (the two domains that accept a bare
+free-text claim); a part needing `ml_data`/`fpga_embedded`'s structured
+file-path context is left an explicit, visible gap rather than having
+the LLM invent a plausible-looking path or number. See
+`docs/ARCHITECTURE.md`'s own "Item 20" section for exactly what's tested
+vs. still open (the HTTP endpoint itself, `/verify/compound`, named here
+originally — not built this round; see that section for why).
 
 ## 3. Scoring v2 — what would actually improve on the current placeholder
 
