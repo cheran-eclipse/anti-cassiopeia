@@ -10,3 +10,4 @@ build/
 .mypy_cache/
 .DS_Store
 stress_test/data/
+*.zip
