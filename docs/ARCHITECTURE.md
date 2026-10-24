@@ -581,6 +581,16 @@ for the test) tiny cap, not just that the constants exist. All proven by
 shared across multiple uvicorn workers — documented, not silently
 assumed away.
 
+**Track/UI framing (external review, item 26): a confirmed, deliberate
+decision, not an implicit default.** This project deliberately ships no
+dedicated UI. The Apps and Agents track asks for "an app or agent you'd
+actually use," not a web frontend specifically — so the CLI
+(`scripts/demo.py`), the HTTP API above, and direct use as another
+agent's tool-use step are treated as three equally real surfaces over
+one shared engine, and effort went into making all three genuinely work
+rather than into a UI none of them need. See `README.md`'s opening
+paragraph for where this is stated to a reader first.
+
 ### `scripts/demo.py`, `Dockerfile`, CI, `evals/` detail
 
 `scripts/demo.py`: real end-to-end demo, 6 claims across all 4 domains,

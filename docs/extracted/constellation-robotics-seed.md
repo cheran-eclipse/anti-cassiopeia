@@ -205,6 +205,17 @@ instead of saying a datasheet still needs to be pulled. No corpus file was added
 (there is no numeric fact to route through the retrieve→propose→verify pipeline) — the fix
 lives entirely in `RoboticsAdapter.describe_gap()`'s QuSpin branch.
 
+**Grounding strengthened (external review, 2026-10-24):** the finding above rested on one
+page's silence. Independently re-checked across three MORE QuSpin-hosted pages — the current
+product page (`https://quspin.com/products-qzfm/`), the mechanical dimensions page
+(`https://quspin.com/qzfm-dimensions/`), and the quick-start guide
+(`https://quspin.com/products-qzfm/qzfm-quick-start-guide/`) — none states a pressure/depth/
+submersion/waterproof/IP rating either, and the product page explicitly frames the device as
+"designed for magnetically shielded or actively field-controlled environments — not direct
+operation in Earth's magnetic field." A fifth candidate, an HSE University page mirroring
+QuSpin's specs, was checked and explicitly excluded as corroboration: it states its own text
+is copied verbatim from QuSpin, so it's not an independent source, not a second opinion.
+
 ---
 
 ## 5. The retrieval/grounding pattern (for designing `gather_evidence()`)

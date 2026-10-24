@@ -5,6 +5,15 @@ synthetic unless explicitly marked SYNTHETIC — every other file was
 actually fetched from the URL given, verified to contain real content
 matching its expected shape, and saved verbatim.
 
+**Reproducibility (external review, item 14):** `stress_test/data/` is
+gitignored, so none of these files survive a fresh clone. Run
+`PYTHONPATH=. python stress_test/bootstrap_data.py` to re-fetch every
+file below from these exact URLs (plus regenerate the shard files and
+copy the two synthetic fixtures) — verified (2026-10-24) to reproduce
+all 33 files byte-identical to what this project's stress-test numbers
+were actually computed from, checked against the committed
+`stress_test/data_checksums.txt`.
+
 ## ml_data/ — UCI Machine Learning Repository (archive.ics.uci.edu)
 
 All 14 fetched via UCI's public dataset API (`https://archive.ics.uci.edu/api/dataset?id=<id>`,
@@ -172,7 +181,11 @@ confirmed by fetching the real page (same method as the existing
 | Xilinx | https://en.wikipedia.org/wiki/Xilinx | 2026-10-18 | entity type (American technology company) |
 
 **24 more topics added for Phase B item 9** (external review: research_web
-was the most under-tested domain at only 24 claims) — each fetched LIVE
+was the most under-tested domain at only 24 claims) — bringing the total
+source pages/topics to **32** (the original 8 above + these 24; a later
+external review mis-cited this total as 24, confusing it with the
+*topic* count added in this step or the pre-expansion *claim* count —
+neither of which is the source-page total). Each fetched LIVE
 via Wikipedia's REST summary API
 (`https://en.wikipedia.org/api/rest_v1/page/summary/<title>`, the same
 confirmed-working backend `research_web.py`'s own live tests use) on
