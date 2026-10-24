@@ -9,10 +9,15 @@ duplicate entity names) and this file runs those claims through the REAL
 VerificationEngine + real adapters, asserting the actual verdict matches
 the documented ground truth -- not just that the generator script runs.
 
-ml_data/fpga_embedded adversarial cases are fully offline (no LLM, no
-network) so they run unconditionally in CI. robotics/research_web ones
-need a live NEBIUS_API_KEY (same `_requires_live_key` skip convention as
-tests/test_domains_robotics.py and tests/test_domains_research_web.py).
+ml_data/fpga_embedded adversarial cases need no LLM/network call, but DO
+need the real data files under stress_test/data/ -- gitignored (see
+stress_test/bootstrap_data.py, item 14), so NOT present in CI or a fresh
+clone unless bootstrapped first. Skipped (not failed) when that data is
+missing, same convention as test_bootstrap_data.py's own skip -- a
+missing local data dir is an environment fact, not this test failing.
+robotics/research_web ones need a live NEBIUS_API_KEY (same
+`_requires_live_key` skip convention as tests/test_domains_robotics.py
+and tests/test_domains_research_web.py).
 """
 
 import json
@@ -24,7 +29,14 @@ import pytest
 from anticassiopeia.core import Claim, VerdictState, VerificationEngine
 from anticassiopeia.domains import default_domains
 
-_HELDOUT_PATH = Path(__file__).parent.parent / "stress_test/claims/heldout_manifest.jsonl"
+_REPO_ROOT = Path(__file__).parent.parent
+_HELDOUT_PATH = _REPO_ROOT / "stress_test/claims/heldout_manifest.jsonl"
+
+_requires_stress_test_data = pytest.mark.skipif(
+    not (_REPO_ROOT / "stress_test/data/ml_data/yacht_hydrodynamics.csv").exists()
+    or not (_REPO_ROOT / "stress_test/data/fpga_embedded/nethakah__nasdaq-pipeline__timing_route.rpt").exists(),
+    reason="stress_test/data/ is gitignored and not present -- run stress_test/bootstrap_data.py first",
+)
 
 _VERDICT_BY_NAME = {
     "confirmed": VerdictState.CONFIRMED,
@@ -93,6 +105,7 @@ async def test_heldout_manifest_has_an_adversarial_batch_covering_all_four_domai
     assert all(n >= 2 for n in by_domain.values())
 
 
+@_requires_stress_test_data
 async def test_ml_data_adversarial_cases_match_ground_truth_against_the_real_engine():
     engine = VerificationEngine(domains=default_domains())
     rows = _load_adversarial("ml_data")
@@ -101,6 +114,7 @@ async def test_ml_data_adversarial_cases_match_ground_truth_against_the_real_eng
         await _assert_matches_ground_truth(engine, row)
 
 
+@_requires_stress_test_data
 async def test_fpga_embedded_adversarial_cases_match_ground_truth_against_the_real_engine():
     engine = VerificationEngine(domains=default_domains())
     rows = _load_adversarial("fpga_embedded")
