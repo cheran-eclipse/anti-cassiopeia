@@ -551,7 +551,13 @@
   <section class="card">
     <label for="apiKeyInput">API Key</label>
     <input type="password" id="apiKeyInput" autocomplete="off" placeholder="sk-…" />
-    <p class="field-note">Stored only in this browser tab's session.</p>
+    <p class="field-note" id="apiKeyNote">Pre-filled with a public demo key. Replace with your own if you have one. Stored only in this browser, on this device.</p>
+  </section>
+
+  <section class="card">
+    <label for="apiBaseInput">API Base URL</label>
+    <input type="text" id="apiBaseInput" autocomplete="off" spellcheck="false" />
+    <p class="field-note">Points at the deployed engine by default. Change to <code>http://localhost:8000</code> for local testing.</p>
   </section>
 
   <section class="card">
@@ -584,21 +590,27 @@
 (function () {
   "use strict";
 
-  var API_BASE = "https://anti-cassiopeia-221333847588.asia-south1.run.app";
-  var SESSION_KEY_NAME = "ac_api_key";
+  var DEFAULT_API_BASE = "https://anti-cassiopeia-221333847588.asia-south1.run.app";
+  var DEMO_API_KEY = "elu9PKGAi0_eX07u13FqhhxFtKp9l7NUOgNeJ_Y4SmM";
+  var STORAGE_KEY_NAME = "ac_api_key";
+  var STORAGE_BASE_NAME = "ac_api_base";
 
   var PRESETS = [
     { label: "Bar30 survives 500m depth", text: "The Bar30 pressure sensor survives at 500m depth.", domain: "robotics" },
     { label: "BlueROV2 Heavy housing", text: "The BlueROV2 Heavy shares the same housing options as the base BlueROV2.", domain: "robotics" },
     { label: "Rust origin", text: "Rust is a systems programming language originally developed at Mozilla.", domain: "research_web" },
     { label: "Z-Wave frequency", text: "The Z-Wave protocol operates in the 2.4GHz ISM band.", domain: "research_web" },
-    { label: "Dataset mean, no context", text: "The dataset's average column value is 5.0.", domain: "ml_data" }
+    { label: "Dataset mean, no context", text: "The dataset's average column value is 5.0.", domain: "ml_data" },
+    { label: "clk_main meets 100 MHz", text: "design's clk_main meets 100 MHz timing", domain: "fpga_embedded",
+      context: { report_path: "evals/fixtures/vivado_timing_report_single_corner.rpt", metric: "frequency_mhz", clock: "clk_main", comparator: ">=", expected_value: 100 } }
   ];
 
   var statusDot = document.getElementById("statusDot");
   var statusText = document.getElementById("statusText");
   var presetsEl = document.getElementById("presets");
   var apiKeyInput = document.getElementById("apiKeyInput");
+  var apiKeyNote = document.getElementById("apiKeyNote");
+  var apiBaseInput = document.getElementById("apiBaseInput");
   var claimText = document.getElementById("claimText");
   var domainSelect = document.getElementById("domainSelect");
   var runBtn = document.getElementById("runBtn");
@@ -607,7 +619,12 @@
   var errorArea = document.getElementById("errorArea");
   var resultArea = document.getElementById("resultArea");
 
-  var lastSubmission = null; // { text, domain } -- for retry
+  var lastSubmission = null; // { text, domain, context } -- for retry
+
+  function getApiBase() {
+    var v = (apiBaseInput.value || "").trim();
+    return v ? v.replace(/\/+$/, "") : DEFAULT_API_BASE;
+  }
 
   // ---------- helpers ----------
 
@@ -628,21 +645,50 @@
     while (el.firstChild) el.removeChild(el.firstChild);
   }
 
-  // ---------- API key persistence ----------
+  // ---------- API key + base URL persistence ----------
+  // localStorage, not sessionStorage: this is a deliberate choice so a
+  // returning visitor on the same browser doesn't have to re-enter a key
+  // every time they reopen the tab. The key still never ships in this
+  // file's source -- DEMO_API_KEY above is a dedicated, separately
+  // rate-limited key meant to be public, never the primary API key.
 
-  try {
-    var savedKey = sessionStorage.getItem(SESSION_KEY_NAME);
-    if (savedKey) apiKeyInput.value = savedKey;
-  } catch (e) { /* sessionStorage unavailable -- degrade silently */ }
+  (function initApiKey() {
+    try {
+      var saved = localStorage.getItem(STORAGE_KEY_NAME);
+      if (saved) {
+        apiKeyInput.value = saved;
+        apiKeyNote.textContent = "Stored only in this browser, on this device.";
+        return;
+      }
+    } catch (e) { /* localStorage unavailable -- fall through to demo key */ }
+    apiKeyInput.value = DEMO_API_KEY;
+    try { localStorage.setItem(STORAGE_KEY_NAME, DEMO_API_KEY); } catch (e) {}
+  })();
 
   apiKeyInput.addEventListener("input", function () {
-    try { sessionStorage.setItem(SESSION_KEY_NAME, apiKeyInput.value); } catch (e) {}
+    apiKeyNote.textContent = "Stored only in this browser, on this device.";
+    try { localStorage.setItem(STORAGE_KEY_NAME, apiKeyInput.value); } catch (e) {}
+  });
+
+  (function initApiBase() {
+    try {
+      var saved = localStorage.getItem(STORAGE_BASE_NAME);
+      apiBaseInput.value = saved || DEFAULT_API_BASE;
+    } catch (e) {
+      apiBaseInput.value = DEFAULT_API_BASE;
+    }
+  })();
+
+  apiBaseInput.addEventListener("change", function () {
+    try { localStorage.setItem(STORAGE_BASE_NAME, apiBaseInput.value); } catch (e) {}
+    checkHealth();
+    loadDomains();
   });
 
   // ---------- health check ----------
 
   function checkHealth() {
-    fetch(API_BASE + "/health")
+    fetch(getApiBase() + "/health")
       .then(function (res) {
         if (!res.ok) throw new Error("status " + res.status);
         return res.json();
@@ -661,7 +707,7 @@
   // ---------- domains ----------
 
   function loadDomains() {
-    fetch(API_BASE + "/domains")
+    fetch(getApiBase() + "/domains")
       .then(function (res) {
         if (!res.ok) throw new Error("status " + res.status);
         return res.json();
@@ -695,6 +741,17 @@
   }
 
   var pendingPresetDomain = null;
+  var pendingPresetContext = {};
+
+  // Context only ever comes from a clicked preset. If the visitor types
+  // their own claim by hand (a real keystroke, not the programmatic
+  // .value set a preset click does -- which does not fire "input"), drop
+  // any leftover preset context rather than silently attaching it to a
+  // now-unrelated claim.
+  claimText.addEventListener("input", function () {
+    pendingPresetContext = {};
+  });
+
   function applyPresetDomainIfPending() {
     if (pendingPresetDomain && domainSelectHasOption(pendingPresetDomain)) {
       domainSelect.value = pendingPresetDomain;
@@ -719,6 +776,7 @@
       btn.innerHTML = "$ " + escapeHtml(p.label) + "<span class='domain-tag'>[" + escapeHtml(p.domain) + "]</span>";
       btn.addEventListener("click", function () {
         claimText.value = p.text;
+        pendingPresetContext = p.context || {};
         if (domainSelectHasOption(p.domain)) {
           domainSelect.value = p.domain;
         } else {
@@ -790,6 +848,16 @@
     claimP.className = "verdict-claim-text";
     claimP.textContent = (data.claim && data.claim.text) || "";
     left.appendChild(claimP);
+
+    var ctx = data.claim && data.claim.context;
+    if (ctx && typeof ctx === "object" && Object.keys(ctx).length > 0) {
+      var ctxP = document.createElement("p");
+      ctxP.className = "verdict-claim-text";
+      ctxP.style.marginTop = "-6px";
+      var ctxParts = Object.keys(ctx).map(function (k) { return k + "=" + JSON.stringify(ctx[k]); });
+      ctxP.textContent = "context: " + ctxParts.join("  ");
+      left.appendChild(ctxP);
+    }
 
     var stateDiv = document.createElement("div");
     stateDiv.className = "verdict-state " + state;
@@ -954,6 +1022,7 @@
   function runVerification(isRetry) {
     var text = isRetry && lastSubmission ? lastSubmission.text : claimText.value.trim();
     var domain = isRetry && lastSubmission ? lastSubmission.domain : domainSelect.value;
+    var context = isRetry && lastSubmission ? lastSubmission.context : (pendingPresetContext || {});
     var apiKey = apiKeyInput.value;
 
     if (!text) {
@@ -969,19 +1038,19 @@
       return;
     }
 
-    lastSubmission = { text: text, domain: domain };
+    lastSubmission = { text: text, domain: domain, context: context };
 
     clearError();
     clearChildren(resultArea);
     setRunning(true);
 
-    fetch(API_BASE + "/verify", {
+    fetch(getApiBase() + "/verify", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "X-API-Key": apiKey
       },
-      body: JSON.stringify({ text: text, domain: domain })
+      body: JSON.stringify({ text: text, domain: domain, context: context })
     })
       .then(function (res) {
         return res.json().catch(function () { return null; }).then(function (body) {
