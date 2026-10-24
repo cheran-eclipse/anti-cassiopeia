@@ -107,6 +107,7 @@ class InstrumentedNebiusClient:
         model: str | None = None,
         input_cost_per_m: float | None = None,
         output_cost_per_m: float | None = None,
+        max_tokens: int = 16384,
     ):
         self.api_key = _ENV.get("NEBIUS_API_KEY")
         if not self.api_key:
@@ -129,6 +130,10 @@ class InstrumentedNebiusClient:
         self.timeout = timeout
         self.tracker = tracker
         self.budget_usd = budget_usd
+        # Same fix as nebius_client.py's DEFAULT_MAX_TOKENS, mirrored here since
+        # this class intentionally duplicates that method rather than wrapping it
+        # -- applies equally to whichever model this instance is pointed at.
+        self.max_tokens = max_tokens
 
     async def complete(self, prompt: str, *, system: str | None = None, temperature: float = 0.2) -> str:
         if self.tracker.total_cost_usd >= self.budget_usd:
@@ -147,7 +152,7 @@ class InstrumentedNebiusClient:
             resp = await client.post(
                 f"{self.base_url}/chat/completions",
                 headers={"Authorization": f"Bearer {self.api_key}"},
-                json={"model": self.model, "messages": messages, "temperature": temperature},
+                json={"model": self.model, "messages": messages, "temperature": temperature, "max_tokens": self.max_tokens},
             )
         latency = time.monotonic() - start
 

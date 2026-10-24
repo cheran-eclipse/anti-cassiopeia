@@ -819,12 +819,27 @@ _STANCE_SYSTEM_PROMPT = """You will be given a CLAIM and a PASSAGE. The passage 
 independently confirmed to be real, verbatim text from a live web page — your only job is to decide \
 how it relates to the claim's SPECIFIC assertion, not just whether they share a general topic.
 
+FOUND BUG (external review, live, during the Nemotron pivot's pilot runs — not hypothetical): a
+passage about the ESP32-S31 ("Espressif Systems has officially started mass production of its new
+ESP32-S31 wireless microcontroller") was judged "supports" for a claim about the plain ESP32 — a
+DIFFERENT, newer chip that merely shares most of its name. This produced a false tie against a
+correct "contradicts" from a real source, pulling a verdict to UNDETERMINED that should have been a
+clean CONTRADICTED. FIRST check whether the passage is actually about the SAME specific entity the
+claim names — a product, model, version, or variant can share most of a name with a different one \
+(ESP32 vs ESP32-S31; "iPhone 15" vs "iPhone 15 Pro") while being a genuinely different thing with its \
+own facts. A passage about a DIFFERENT specific entity than the one the claim names is "unrelated", \
+even if it uses similar or identical wording about that different entity, and even if it would \
+otherwise seem to support or contradict the claim's general shape — do not let topical similarity \
+substitute for actually checking the subject is the same one the claim names.
+
 Reply with EXACTLY one word, nothing else:
-supports — the passage confirms the claim's specific assertion is true
+supports — the passage confirms the claim's specific assertion is true, about the SAME entity the \
+claim names
 contradicts — the passage states something that conflicts with the claim's specific assertion \
-(e.g. a different name, number, date, or entity for the same question)
+(e.g. a different name, number, date, or entity for the same question), about the SAME entity the \
+claim names
 unrelated — the passage is on the same general topic but does not actually address this specific \
-assertion either way"""
+assertion either way, OR is about a different specific entity than the one the claim names"""
 
 
 async def _judge_stance(client: NebiusTokenFactoryClient, claim_text: str, verified_quote: str) -> str:

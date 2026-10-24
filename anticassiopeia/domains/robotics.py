@@ -23,6 +23,18 @@ from the model, not a hallucination. `_RETRIEVAL_QUERIES` below only maps
 part -> doc_id -> the finding-question handed to BM25 and then to the
 model as context — it carries no answer.
 
+MODEL: `ROBOTICS_MODEL` (Nemotron Ultra), not whatever `NEBIUS_MODEL`/.env
+says — a deliberate per-domain override, not an env default drifting in.
+See `stress_test/results/NEMOTRON_PIVOT_REPORT.md` for the full
+before/after comparison this choice is based on: Ultra is the only
+model/tier tested with a clean (zero) dangerous-miss record on this
+domain across three independent runs; the fact-finding below (`kind`
+field non-determinism, retry logic, query-ambiguity fixes) was itself
+originally diagnosed and fixed against `openai/gpt-oss-120b` and
+`nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` before the model swap — those
+fixes are prompt/logic fixes, not model-specific, and apply unchanged
+under Ultra.
+
 RESOLVED (was a KNOWN LIMITATION): an early live run showed the `kind`
 field ("rated" vs "tested" vs null) coming back inconsistent across
 repeated identical calls — roughly half of an 8-call sample. Root cause
@@ -256,6 +268,18 @@ async def _propose_with_retry(
 # ALUMINUM rating specifically — the query now says so, dropping "acrylic"
 # entirely, and was re-verified 20/20 live after the fix (see
 # tests/test_domains_robotics.py's dedicated resampling test).
+#: Nemotron pivot result (stress_test/results/NEMOTRON_PIVOT_REPORT.md):
+#: Nemotron Ultra is the only tested model/tier combination with a CLEAN
+#: dangerous-miss record on robotics across three independent runs (n=15
+#: and n=40 pre-fix, n=40 post-fix) -- zero, every time. Overrides
+#: NEBIUS_MODEL/.env's default (gpt-oss-120b) specifically for this
+#: adapter: this is a deliberate per-domain model choice backed by
+#: measured evidence, not an env-wide default drifting in by accident.
+#: Also satisfies the "a real NVIDIA model in the request path" track
+#: requirement for real, not as a comment -- every live propose() call
+#: this adapter makes now actually goes to this model.
+ROBOTICS_MODEL = "nvidia/Nemotron-3-Ultra-550b-a55b"
+
 _RETRIEVAL_QUERIES: dict[str, dict[str, str]] = {
     "bluerov2": {
         "DOC1_BlueROV2": "maximum rated depth aluminum housing",
@@ -300,7 +324,7 @@ class RoboticsAdapter(DomainAdapter):
         self._client_error: str | None = None
         if self._client is None:
             try:
-                self._client = NebiusTokenFactoryClient()
+                self._client = NebiusTokenFactoryClient(model=ROBOTICS_MODEL)
             except NebiusClientError as exc:
                 self._client_error = str(exc)
 

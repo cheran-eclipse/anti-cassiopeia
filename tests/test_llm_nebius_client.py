@@ -17,6 +17,7 @@ from anticassiopeia.llm.nebius_client import NebiusClientError, NebiusTokenFacto
 class _DummyAsyncClient:
     def __init__(self, response: httpx.Response):
         self._response = response
+        self.last_post_kwargs: dict | None = None
 
     async def __aenter__(self):
         return self
@@ -25,6 +26,7 @@ class _DummyAsyncClient:
         return False
 
     async def post(self, url: str, **kwargs) -> httpx.Response:
+        self.last_post_kwargs = kwargs
         return self._response
 
     async def aclose(self) -> None:
@@ -89,3 +91,19 @@ async def test_non_200_status_is_a_named_error(monkeypatch):
         await client.complete("prompt")
 
     assert "401" in str(exc_info.value)
+
+
+async def test_max_tokens_is_actually_sent_in_the_request(monkeypatch):
+    """FOUND BUG (Nemotron pivot's fair-fight investigation): no max_tokens was
+    ever set, so the API's own implicit default applied -- a crash observed
+    live hit exactly 8192 completion tokens before truncating. Fixed by
+    setting it explicitly; this locks in that it's actually sent, not just
+    documented as a constant nothing reads."""
+    response = _response({"choices": [{"message": {"content": "hello"}, "finish_reason": "stop"}]})
+    dummy = _DummyAsyncClient(response)
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **_: dummy)
+
+    client = NebiusTokenFactoryClient(api_key="k", max_tokens=12345)
+    await client.complete("prompt")
+
+    assert dummy.last_post_kwargs["json"]["max_tokens"] == 12345

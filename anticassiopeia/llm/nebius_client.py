@@ -114,6 +114,15 @@ load_dotenv(override=True)
 
 DEFAULT_BASE_URL = "https://api.tokenfactory.nebius.com/v1"
 DEFAULT_MODEL = "openai/gpt-oss-120b"
+#: FOUND during the Nemotron pivot's fair-fight investigation: no max_tokens
+#: was ever set, so the API's own implicit default applied -- a crash
+#: observed live against Nemotron Super hit exactly 8192 completion tokens
+#: before truncating (a reasoning model can spend its whole budget on hidden
+#: thinking before producing a visible answer). Set generously here so a
+#: reasoning-capable model has real room to think AND answer, rather than
+#: silently inheriting whatever the API's own default happens to be -- this
+#: applies to every model behind this client equally, not just Nemotron.
+DEFAULT_MAX_TOKENS = 16384
 
 
 class NebiusClientError(Exception):
@@ -127,6 +136,7 @@ class NebiusTokenFactoryClient:
         base_url: str | None = None,
         model: str | None = None,
         timeout: float = 60.0,
+        max_tokens: int = DEFAULT_MAX_TOKENS,
     ):
         self.api_key = api_key or os.environ.get("NEBIUS_API_KEY")
         if not self.api_key:
@@ -134,6 +144,7 @@ class NebiusTokenFactoryClient:
         self.base_url = base_url or os.environ.get("NEBIUS_BASE_URL", DEFAULT_BASE_URL)
         self.model = model or os.environ.get("NEBIUS_MODEL", DEFAULT_MODEL)
         self.timeout = timeout
+        self.max_tokens = max_tokens
 
     async def complete(self, prompt: str, *, system: str | None = None, temperature: float = 0.2) -> str:
         """Single-turn chat completion. Raises NebiusClientError on failure rather than
@@ -148,7 +159,7 @@ class NebiusTokenFactoryClient:
             resp = await client.post(
                 f"{self.base_url}/chat/completions",
                 headers={"Authorization": f"Bearer {self.api_key}"},
-                json={"model": self.model, "messages": messages, "temperature": temperature},
+                json={"model": self.model, "messages": messages, "temperature": temperature, "max_tokens": self.max_tokens},
             )
         if resp.status_code != 200:
             raise NebiusClientError(f"Nebius Token Factory returned {resp.status_code}: {resp.text}")

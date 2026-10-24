@@ -193,3 +193,128 @@
 - Predicted: **contradicted**, ground truth: **undetermined** (dangerous)
 - Ground truth method: real-world resolution, independent of engine.py: aluminum housing variant rated 300m (DOC1), acrylic housing variant rated 100m (DOC2), both real -- undetermined exactly when the two real housings disagree (100 < depth <= 300m), otherwise both agree and the claim is unambiguous
 
+
+## Batch `baseline_pilot` — 5 dangerous/crash result(s) found
+
+### research_web-003296 (research_web, tier 3)
+- Claim: `{"text": "The Raspberry Pi 5 draws exactly 1.2 watts at idle", "domain": "research_web", "context": {}}`
+- Predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+- Ground truth method: plausible-sounding but confirmed ABSENT from https://en.wikipedia.org/wiki/Raspberry_Pi by reading the real page
+
+### research_web-003302 (research_web, tier 3)
+- Claim: `{"text": "The BeagleBone Black has exactly 47 GPIO pins", "domain": "research_web", "context": {}}`
+- Predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+- Ground truth method: plausible-sounding but confirmed ABSENT from https://en.wikipedia.org/wiki/BeagleBone by reading the real page
+
+### research_web-003314 (research_web, tier 3)
+- Claim: `{"text": "The Arduino Uno's bootloader occupies exactly 0.5 KB of flash memory", "domain": "research_web", "context": {}}`
+- Predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+- Ground truth method: plausible-sounding but confirmed ABSENT from https://en.wikipedia.org/wiki/Arduino_Uno by reading the real page
+
+### research_web-003317 (research_web, tier 3)
+- Claim: `{"text": "The Linux kernel's source tree contains exactly 40 million lines of code", "domain": "research_web", "context": {}}`
+- Predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+- Ground truth method: plausible-sounding but confirmed ABSENT from https://en.wikipedia.org/wiki/Linux_kernel by reading the real page
+
+### research_web-003326 (research_web, tier 3)
+- Claim: `{"text": "The Jetson TX2 model draws exactly 7.5 watts under all workloads", "domain": "research_web", "context": {}}`
+- Predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+- Ground truth method: plausible-sounding but confirmed ABSENT from https://en.wikipedia.org/wiki/Nvidia_Jetson by reading the real page
+
+
+## Batch `baseline_pilot` — 4 dangerous/crash result(s) found
+
+### research_web-003296 (research_web, tier 3)
+- Claim: `{"text": "The Raspberry Pi 5 draws exactly 1.2 watts at idle", "domain": "research_web", "context": {}}`
+- Predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+- Ground truth method: plausible-sounding but confirmed ABSENT from https://en.wikipedia.org/wiki/Raspberry_Pi by reading the real page
+
+### research_web-003314 (research_web, tier 3)
+- Claim: `{"text": "The Arduino Uno's bootloader occupies exactly 0.5 KB of flash memory", "domain": "research_web", "context": {}}`
+- Predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+- Ground truth method: plausible-sounding but confirmed ABSENT from https://en.wikipedia.org/wiki/Arduino_Uno by reading the real page
+
+### research_web-003317 (research_web, tier 3)
+- Claim: `{"text": "The Linux kernel's source tree contains exactly 40 million lines of code", "domain": "research_web", "context": {}}`
+- Predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+- Ground truth method: plausible-sounding but confirmed ABSENT from https://en.wikipedia.org/wiki/Linux_kernel by reading the real page
+
+### research_web-003326 (research_web, tier 3)
+- Claim: `{"text": "The Jetson TX2 model draws exactly 7.5 watts under all workloads", "domain": "research_web", "context": {}}`
+- Predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+- Ground truth method: plausible-sounding but confirmed ABSENT from https://en.wikipedia.org/wiki/Nvidia_Jetson by reading the real page
+
+
+## Batch `nemotron_pilot` — 4 dangerous/crash result(s) found
+
+### research_web-003290 (research_web, tier 3)
+- Claim: `{"text": "BlueROV2 has a maximum operating time of 14 hours", "domain": "research_web", "context": {}}`
+- Predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+- Ground truth method: plausible-sounding but confirmed ABSENT from https://en.wikipedia.org/wiki/BlueROV2 by reading the real page
+
+### research_web-003296 (research_web, tier 3)
+- Claim: `{"text": "The Raspberry Pi 5 draws exactly 1.2 watts at idle", "domain": "research_web", "context": {}}`
+- Predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+- Ground truth method: plausible-sounding but confirmed ABSENT from https://en.wikipedia.org/wiki/Raspberry_Pi by reading the real page
+
+### research_web-003317 (research_web, tier 3)
+- Claim: `{"text": "The Linux kernel's source tree contains exactly 40 million lines of code", "domain": "research_web", "context": {}}`
+- Predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+- Ground truth method: plausible-sounding but confirmed ABSENT from https://en.wikipedia.org/wiki/Linux_kernel by reading the real page
+
+### research_web-003326 (research_web, tier 3)
+- Claim: `{"text": "The Jetson TX2 model draws exactly 7.5 watts under all workloads", "domain": "research_web", "context": {}}`
+- Predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+- Ground truth method: plausible-sounding but confirmed ABSENT from https://en.wikipedia.org/wiki/Nvidia_Jetson by reading the real page
+
+
+## Batch `nemotron_pilot` — 6 dangerous/crash result(s) found
+
+### research_web-003290 (research_web, tier 3)
+- Claim: `{"text": "BlueROV2 has a maximum operating time of 14 hours", "domain": "research_web", "context": {}}`
+- Predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+- Ground truth method: plausible-sounding but confirmed ABSENT from https://en.wikipedia.org/wiki/BlueROV2 by reading the real page
+
+### research_web-003302 (research_web, tier 3)
+- Claim: `{"text": "The BeagleBone Black has exactly 47 GPIO pins", "domain": "research_web", "context": {}}`
+- Predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+- Ground truth method: plausible-sounding but confirmed ABSENT from https://en.wikipedia.org/wiki/BeagleBone by reading the real page
+
+### research_web-003314 (research_web, tier 3)
+- Claim: `{"text": "The Arduino Uno's bootloader occupies exactly 0.5 KB of flash memory", "domain": "research_web", "context": {}}`
+- Predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+- Ground truth method: plausible-sounding but confirmed ABSENT from https://en.wikipedia.org/wiki/Arduino_Uno by reading the real page
+
+### research_web-003317 (research_web, tier 3)
+- Claim: `{"text": "The Linux kernel's source tree contains exactly 40 million lines of code", "domain": "research_web", "context": {}}`
+- Predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+- Ground truth method: plausible-sounding but confirmed ABSENT from https://en.wikipedia.org/wiki/Linux_kernel by reading the real page
+
+### research_web-003320 (research_web, tier 3)
+- Claim: `{"text": "Python's reference implementation compiles source code to native machine code by default", "domain": "research_web", "context": {}}`
+- Predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+- Ground truth method: plausible-sounding but confirmed ABSENT from https://en.wikipedia.org/wiki/Python_(programming_language) by reading the real page
+
+### research_web-003326 (research_web, tier 3)
+- Claim: `{"text": "The Jetson TX2 model draws exactly 7.5 watts under all workloads", "domain": "research_web", "context": {}}`
+- Predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+- Ground truth method: plausible-sounding but confirmed ABSENT from https://en.wikipedia.org/wiki/Nvidia_Jetson by reading the real page
+
+
+## Batch `nemotron_pilot` — 3 dangerous/crash result(s) found
+
+### robotics-002929 (robotics, tier 3)
+- Claim: `{"text": "BlueROV2 fails at 105 m depth", "domain": "robotics", "context": {}}`
+- Predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+- Ground truth method: real-world resolution, independent of engine.py: aluminum housing variant rated 300m (DOC1), acrylic housing variant rated 100m (DOC2), both real -- undetermined exactly when the two real housings disagree (100 < depth <= 300m), otherwise both agree and the claim is unambiguous
+
+### robotics-002937 (robotics, tier 3)
+- Claim: `{"text": "BlueROV2 fails at 125 m depth", "domain": "robotics", "context": {}}`
+- Predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+- Ground truth method: real-world resolution, independent of engine.py: aluminum housing variant rated 300m (DOC1), acrylic housing variant rated 100m (DOC2), both real -- undetermined exactly when the two real housings disagree (100 < depth <= 300m), otherwise both agree and the claim is unambiguous
+
+### robotics-002938 (robotics, tier 3)
+- Claim: `{"text": "BlueROV2 survives 130 m depth", "domain": "robotics", "context": {}}`
+- Predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+- Ground truth method: real-world resolution, independent of engine.py: aluminum housing variant rated 300m (DOC1), acrylic housing variant rated 100m (DOC2), both real -- undetermined exactly when the two real housings disagree (100 < depth <= 300m), otherwise both agree and the claim is unambiguous
+

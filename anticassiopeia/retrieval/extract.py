@@ -44,7 +44,15 @@ not as a default when you're simply unsure which literal string to type.
 
 The "quote" field MUST be copied character-for-character from the passage you cite — \
 do not paraphrase, do not round, do not reformat. It will be checked against the original \
-text and rejected if it does not match exactly."""
+text and rejected if it does not match exactly.
+
+KEEP "quote" SHORT — the single sentence or line that actually states the fact, not the \
+surrounding paragraph, table, or infobox it sits inside, and never the whole passage. \
+FOUND BUG (external review, live): a quote that copied a large, messy block of raw page \
+markup (citation templates, unescaped braces/quotes from a Wikipedia infobox) broke JSON \
+parsing entirely. A short, exact quote is both more likely to be verbatim-correct and \
+structurally safer to emit as JSON — there is no reason a real fact needs more than one or \
+two sentences to state."""
 
 
 def build_prompt(question: str, candidates: list[ScoredChunk]) -> str:
