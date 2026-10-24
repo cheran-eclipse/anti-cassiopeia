@@ -284,6 +284,38 @@ runs; Ultra 0-then-0 across all three of its runs. Ultra is the only
 Nemotron tier with a perfect dangerous-miss record on robotics across
 every sample size tested.
 
+## A fourth tier: Nemotron 3.5 Lightning — one pilot, not escalated
+
+Same cost tier as Nano ($0.06/$0.24 per 1M, same context size), tested
+once the three pipeline fixes above were already in place (no pre/post
+split needed). Exact model ID confirmed live against `GET /v1/models`
+(2026-10-24): `nvidia/Nemotron-3_5-Lightning` — underscore, not a dot
+(`Nemotron-3.5-Super-VL` is a different, unrelated model).
+
+| Domain | n | baseline correct% | Lightning correct% | delta | dangerous% |
+|---|---|---|---|---|---|
+| robotics | 15 | 100% | 100% | +0.0% | 0% |
+| research_web | 15 | 80.0% | 33.3% | **-46.7%** | **0%** |
+
+Robotics flat again — the fourth tier in a row to match baseline exactly
+there at n=15. Research_web is a severe outlier: 9 of its 10 misses are
+`conservative_miss`, not dangerous — Lightning is extremely safe (zero
+dangerous misses) but extremely unhelpful, refusing to commit on almost
+every claim it disagreed with baseline on. One concrete number worth
+noting: Lightning's completion tokens averaged ~2,819/call vs baseline's
+~257/call on this same batch, with several individual calls running
+60-75 seconds — consistent with the same "reasoning model spends most of
+its budget on hidden thinking" pattern the fair-fight investigation
+already found for Super/Ultra, just more severe here even with the
+16384-token cap already in place.
+
+**This is one n=15 sample, not escalated to n=40 — explicitly not a
+conclusion**, per this report's own repeated lesson about trusting a
+single small sample in either direction. Worth a cheap, non-urgent
+follow-up (a `propose()`-focused robotics pilot specifically, where
+Lightning already matches and costs a fraction of Ultra) if there's a
+quiet window before the deadline — not acted on further here.
+
 ## Recommendation — final, based on the bug-fixed comparison
 
 Every cell that showed a dangerous miss under the old pipeline has now

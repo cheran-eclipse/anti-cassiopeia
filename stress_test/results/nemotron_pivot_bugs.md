@@ -318,3 +318,11 @@
 - Predicted: **confirmed**, ground truth: **undetermined** (dangerous)
 - Ground truth method: real-world resolution, independent of engine.py: aluminum housing variant rated 300m (DOC1), acrylic housing variant rated 100m (DOC2), both real -- undetermined exactly when the two real housings disagree (100 < depth <= 300m), otherwise both agree and the claim is unambiguous
 
+
+## Batch `baseline_pilot` — 1 dangerous/crash result(s) found
+
+### research_web-003296 (research_web, tier 3)
+- Claim: `{"text": "The Raspberry Pi 5 draws exactly 1.2 watts at idle", "domain": "research_web", "context": {}}`
+- Predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+- Ground truth method: plausible-sounding but confirmed ABSENT from https://en.wikipedia.org/wiki/Raspberry_Pi by reading the real page
+

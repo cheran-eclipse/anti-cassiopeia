@@ -53,6 +53,12 @@ NEMOTRON_PRICING_PER_M: dict[str, tuple[float, float]] = {
     "nvidia/Nemotron-3-Ultra-550b-a55b": (1.00, 3.00),
     "nvidia/nemotron-3-super-120b-a12b": (0.30, 0.90),
     "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B": (0.06, 0.24),
+    # Exact model ID confirmed live against GET /v1/models (2026-10-24) --
+    # "Nemotron-3_5-Lightning" with an underscore, NOT "3.5" with a dot (that
+    # string belongs to a different model, nvidia/Nemotron-3.5-Super-VL, which
+    # is NOT this one). Pricing same tier as Nano (also third-party-sourced,
+    # same caveat as the others above).
+    "nvidia/Nemotron-3_5-Lightning": (0.06, 0.24),
 }
 
 BUDGET_HARD_STOP_USD = 6.00
