@@ -698,6 +698,120 @@ that), and its own endpoint-level tests — was left for a later round
 rather than wired in half-finished. `docs/DESIGN.md` §2 has the original
 design reasoning this followed.
 
+## v2: "bring your own evidence" — upload, robotics BYOE, project verify, frontend
+
+Built in three phases (2026-10-25), each committed and CI-green before
+the next started; full detail, including every test file and both
+deliberate live-call confirmations, is in each phase's own commit
+message (`git log --grep "v2 Phase"`).
+
+**Phase 1 — `POST /upload` + `robotics.py`'s free-text BYOE path.**
+`anticassiopeia/retrieval/document_ingest.py` (`extract_text()`,
+format-dispatched: `.txt/.md/.csv/.rpt/.svd/.xml` as UTF-8, `.pdf` via
+`pypdf`, `.docx` via `python-docx`; a `DocumentIngestError` — never a
+silent empty string — on an unsupported extension or no extractable
+text, e.g. a scanned PDF with no text layer) and
+`anticassiopeia/api/upload_store.py` (a thread-safe, capped, 24h-TTL
+in-memory `UploadStore` keyed by an opaque `secrets.token_urlsafe`
+`document_id`) were present but UNTESTED and missing real dependency
+declarations going into this phase (see that commit's own "WIP, stopped
+mid-Phase-1" message) — fixed for real: `pypdf`/`python-docx`/
+`python-multipart` added to `pyproject.toml` pinned to the exact
+versions actually installed and tested (`python-docx`/`python-multipart`
+were missing from the environment entirely; the multipart one meant
+`/upload`'s own form-parsing would have failed at runtime).
+`anticassiopeia/retrieval/stance.py` was extracted out of
+`research_web.py` (pure refactor, zero behavior change, proven by the
+existing research_web suite staying green) so `robotics.py`'s new BYOE
+path and `research_web.py`'s multi-candidate mode share one stance-
+judgment implementation instead of two that could drift.
+`robotics.py`'s `gather_evidence()`: when `Claim.context["document_text"]`
+is present (resolved from a caller's `document_id` by `server.py`'s
+`/verify` handler — `robotics.py` itself never imports the upload store,
+keeping the domain/api layering clean), it takes over ENTIRELY — real
+chunk → BM25 → propose → independently-reverify → judge-stance, the
+SAME shape `research_web.py`'s multi-candidate mode already uses, minus
+the web-search step. Deliberately does NOT route through the depth-
+specific regex/bar-conversion parser even when `depth_m`/`polarity` are
+also present in context — an uploaded document can be about anything,
+not just a rated depth. No `document_text` → byte-for-byte the pre-v2
+fixed-corpus behavior (proven by the pre-existing 229-test baseline
+staying green throughout). 49 new offline tests (real `pypdf`-built
+PDFs and `python-docx`-built DOCX files, not mocks, for the ingestion
+module; `UploadStore`'s TTL/cap eviction; the BYOE path via a fake LLM
+client; `/upload`'s auth/rate-limit/size-cap/extension-allowlist and
+`/verify`'s `document_id` resolution/expiry) plus two deliberate live
+calls against the real Nebius API confirming the full pipeline in both
+directions (a true depth claim against an uploaded datasheet →
+CONFIRMED; a false one → CONTRADICTED).
+
+**Phase 2 — `POST /verify/project`.** A batch of claims, each optionally
+tied to a prior upload's `document_id`, deterministically routed to the
+right domain (`server.py`'s `_sniff_domain_for_document()`: extension
+first, `.xml`/`.rpt` cross-checked against real content markers already
+defined in `fpga_embedded.py` — `_SVD_DEVICE_TAG_RE`,
+`_DESIGN_TIMING_SUMMARY_HEADER_RE`, imported and reused, never
+reimplemented — so the one genuinely ambiguous extension isn't trusted
+blind; never an LLM guess about a format code can already determine).
+`ml_data.py`/`fpga_embedded.py` themselves are UNCHANGED — rather than
+teach their already-hardened, heavily-tested file-reading/line-locator
+code a second, raw-text code path, `server.py` writes a resolved
+document's real extracted text to a real file under a new, fixed,
+server-owned scratch directory (`var/project_scratch/`, gitignored),
+added to just those two adapters' `allowed_base_dirs` via
+`domains/__init__.py`'s new `default_domains(extra_allowed_base_dirs=...)`
+param (default `None` — zero behavior change for every other caller).
+Scoped to one request via a per-call `tempfile.mkdtemp()` subdirectory,
+deleted in a `finally` block right after — proven empirically (not just
+assumed) by a dedicated test asserting the scratch directory is empty
+again after the call. The endpoint fabricates nothing: the caller still
+supplies every structured field `ml_data`/`fpga_embedded` actually need
+(column/stat/expected_value, or peripheral/metric/comparator/
+expected_value) — this only ever auto-fills which real file a
+`document_id` corresponds to. One claim's own failure (bad/expired
+`document_id`, a domain with no defined way to consume a document) is a
+named per-claim `error`, never a whole-batch failure; the real per-claim
+`Verdict`s are rolled up via `core/compound.py`'s EXISTING `rollup()` —
+this endpoint never calls `decompose_claim()` at all (see that section
+above for why `DECOMPOSABLE_DOMAINS` is deliberately NOT loosened just
+because this endpoint exists). Its own rate-limit bucket (stricter than
+`/verify`'s — a project call can fan out into several live LLM calls)
+and a hard cap of 20 claims/call. 18 new offline tests (real CSV/SVD/
+Vivado-report fixture content through real `ml_data.py`/`fpga_embedded.py`
+computation against real scratch files; sniffing correctness including
+caller override; per-claim-vs-batch error isolation; scratch cleanup)
+plus one deliberate live end-to-end confirmation through the real app
+and the real Nebius API: a real CSV mean recomputation + a real Nemotron
+Ultra robotics BYOE verification, rolled up to a real `CONFIRMED`.
+
+**Phase 3 — frontend rebuild.** `docs/index.html`'s visual theme was
+fully rewritten (clean Inter sans-serif chrome, monospace reserved for
+precision/data content only, a near-black navy background with two
+sparse neon accents — lime for CONFIRMED/highlights, cyan for primary
+actions — replacing the single blue-violet terminal theme a direct
+screenshot-comparison correction rejected) and extended with a Documents
+upload card and a Project-verify card (dynamic claim rows, each
+optionally tied to an uploaded document) wired to Phases 1-2's new
+endpoints, reusing the same error-handling conventions (401 fixed
+message, 429 real server detail + retry, network failure + retry) the
+single-claim flow already had. No browser tool was available to verify
+this visually in-session; verification used what was available instead
+of being skipped: `node --check` on the extracted script, and two real
+`jsdom` dry runs of the ACTUAL shipped file (real DOM, real event
+dispatch, a mocked `fetch()` returning the exact response shapes Phases
+1-2's own backend tests already proved correct) covering the success
+path (presets, single verify, project verify, mixed success/error
+per-claim rendering) and the error path (401/429+retry/network-failure+
+retry/a real `missing[]` payload) end to end. This process also caught a
+real gap by actually POSTing rather than trusting a CORS preflight's
+200: the LIVE Cloud Run deployment this frontend points at by default is
+still running the OLD `server.py` (`/verify/project` is a real 404
+there right now) — stated plainly in the README's "Frontend" section,
+not hidden. Redeploying is a real, billed action on the live GCP
+project, not something any CI step in this repo does automatically, and
+this session had no `gcloud` CLI available to do it even if that were
+appropriate to do unprompted.
+
 ## Open design decisions (not yet made)
 
 - Evidence retrieval inside each domain adapter: web search? local

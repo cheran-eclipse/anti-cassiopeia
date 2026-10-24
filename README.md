@@ -6,9 +6,10 @@ a confident-sounding guess standing in for the third one.
 
 Built for the Nebius x NVIDIA Global AI Hackathon, Apps and Agents track:
 an app or agent you'd actually use, not a single demo script. Run it as
-a CLI, call it as an HTTP API, or wire it into another agent's tool-use
+a CLI, call it as an HTTP API, through the hosted web frontend (see
+["Frontend"](#frontend) below), or wire it into another agent's tool-use
 loop as the claim-checking step before that agent commits to an answer —
-all three hit the same `VerificationEngine`. Runs on Nebius Token Factory
+all four hit the same `VerificationEngine`. Runs on Nebius Token Factory
 (see `anticassiopeia/llm/nebius_client.py`). The `robotics` domain's live
 calls run on **NVIDIA Nemotron Ultra** — a real, live model in the
 request path, not a mention — and `research_web` runs on `gpt-oss-120b`;
@@ -62,6 +63,69 @@ Every domain either returns real evidence with a real locator, or an
 honest, specific, named reason it can't yet — never a guess. See
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full per-piece
 status and known limitations stated plainly, not hidden.
+
+## Bring your own evidence (v2)
+
+The four domains above also work against a document YOU supply, not just
+the project's own seeded corpus / live search:
+
+```bash
+curl -X POST localhost:8000/upload -H "X-API-Key: $ANTICASSIOPEIA_API_KEY" \
+  -F file=@my_datasheet.pdf
+# -> {"document_id": "...", "filename": "my_datasheet.pdf", "size_bytes": 48213}
+```
+
+`.txt` / `.md` / `.csv` / `.rpt` / `.svd` / `.xml` are read as plain text;
+`.pdf` (via `pypdf`) and `.docx` (via `python-docx`) have their real text
+layer extracted. A scanned/image-only PDF with no text layer is a named
+error, not a silent empty result — OCR is explicitly out of scope. The
+extracted text is held in memory for 24h under an opaque `document_id`,
+capped and evicted the same way the API's own rate-limit state is.
+
+**Single claim against your document** — pass that `document_id` in
+`context`, and `robotics`'s evidence pipeline (real chunk → BM25 retrieve
+→ LLM propose → independently re-verify → judge stance) runs against
+your document's real text instead of the fixed corpus:
+
+```bash
+curl -X POST localhost:8000/verify -H "X-API-Key: $ANTICASSIOPEIA_API_KEY" \
+  -H 'content-type: application/json' \
+  -d '{"text": "the X9 sensor is rated for 450m depth", "domain": "robotics", "context": {"document_id": "..."}}'
+```
+
+**A bundle of claims, each tied to a different document** — `ml_data` and
+`fpga_embedded` need their own structured fields too (column/stat, or
+peripheral/metric/comparator), same as always; `POST /verify/project`
+only auto-fills *which real file* a `document_id` refers to, by
+deterministically sniffing the upload's format (extension first, cross-
+checked by real content markers for the one genuinely ambiguous case,
+`.xml` — never an LLM guessing what code can already determine) and
+routing it to the right domain:
+
+```bash
+curl -X POST localhost:8000/verify/project -H "X-API-Key: $ANTICASSIOPEIA_API_KEY" \
+  -H 'content-type: application/json' \
+  -d '{"claims": [
+        {"text": "the mean voltage is 5.0", "document_id": "<csv-doc>", "context": {"column": "voltage", "stat": "mean", "expected_value": 5.0}},
+        {"text": "the X9 sensor is rated for 450m depth", "document_id": "<datasheet-doc>"}
+      ]}'
+```
+
+The response carries both each claim's own full `Verdict` and one rolled-
+up project status (AND-semantics — one real `CONTRADICTED` part falsifies
+the whole bundle; one claim's own error, e.g. an unknown `document_id`,
+never fails the others). Up to 20 claims per call, its own rate limit
+(a project call can fan out into several live LLM calls).
+
+Honest, stated scope boundary: a *compound* claim split by an LLM
+(`anticassiopeia/core/compound.py`, library-only, not wired to any HTTP
+endpoint — see `docs/ARCHITECTURE.md`'s "Item 20" section) still only
+ever decomposes into `robotics`/`research_web` sub-claims — that
+restriction is deliberately **not** loosened just because `/verify/project`
+can now resolve a real uploaded path elsewhere; an LLM splitting free
+text never sees which document a sub-claim would even need, and
+loosening it would reintroduce exactly the fabricated-file-path risk
+that restriction exists to prevent.
 
 ## How the model choice was made
 
@@ -173,6 +237,31 @@ curl -X POST localhost:8000/verify \
   -d '{"text": "Bar30 survives 500m depth", "domain": "robotics"}'
 ```
 
+## Frontend
+
+**[cheran-eclipse.github.io/anti-cassiopeia](https://cheran-eclipse.github.io/anti-cassiopeia/)**
+— a single dependency-free static HTML+JS file (`docs/index.html`,
+served by GitHub Pages, no build step, no framework), pointed at the
+deployed engine by default. Covers the same surface as the API: a
+single-claim verify form (with live-loaded domains and quick-verify
+presets), a document uploader, and a project-verify panel for a bundle
+of claims each optionally tied to a different uploaded document, rolled
+up the same way the API itself does. The API key field is a plain
+password input stored only in that browser's `localStorage`, pre-filled
+with a dedicated, separately-rate-limited public demo key (never the
+primary one) so a first-time visitor can try it immediately.
+
+**Known gap, stated plainly:** the live Cloud Run deployment this
+frontend points at by default has not yet been redeployed with this
+repo's current `server.py` — its own `/openapi.json` currently lists
+only `/health`, `/domains`, and `/verify`. The frontend's Documents and
+Project-verify panels need `POST /upload` / `POST /verify/project`,
+which only exist in this repository right now, not yet on that live
+service. The single-claim verify flow is unaffected (unchanged endpoint,
+unchanged contract). Redeploying the service is a real, billed action on
+whoever controls that Cloud Run project, so it's intentionally not done
+automatically by any CI step in this repo.
+
 ## Docker
 
 ```bash
@@ -194,13 +283,19 @@ not skip them).
 
 ```
 anticassiopeia/
-  core/        verdict types, DomainAdapter interface, VerificationEngine
+  core/        verdict types, DomainAdapter interface, VerificationEngine,
+               compound.py (LLM claim decomposition, library-only)
   domains/     robotics, ml_data, fpga_embedded, research_web — all real
+  retrieval/   shared chunk/BM25/propose/verify/stance pipeline +
+               document_ingest.py (.txt/.md/.csv/.rpt/.svd/.xml/.pdf/.docx)
   llm/         Nebius Token Factory client (live-verified, see docstring)
-  api/         FastAPI surface (POST /verify, GET /health, GET /domains)
+  api/         FastAPI surface — POST /verify, POST /upload,
+               POST /verify/project, GET /health, GET /domains
 evals/         31 real test cases + fixtures + the runner (run_evals.py)
 scripts/       demo.py — judge-facing end-to-end demo
-docs/          architecture, design decisions, Constellation extraction provenance
+docs/          index.html (the frontend, GitHub-Pages-served — see
+               "Frontend" above), architecture, design decisions,
+               Constellation extraction provenance
 .github/workflows/evals.yml   CI: runs the eval suite on every push/PR
 Dockerfile     build-tested for real (see above)
 ```
