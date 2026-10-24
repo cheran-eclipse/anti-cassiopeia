@@ -20,10 +20,21 @@ from anticassiopeia.core.verdict import Claim, Evidence, Verdict, VerdictState
 #: Below this on both sides, the claim is UNDETERMINED rather than guessed at.
 DECISION_THRESHOLD = 0.5
 
-#: Minimum total trust-weighted evidence before the engine will render any
-#: verdict other than UNDETERMINED. Thin evidence stays UNDETERMINED even
-#: if it all points one way.
-MIN_EVIDENCE_WEIGHT = 0.3
+# REMOVED (external review): there used to be a second constant here,
+# MIN_EVIDENCE_WEIGHT = 0.3, gating total_weight (support + contradict)
+# before the net-weight check below ever ran. Proven dead code, not just
+# unused: for any support/contradict >= 0, |support - contradict| <=
+# support + contradict always (the net can never exceed the total) -- so
+# whenever total_weight < 0.3, abs(net) was ALSO necessarily < 0.3 < 0.5
+# = DECISION_THRESHOLD, meaning the net-weight check a few lines below
+# already caught every case this constant could ever have caught, with
+# the identical UNDETERMINED outcome. Verified by a 1,000,000-trial Monte
+# Carlo check (zero violations) before removing, not just the algebra
+# alone. Removed rather than redesigned to have an independent effect:
+# docs/DESIGN.md §3 already states these thresholds are "arbitrary, not
+# fit to anything" and shouldn't be tuned without real evidence data to
+# tune them against -- inventing a new independent role for this
+# constant without that data would be guessing, not fixing.
 
 #: FOUND BUG (external review): `confidence = |net| / total_weight` reaches
 #: a full 1.00 off a SINGLE piece of evidence, regardless of that source's
@@ -151,9 +162,28 @@ class VerificationEngine:
         reasoning.append(f"Support weight: {support:.2f}, contradiction weight: {contradict:.2f}.")
 
         total_weight = support + contradict
-        if total_weight < MIN_EVIDENCE_WEIGHT:
+
+        # MERGED (external review — see MIN_EVIDENCE_WEIGHT's removal note
+        # above): this used to be two separate checks, a total_weight
+        # minimum and this net-weight one, but the first was PROVEN dead
+        # code — it never independently fired, since |net| <= total_weight
+        # always, so total_weight below its old 0.3 floor meant |net| was
+        # also already below this 0.5 threshold. Merging them loses no
+        # case the old code handled (every one still lands here with the
+        # SAME describe_gap()-sourced `missing` value, now called
+        # unconditionally rather than only on the old first branch), and
+        # gains one: an adapter that has something specific to say about
+        # GENUINELY CONFLICTING (not just absent) evidence now gets the
+        # chance to say it too, instead of always getting the generic
+        # fallback below.
+        net = support - contradict
+        if abs(net) < DECISION_THRESHOLD:
             missing = adapter.describe_gap(claim, evidence)
-            reasoning.append("Total evidence weight below minimum — refusing to render a confident verdict.")
+            reasoning.append(
+                "Total evidence weight below the decision threshold — refusing to render a confident verdict."
+                if not evidence else
+                "Support and contradiction are too close to call."
+            )
             if contested and not missing:
                 missing = [
                     f"{len(contested)} piece(s) of evidence exist but are contested (sources disagree) — "
@@ -165,19 +195,7 @@ class VerificationEngine:
                 confidence=None,
                 evidence=evidence,
                 reasoning=reasoning,
-                missing=missing or ["Insufficient evidence weight to decide."],
-            )
-
-        net = support - contradict
-        if abs(net) < DECISION_THRESHOLD:
-            reasoning.append("Support and contradiction are too close to call.")
-            return Verdict(
-                claim=claim,
-                state=VerdictState.UNDETERMINED,
-                confidence=None,
-                evidence=evidence,
-                reasoning=reasoning,
-                missing=["Evidence conflicts or is too evenly weighted to resolve."],
+                missing=missing or ["Evidence conflicts or is too evenly weighted to resolve."],
             )
 
         if net > 0:

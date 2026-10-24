@@ -37,9 +37,12 @@ from anticassiopeia.domains.research_web import ResearchWebAdapter  # noqa: E402
 from anticassiopeia.domains.robotics import RoboticsAdapter  # noqa: E402
 from instrumented_client import (  # noqa: E402
     BUDGET_HARD_STOP_USD,
+    DEFAULT_MODEL_NAME,
     BudgetExceededError,
     InstrumentedNebiusClient,
     UsageTracker,
+    run_provenance,
+    utc_timestamp,
 )
 
 MANIFEST_PATH = REPO_ROOT / "stress_test/claims/manifest.jsonl"
@@ -161,6 +164,11 @@ async def run_batch(
     engine = await build_engine(
         tracker, budget_usd=budget_usd, model=model, input_cost_per_m=input_cost_per_m, output_cost_per_m=output_cost_per_m
     )
+    # FOUND BUG (external review): raw result rows had no run_id, model ID,
+    # timestamp, commit, or claim-set hash -- computed ONCE per batch (not
+    # per-row; see run_provenance()'s own docstring), merged into every row
+    # below. Going forward only, per the task: historical files not backfilled.
+    provenance = run_provenance(claims, model or DEFAULT_MODEL_NAME)
 
     raw_results_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -192,6 +200,8 @@ async def run_batch(
             severity = "crash" if predicted == "CRASH" else classify(predicted, c["ground_truth_verdict"])
 
             record = {
+                **provenance,
+                "timestamp": utc_timestamp(),
                 "claim_id": c["claim_id"],
                 "domain": c["domain"],
                 "tier": c["tier"],

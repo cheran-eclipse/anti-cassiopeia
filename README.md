@@ -116,15 +116,19 @@ PYTHONPATH=. python scripts/demo.py
 ```
 
 Runs 6 real claims across all 4 domains through the actual engine — no
-mocked output. Example excerpt (robotics, on real sourced facts):
+mocked output. Example excerpt (robotics, on real sourced facts, from an
+actual run on 2026-10-24 — regenerated here after an external review
+caught the previous excerpt showing a stale confidence 1.00 the engine's
+single-source cap, added earlier this project, no longer produces):
 
 ```
 [✗] (robotics) Bar30 survives 500 m depth
-    verdict: contradicted (confidence 1.00)
-    evidence [contradicts, trust=0.85]: Operating pressure range: 0 to 30 bar,
-      -20 to +85 C (≈296 m depth-equivalent) — fails a 500 m condition by ~40%.
-      locator: docs/extracted/constellation-robotics-seed.md §2, citing
-      evals/model-comparison/corpus/DOC3_Bar30_MS5837-30BA_chip_datasheet.txt:11,33
+    verdict: contradicted (confidence 0.90)
+    evidence [contradicts, trust=0.85]: Operating Pressure Range: 0 to 30 bar
+      [checked against the manufacturer's RATED limit (not an observed
+      destructive test): ~298 m depth-equivalent rating vs claimed 500 m
+      (survives claim) -> contradicts]
+      locator: DOC3_Bar30, chunk DOC3_Bar30#3, ~char 813 (chunk starts line 10)
 ```
 
 ## Eval suite
@@ -205,3 +209,15 @@ Dockerfile     build-tested for real (see above)
 
 MPL 2.0 — see LICENSE. Copyright (c) 2026 Cheran N K (Eclipse Hovering).
 Commercial licensing available on request.
+
+**Scope, stated explicitly (external review):** this license covers the
+code in this repository only — `anticassiopeia/`, `evals/`, `scripts/`,
+`stress_test/`'s own scripts, and the docs. It does NOT cover third-party
+data files or vendor reports bundled or referenced alongside the code
+(e.g. the UCI datasets `ml_data` claims are checked against, fetched
+manufacturer datasheet excerpts, sample EDA/synthesis reports) — those
+keep whatever license their original source states, which varies by
+source and in some cases isn't stated by the source at all. See
+[`stress_test/PROVENANCE.md`](stress_test/PROVENANCE.md) for exactly
+which license applies to each bundled third-party file, stated plainly
+rather than assumed.

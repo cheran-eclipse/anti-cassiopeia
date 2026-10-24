@@ -96,6 +96,7 @@ import httpx  # noqa: E402
 from dotenv import dotenv_values  # noqa: E402
 
 from instrumented_client import BUDGET_HARD_STOP_USD, BudgetExceededError, UsageTracker  # noqa: E402
+from instrumented_client import run_provenance, utc_timestamp  # noqa: E402
 from run_test1 import classify, locked_append  # noqa: E402
 from run_test2_bare import (  # noqa: E402
     _CANONICAL_WORDS, build_prompt, parse_bare_verdict, shows_access_awareness,
@@ -304,6 +305,9 @@ async def run_codeexec_batch(
     raw_results_path.parent.mkdir(parents=True, exist_ok=True)
     scratch_root = scratch_root or (REPO_ROOT / "stress_test" / ".codeexec_scratch")
     scratch_root.mkdir(parents=True, exist_ok=True)
+    # FOUND BUG (external review): same fix as run_test1.py's run_batch() --
+    # see run_provenance()'s docstring. Going forward only.
+    provenance = run_provenance(claims, _MODEL)
 
     bugs_found: list[dict] = []
     results = []
@@ -416,6 +420,8 @@ async def run_codeexec_batch(
             severity = "crash" if predicted == "CRASH" else classify(classify_input, c["ground_truth_verdict"])
 
             record = {
+                **provenance,
+                "timestamp": utc_timestamp(),
                 "claim_id": c["claim_id"], "domain": c["domain"], "tier": c["tier"],
                 "predicted_verdict": predicted, "ground_truth_verdict": c["ground_truth_verdict"],
                 "severity": severity, "n_tool_calls": n_tool_calls,

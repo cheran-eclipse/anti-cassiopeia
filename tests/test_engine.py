@@ -109,12 +109,37 @@ async def test_evenly_balanced_evidence_is_undetermined_not_a_coin_flip():
     assert v.state == VerdictState.UNDETERMINED
 
 
-async def test_weak_evidence_below_minimum_weight_is_undetermined_even_if_one_sided():
-    # single low-trust piece of evidence, all pointing one way, but too thin overall
+async def test_weak_evidence_below_decision_threshold_is_undetermined_even_if_one_sided():
+    # single low-trust piece of evidence, all pointing one way, but too thin to decide.
+    # (external review: engine.py used to have a SEPARATE MIN_EVIDENCE_WEIGHT=0.3
+    # constant/check for this case -- proven mathematically dead code, since
+    # |net| <= total_weight always, so anything below that 0.3 floor was
+    # already below DECISION_THRESHOLD=0.5 too. Removed; this test's outcome
+    # is unchanged, now via the single merged check.)
     ev = [Evidence(source="a", snippet="x", stance="supports", trust=0.1)]
     engine = VerificationEngine(domains={"test_domain": _FixedEvidenceAdapter(ev)})
     v = await engine.verify(_claim())
     assert v.state == VerdictState.UNDETERMINED
+
+
+async def test_describe_gap_is_consulted_even_for_genuinely_conflicting_nonempty_evidence():
+    # FOUND improvement while removing MIN_EVIDENCE_WEIGHT (external review):
+    # the old "too close to call" branch never called adapter.describe_gap()
+    # at all, always using a generic message -- merging the two branches
+    # means an adapter with something specific to say about conflicting
+    # evidence now gets the chance to say it, not just on the zero-evidence path.
+    class _AdapterWithSpecificConflictGap(_FixedEvidenceAdapter):
+        def describe_gap(self, claim, evidence):
+            return ["Specific reason: sources genuinely disagree about X."]
+
+    ev = [
+        Evidence(source="a", snippet="x", stance="supports", trust=0.6),
+        Evidence(source="b", snippet="y", stance="contradicts", trust=0.6),
+    ]
+    engine = VerificationEngine(domains={"test_domain": _AdapterWithSpecificConflictGap(ev)})
+    v = await engine.verify(_claim())
+    assert v.state == VerdictState.UNDETERMINED
+    assert v.missing == ["Specific reason: sources genuinely disagree about X."]
 
 
 async def test_contested_evidence_is_excluded_from_scoring_not_counted_either_way():

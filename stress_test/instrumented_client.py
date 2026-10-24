@@ -20,8 +20,14 @@ printed/logged) and is never written to any report file.
 
 from __future__ import annotations
 
+import hashlib
+import json
+import subprocess
 import time
+import uuid
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from pathlib import Path
 
 import httpx
 from dotenv import dotenv_values
@@ -31,6 +37,70 @@ from anticassiopeia.llm.nebius_client import NebiusClientError
 _ENV = dotenv_values(".env")
 _DEFAULT_BASE_URL = "https://api.tokenfactory.nebius.com/v1"
 _DEFAULT_MODEL = "openai/gpt-oss-120b"
+#: Public alias of _DEFAULT_MODEL, for callers (e.g. run_test1.py's
+#: run_provenance() call) that need to record the real default without
+#: importing a leading-underscore "private" name across modules.
+DEFAULT_MODEL_NAME = _DEFAULT_MODEL
+
+
+def new_run_id() -> str:
+    """One short, unique id per harness invocation (shared across every row
+    that run produces), not per-row -- see run_provenance()'s own docstring
+    for why this matters."""
+    return uuid.uuid4().hex[:12]
+
+
+def git_commit_hash() -> str:
+    """FOUND BUG (external review): raw result rows had no way to tell which
+    code version produced them -- repeated pivot runs reuse the same ~80
+    claim IDs under different model variants with no way to tell runs apart
+    except file order. Best-effort: a dirty/missing git checkout (e.g. a
+    packaged artifact with no .git) must not crash a real run over a
+    provenance nicety."""
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, timeout=5,
+            cwd=str(Path(__file__).parent.parent),
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return "unknown"
+
+
+def claims_hash(claims: list[dict]) -> str:
+    """Short hash of the EXACT claim set a batch ran against -- not a path
+    to a manifest FILE, which wouldn't survive a pilot run against an
+    ad hoc subset (e.g. the Nemotron pivot's select_pilot() samples) or a
+    manifest regenerated after the fact. Hashes the claims' own content
+    (sorted by claim_id for a stable hash regardless of iteration order),
+    so two rows sharing this hash are PROVABLY running the identical claim
+    set, not just a file with the same name."""
+    canonical = json.dumps(sorted(claims, key=lambda c: c["claim_id"]), sort_keys=True)
+    return hashlib.sha256(canonical.encode()).hexdigest()[:12]
+
+
+def run_provenance(claims: list[dict], model: str) -> dict:
+    """FOUND BUG (external review): stress_test/results/*_raw.jsonl rows had
+    no run_id, model ID, timestamp, commit, or manifest/claim-set hash --
+    repeated pilot runs reuse the same ~80 claim IDs under different model
+    variants with no way to tell rows from DIFFERENT runs apart except file
+    order, which breaks the moment two runs get interleaved or a file is
+    hand-edited. Computed ONCE per run_batch()/run_codeexec_batch() call
+    (not per-row -- commit/claims_hash/run_id are constant across one run;
+    only the per-row timestamp genuinely varies) and merged into every row.
+    Going forward only, per the task: not backfilled into historical files."""
+    return {
+        "run_id": new_run_id(),
+        "model": model,
+        "commit": git_commit_hash(),
+        "claims_hash": claims_hash(claims),
+    }
+
+
+def utc_timestamp() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 # Nebius Token Factory pricing for openai/gpt-oss-120b, as given in this task's
 # own rule 5 — not re-derived, not looked up, used exactly as specified.
