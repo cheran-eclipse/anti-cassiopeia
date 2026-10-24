@@ -199,12 +199,25 @@ def _auth_failure_bucket_for(client_ip: str) -> _TokenBucket:
 
 def _require_api_key(request: Request, x_api_key: str | None = Header(default=None, alias=_API_KEY_HEADER)) -> str:
     expected = os.environ.get("ANTICASSIOPEIA_API_KEY")
+    # Optional second key, meant for a public-facing demo frontend: kept
+    # separate from the main key so a frontend can ship this one pre-filled
+    # without exposing the primary key anyone else depends on. Unset by
+    # default -- if ANTICASSIOPEIA_DEMO_API_KEY isn't configured, this
+    # candidate simply never matches, same fail-closed behavior as before
+    # for anyone not holding the main key.
+    expected_demo = os.environ.get("ANTICASSIOPEIA_DEMO_API_KEY")
     # FOUND BUG (follow-up security review): secrets.compare_digest() raises
     # TypeError -- a 500, not a clean 401 -- for a str argument containing any
     # non-ASCII character. Encoding both sides to bytes first removes that
     # restriction entirely (bytes comparison has no ASCII requirement) while
-    # keeping the same constant-time guarantee.
-    valid = bool(expected and x_api_key and secrets.compare_digest(x_api_key.encode("utf-8"), expected.encode("utf-8")))
+    # keeping the same constant-time guarantee. Both candidates are checked
+    # with compare_digest (never short-circuited on a plain ==) so neither
+    # comparison leaks timing information.
+    x_api_key_bytes = x_api_key.encode("utf-8") if x_api_key else None
+    valid = bool(x_api_key_bytes) and (
+        bool(expected and secrets.compare_digest(x_api_key_bytes, expected.encode("utf-8")))
+        or bool(expected_demo and secrets.compare_digest(x_api_key_bytes, expected_demo.encode("utf-8")))
+    )
     if not valid:
         client_ip = request.client.host if request.client else "unknown"
         if not _auth_failure_bucket_for(client_ip).allow():
