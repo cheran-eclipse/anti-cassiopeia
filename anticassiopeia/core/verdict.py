@@ -35,6 +35,15 @@ class Evidence:
     stance: str                 # "supports" | "contradicts" | "neutral" | "contested"
     trust: float                # 0.0-1.0: how much this source is worth trusting, domain-adapter-assigned
     locator: str | None = None  # page/line/pin/register/section — precise enough to re-check by hand
+    # Item 19 (external review, time-decay): when THIS evidence was itself
+    # dated as of (e.g. a Vivado report's own "| Date : ..." line) — NOT
+    # when it was fetched/computed just now. None (the default) means no
+    # real date is known for this specific piece, which is the honest
+    # state for most evidence today (a freshly re-computed statistic, a
+    # live-fetched web page with no reliably extractable publish date) —
+    # engine.py's decay only ever fires when this is actually set by the
+    # domain adapter from real document content, never guessed or backfilled.
+    timestamp: datetime | None = None
 
     # "contested": two independent sources/extractions disagree on this specific fact
     # (not just differ in magnitude — disagree on the fact itself). The engine counts

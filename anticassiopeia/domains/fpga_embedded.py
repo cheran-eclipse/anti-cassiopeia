@@ -105,6 +105,7 @@ from __future__ import annotations
 
 import math
 import re
+from datetime import datetime
 from pathlib import Path
 
 from anticassiopeia.core.domain import DomainAdapter
@@ -139,6 +140,17 @@ _DESIGN_TIMING_DATA_ROW_RE = re.compile(r"^\s*(" + r")\s+(".join([_NUM] * 12) + 
 _DESIGN_TIMING_SUMMARY_HEADER_RE = re.compile(r"Design Timing Summary")
 _CLOCK_ROW_RE = re.compile(r"^\s*(\S+)\s+\{[^}]*\}\s+(" + _NUM + r")\s+(" + _NUM + r")\s*$")
 _CORNER_LABEL_RE = re.compile(r"^\s*Corner:\s*(\S+)\s*$", re.IGNORECASE)
+
+#: Item 19 (external review, time-decay): a real Vivado report's own header
+#: carries a genuine generation date on a line shaped like
+#: "| Date              : Mon Aug 24 22:15:03 2026" (confirmed present in
+#: all 9 real files under stress_test/data/fpga_embedded/, absent from both
+#: explicitly-synthetic fixtures — exactly the distinction this needs: real
+#: evidence gets a real date, synthetic fixtures get none, never a guessed one).
+_REPORT_DATE_RE = re.compile(r"^\|\s*Date\s*:\s*(.+?)\s*$")
+#: ctime-style format Vivado writes (day-of-month space-padded, not
+#: zero-padded, e.g. "Dec  7" -- Python's %d accepts this).
+_REPORT_DATE_FORMAT = "%a %b %d %H:%M:%S %Y"
 _DEFAULT_CORNER = "DEFAULT"
 
 _COMPARATORS = {
@@ -381,6 +393,10 @@ class FPGAEmbeddedAdapter(DomainAdapter):
                 stance="supports" if passes else "contradicts",
                 trust=0.9,  # directly parsed from the report file, not reported secondhand
                 locator=locator,
+                # Item 19: real Vivado reports carry a real generation date;
+                # None for files without one (e.g. synthetic fixtures) --
+                # engine.py's time-decay is a no-op on None, never guessed here.
+                timestamp=self._extract_report_date(path),
             )
         ]
 
@@ -424,6 +440,12 @@ class FPGAEmbeddedAdapter(DomainAdapter):
                 stance="supports" if passes else "contradicts",
                 trust=0.9,  # directly parsed from the real SVD file, not reported secondhand
                 locator=locator,
+                # Item 19: deliberately NO timestamp here -- CMSIS-SVD files carry no
+                # reliable, structured generation-date field (unlike Vivado's report
+                # header, see _extract_report_date()); a register's bit layout is also
+                # a much more stable fact over time than a timing-closure result, so
+                # the case for decaying it is weaker too. Left undated rather than
+                # guessed from e.g. a license-string copyright year.
             )
         ]
 
@@ -639,6 +661,21 @@ class FPGAEmbeddedAdapter(DomainAdapter):
             i += 1
 
         return report
+
+    @staticmethod
+    def _extract_report_date(path: Path) -> datetime | None:
+        """Item 19 (time-decay): the real generation date from a Vivado
+        report's own "| Date : ..." header line, or None (never guessed) if
+        that line is missing or doesn't parse -- the explicitly-synthetic
+        fixtures have no such line at all, so they correctly never decay."""
+        for line in path.read_text().splitlines()[:15]:  # header is always near the top
+            m = _REPORT_DATE_RE.match(line)
+            if m:
+                try:
+                    return datetime.strptime(m.group(1), _REPORT_DATE_FORMAT)
+                except ValueError:
+                    return None
+        return None
 
     @staticmethod
     def _find_metric_line(path: Path, corner: str, metric: str, clock: str | None) -> int | None:

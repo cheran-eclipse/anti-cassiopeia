@@ -652,3 +652,105 @@ async def test_register_map_path_traversal_outside_allowed_directories_is_reject
     assert ev == []
     gap = adapter.describe_gap(claim, ev)
     assert "not within an allowed directory" in gap[0].lower()
+
+
+# --- Item 19 (external review, time-decay): real Vivado reports carry a
+# real generation date; synthetic fixtures (no such line) and the SVD
+# register path (no comparable field) must never get one guessed. ---
+
+_DATED_REPORT_TEMPLATE = """Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+--------------------------------------------------------------------------------------
+| Tool Version      : Vivado v.2024.1 (lin64) Build 5076996 Wed May 22 18:36:09 MDT 2024
+| Date              : {date_line}
+--------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------------------------
+| Design Timing Summary
+| ---------------------
+------------------------------------------------------------------------------------------------
+
+    WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  THS Failing Endpoints  THS Total Endpoints     WPWS(ns)     TPWS(ns)  TPWS Failing Endpoints  TPWS Total Endpoints
+    -------      -------  ---------------------  -------------------      -------      -------  ---------------------  -------------------     --------     --------  ----------------------  --------------------
+      0.320        0.000                      0                  200        0.050        0.000                      0                  200        1.200        0.000                       0                   80
+
+All user specified timing constraints are met.
+"""
+
+
+def _dated_report(tmp_path, date_line: str) -> str:
+    path = tmp_path / "dated_timing_report.rpt"
+    path.write_text(_DATED_REPORT_TEMPLATE.format(date_line=date_line))
+    return str(path)
+
+
+async def test_real_vivado_date_header_is_extracted_as_evidence_timestamp(tmp_path):
+    report_path = _dated_report(tmp_path, "Wed Dec  7 18:59:42 2016")  # real, space-padded single-digit day
+    adapter = FPGAEmbeddedAdapter()
+    claim = Claim(
+        text="x", domain="fpga_embedded",
+        context={"report_path": report_path, "metric": "wns_ns", "comparator": ">=", "expected_value": 0.3},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert len(ev) == 1
+    assert ev[0].timestamp is not None
+    assert ev[0].timestamp.year == 2016 and ev[0].timestamp.month == 12 and ev[0].timestamp.day == 7
+
+
+async def test_a_report_with_no_date_line_gets_no_timestamp_never_guessed(single_corner_report_path):
+    """The real synthetic fixture (evals/fixtures/vivado_timing_report_single_corner.rpt)
+    has no "| Date : ..." line at all -- confirms this stays None, not some
+    fabricated fallback (e.g. file mtime, which would be today's date, not
+    the report's own claimed generation date)."""
+    adapter = FPGAEmbeddedAdapter()
+    claim = Claim(
+        text="x", domain="fpga_embedded",
+        context={"report_path": single_corner_report_path, "metric": "wns_ns", "comparator": ">=", "expected_value": 0.3},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert len(ev) == 1
+    assert ev[0].timestamp is None
+
+
+async def test_an_unparsable_date_line_gets_no_timestamp_not_a_crash(tmp_path):
+    report_path = _dated_report(tmp_path, "not a real date at all")
+    adapter = FPGAEmbeddedAdapter()
+    claim = Claim(
+        text="x", domain="fpga_embedded",
+        context={"report_path": report_path, "metric": "wns_ns", "comparator": ">=", "expected_value": 0.3},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert len(ev) == 1
+    assert ev[0].timestamp is None
+
+
+async def test_old_real_report_date_produces_a_time_decay_reasoning_note_through_the_real_engine(tmp_path):
+    from anticassiopeia.core import VerificationEngine
+
+    report_path = _dated_report(tmp_path, "Wed Dec  7 18:59:42 2016")  # ~10 years old as of this project
+    adapter = FPGAEmbeddedAdapter()
+    claim = Claim(
+        text="x", domain="fpga_embedded",
+        context={"report_path": report_path, "metric": "wns_ns", "comparator": ">=", "expected_value": 0.3},
+    )
+    engine = VerificationEngine(domains={"fpga_embedded": adapter})
+    v = await engine.verify(claim)
+    assert v.state.value == "confirmed"  # MIN_DECAY_FACTOR guarantees this can't flip, see test_engine.py
+    assert any("time-decay" in r.lower() for r in v.reasoning)
+
+
+async def test_svd_register_path_never_gets_a_timestamp(svd_register_map_path):
+    """Item 19's deliberate scope exclusion: CMSIS-SVD files have no
+    comparable real generation-date field, so this path must never attach
+    one (confirmed via the real register-map evidence path, not fpga's
+    Vivado path above)."""
+    adapter = FPGAEmbeddedAdapter()
+    claim = Claim(
+        text="x", domain="fpga_embedded",
+        context={
+            "report_path": svd_register_map_path, "metric": "register_offset",
+            "peripheral": "RNG", "register": "DATA", "comparator": "==", "expected_value": 0,
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert len(ev) == 1
+    assert ev[0].timestamp is None

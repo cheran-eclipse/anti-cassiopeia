@@ -212,3 +212,35 @@ def test_malformed_context_types_never_crash_verify_with_a_500(monkeypatch):
         data = resp.json()
         assert data["state"] == "undetermined", f"{name}: malformed context must never produce a confident verdict"
         assert "could not process this claim's context" in data["reasoning"][0]
+
+
+def test_time_decayed_evidence_serializes_cleanly_through_the_real_http_response(monkeypatch):
+    """Item 19 (time-decay): Evidence now carries an optional real datetime
+    (Evidence.timestamp). This confirms the real FastAPI JSON response
+    (not just Verdict.to_dict() called directly in-process) actually
+    serializes that nested datetime without a 500, through a real,
+    old-dated fpga_embedded report that genuinely triggers decay.
+    evals/fixtures/vivado_timing_report_dated_2016.rpt is already within
+    the server's real default allowlist (no monkeypatching needed) --
+    same synthetic-numbers convention as the other fixtures in this
+    directory, just with a "| Date : ..." header line added specifically
+    to exercise this mechanism (real production decay only ever fires
+    from a genuinely real file's own date, see fpga_embedded.py)."""
+    monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
+    resp = client.post(
+        "/verify",
+        json={
+            "text": "x", "domain": "fpga_embedded",
+            "context": {
+                "report_path": "evals/fixtures/vivado_timing_report_dated_2016.rpt",
+                "metric": "wns_ns", "comparator": ">=", "expected_value": 0.3,
+            },
+        },
+        headers={"X-API-Key": "the-real-key"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["state"] == "confirmed"
+    assert any("time-decay" in r.lower() for r in body["reasoning"])
+    assert isinstance(body["evidence"][0]["timestamp"], str)  # serialized to an ISO string, not a crash
+    assert body["evidence"][0]["timestamp"].startswith("2016-12-07")

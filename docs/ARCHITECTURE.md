@@ -72,27 +72,48 @@ below.)
 
 ### `core/engine.py` detail
 
-Deliberately simple trust-weighted sum against fixed thresholds
-(`DECISION_THRESHOLD`, `MIN_EVIDENCE_WEIGHT`) — a bone, not a finished
-spine; see docs/DESIGN.md §3. Handles `contested` evidence (excluded from
-scoring, surfaced in reasoning). **Three fixes from an external review of
-this exact scoring rule:** (1) confidence reached a full 1.00 off a
-SINGLE piece of evidence regardless of that source's own `trust` value —
+Deliberately simple trust-weighted sum against a fixed threshold
+(`DECISION_THRESHOLD`) — a bone, not a finished spine; see
+docs/DESIGN.md §3. Handles `contested` evidence (excluded from scoring,
+surfaced in reasoning). **Four fixes from an external review of this
+exact scoring rule:** (1) confidence reached a full 1.00 off a SINGLE
+piece of evidence regardless of that source's own `trust` value —
 `SINGLE_SOURCE_CONFIDENCE_CAP` now caps confidence below full certainty
 when only one source contributes; two or more independent sources are
 unaffected (genuine corroboration still reaches 1.00). (2) two
 near-identical pieces of evidence from the SAME source used to sum like
 two independent confirmations — `_redundancy_collapsed_weight()` now
 takes the single highest-trust piece per source before summing across
-distinct sources. Time-decay (the other gap DESIGN.md names) is still
-NOT implemented: `Evidence` carries no timestamp field and no adapter
-attaches one, so there is no real data for a decay formula to act on —
-stated as open, not faked. (3) a source that returned an unusable (not
+distinct sources. (3) a source that returned an unusable (not
 `None`) answer used to vanish with no trace once another source alone
 was enough for a confident verdict — `DomainAdapter.describe_partial_gaps()`
 is now called unconditionally and appended to `Verdict.reasoning`
 regardless of final confidence (see `domains/robotics.py` for the first
 real override).
+
+**Item 19, time-decay (external review) — PARTIALLY implemented, not
+faked.** `Evidence.timestamp: datetime | None` plus `engine.py`'s
+`_decayed_trust()`/`_decay_all()` decay a piece of evidence's trust by
+its real age once it carries a real date, with a floor
+(`MIN_DECAY_FACTOR = 0.7`) chosen specifically so decay can never flip an
+existing single-source verdict from CONFIRMED/CONTRADICTED to
+UNDETERMINED purely from age (every current adapter's single-source
+trust is 0.9; `0.9 * 0.7 = 0.63 >= DECISION_THRESHOLD = 0.5`) — checked
+directly by `tests/test_engine.py::test_min_decay_factor_can_never_flip_an_existing_single_source_verdict`,
+and separately by re-running all 385 `fpga_embedded` claims in the full
+3,383-claim stress-test manifest against their recorded ground truth
+with decay now live: zero verdict flips. Wired into exactly ONE domain:
+`fpga_embedded.py`'s Vivado-report path, via a real, reliably-extractable
+`| Date : ...` header line present in all 9 real committed Vivado
+reports (absent from the two pre-existing synthetic fixtures, which
+correctly never decay; a third, newly-added synthetic fixture,
+`evals/fixtures/vivado_timing_report_dated_2016.rpt`, deliberately adds
+a date line specifically to exercise this mechanism in tests). NOT wired
+into: the SVD register path (CMSIS-SVD has no comparable real date
+field), `ml_data.py` (a re-computed statistic is always fresh at verify
+time — there is nothing to decay), or `robotics.py`/`research_web.py`
+(no real, trustworthy per-evidence date source identified for either in
+this round) — left open and stated as such, not guessed at.
 
 ### `domains/robotics.py` detail
 

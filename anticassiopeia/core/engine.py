@@ -13,6 +13,8 @@ evidence is flowing from real domain adapters, not before.
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from anticassiopeia.core.domain import DomainAdapter
 from anticassiopeia.core.verdict import Claim, Evidence, Verdict, VerdictState
 
@@ -49,8 +51,66 @@ DECISION_THRESHOLD = 0.5
 #: (that's genuine corroboration, left to the existing ratio).
 SINGLE_SOURCE_CONFIDENCE_CAP = 0.9
 
+#: Item 19 (external review, time-decay — DESIGN.md's other long-listed
+#: scoring gap, alongside redundancy above): how fast a piece of evidence's
+#: trust erodes once it carries a REAL timestamp (see Evidence.timestamp's
+#: own docstring — most evidence today has none, and decay is a no-op for
+#: those). Chosen, not fit to data (same honest caveat DESIGN.md already
+#: states about every other scoring constant here): two years is long
+#: enough that routine evidence aging (e.g. an FPGA timing-closure report
+#: from a few months ago) barely moves, but long enough evidence (years
+#: old) visibly erodes.
+EVIDENCE_HALF_LIFE_DAYS = 365.0 * 2
 
-def _redundancy_collapsed_weight(evidence: list[Evidence], stance: str) -> float:
+#: Decay never pushes a piece of evidence's trust below this FRACTION of
+#: its original value — old real evidence is weaker, never worthless.
+#: Set specifically so it can NEVER flip an existing single-source verdict
+#: (the only shape fpga_embedded.py's Vivado path currently produces,
+#: trust=0.9) from CONFIRMED/CONTRADICTED to UNDETERMINED purely from age:
+#: 0.9 * MIN_DECAY_FACTOR must stay >= DECISION_THRESHOLD=0.5, i.e. this
+#: floor must stay above 0.5/0.9 ≈ 0.556 — checked by
+#: test_engine.py::test_min_decay_factor_can_never_flip_an_existing_single_source_verdict,
+#: not just asserted here.
+MIN_DECAY_FACTOR = 0.7
+
+
+def _decayed_trust(evidence: Evidence, *, now: datetime | None = None) -> tuple[float, str | None]:
+    """Returns (effective_trust, a human-readable decay note or None).
+
+    A no-op (full trust, no note) whenever `evidence.timestamp` is None —
+    decay only ever fires on evidence a domain adapter has attached a REAL
+    date to from the underlying document itself, never guessed or back-filled
+    (see Evidence.timestamp's own docstring for which domains do this today:
+    only fpga_embedded.py's Vivado-report path, as of this round).
+    """
+    if evidence.timestamp is None:
+        return evidence.trust, None
+    now = now if now is not None else datetime.now()
+    age_days = max((now - evidence.timestamp).total_seconds() / 86400.0, 0.0)
+    decay_factor = max(MIN_DECAY_FACTOR, 0.5 ** (age_days / EVIDENCE_HALF_LIFE_DAYS))
+    effective = evidence.trust * decay_factor
+    if decay_factor >= 0.999:  # evidence is current enough that decay is invisible — no reasoning noise
+        return effective, None
+    return effective, (
+        f"{evidence.source}: trust decayed from {evidence.trust:.2f} to {effective:.2f} "
+        f"(evidence dated {evidence.timestamp.date()}, {age_days:.0f} days old)."
+    )
+
+
+def _decay_all(evidence: list[Evidence]) -> tuple[dict[Evidence, float], list[str]]:
+    """Decays every piece of evidence once (not per-stance, so the SAME decayed
+    value is used consistently everywhere a piece of evidence is weighed)."""
+    effective: dict[Evidence, float] = {}
+    notes: list[str] = []
+    for e in evidence:
+        trust, note = _decayed_trust(e)
+        effective[e] = trust
+        if note:
+            notes.append(note)
+    return effective, notes
+
+
+def _redundancy_collapsed_weight(evidence: list[Evidence], stance: str, effective_trust: dict[Evidence, float]) -> float:
     """Trust-weighted sum for one stance, with same-source redundancy collapsed first.
 
     FOUND BUG (external review, docs/DESIGN.md §3's "no handling of
@@ -66,17 +126,15 @@ def _redundancy_collapsed_weight(evidence: list[Evidence], stance: str) -> float
     named sources (research_web.py's own Jaccard-similarity filter still
     handles that narrower case on top of this one).
 
-    Time-decay (DESIGN.md's other listed gap) is NOT implemented here:
-    `Evidence` carries no timestamp field today, and no current adapter
-    attaches one to the evidence it returns, so a decay formula would
-    have no real data to decay by — stated plainly as still open rather
-    than faked with a formula that can't actually fire.
+    Uses each piece's time-decayed trust (`effective_trust`, computed once
+    per `_score()` call by `_decay_all()`), not raw `e.trust` — the "highest
+    trust per source" comparison below is therefore also decay-aware.
     """
     best_by_source: dict[str, float] = {}
     for e in evidence:
         if e.stance != stance:
             continue
-        best_by_source[e.source] = max(best_by_source.get(e.source, 0.0), e.trust)
+        best_by_source[e.source] = max(best_by_source.get(e.source, 0.0), effective_trust[e])
     return sum(best_by_source.values())
 
 
@@ -157,8 +215,12 @@ class VerificationEngine:
                 "disagree) — excluded from scoring, carried here for the record."
             )
 
-        support = _redundancy_collapsed_weight(evidence, "supports")
-        contradict = _redundancy_collapsed_weight(evidence, "contradicts")
+        effective_trust, decay_notes = _decay_all(evidence)
+        for note in decay_notes:
+            reasoning.append(f"Time-decay: {note}")
+
+        support = _redundancy_collapsed_weight(evidence, "supports", effective_trust)
+        contradict = _redundancy_collapsed_weight(evidence, "contradicts", effective_trust)
         reasoning.append(f"Support weight: {support:.2f}, contradiction weight: {contradict:.2f}.")
 
         total_weight = support + contradict

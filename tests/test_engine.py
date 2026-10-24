@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 import pytest
 
 from anticassiopeia.core import Claim, DomainAdapter, Evidence, UnknownDomainError, VerificationEngine, VerdictState
@@ -190,6 +192,86 @@ async def test_adapter_partial_gaps_are_always_surfaced_in_reasoning():
     v = await engine.verify(_claim())
     assert v.state == VerdictState.CONFIRMED  # confident verdict...
     assert any("doc-b" in r and "test reason" in r for r in v.reasoning)  # ...but gap still recorded
+
+
+async def test_undated_evidence_never_decays():
+    # Item 19: Evidence.timestamp defaults to None -- the vast majority of
+    # evidence today (freshly re-computed ml_data stats, live research_web
+    # fetches, SVD register reads) must behave EXACTLY as before this
+    # feature existed.
+    ev = [Evidence(source="s", snippet="x", stance="supports", trust=0.9)]
+    engine = VerificationEngine(domains={"test_domain": _FixedEvidenceAdapter(ev)})
+    v = await engine.verify(_claim())
+    assert v.state == VerdictState.CONFIRMED
+    assert v.confidence == pytest.approx(0.9)
+    assert not any("decay" in r.lower() for r in v.reasoning)
+
+
+async def test_recently_dated_evidence_barely_decays():
+    from anticassiopeia.core.engine import _decayed_trust
+
+    ev = Evidence(source="s", snippet="x", stance="supports", trust=0.9, timestamp=datetime.now() - timedelta(days=1))
+    trust, note = _decayed_trust(ev)
+    assert trust == pytest.approx(0.9, abs=1e-2)  # 1 day against a 2-year half-life -- negligible
+    assert note is None  # decay this small isn't worth noising up reasoning with
+
+
+async def test_old_dated_evidence_decays_but_floors_at_min_decay_factor():
+    from anticassiopeia.core.engine import MIN_DECAY_FACTOR, _decayed_trust
+
+    ev = Evidence(
+        source="s", snippet="x", stance="supports", trust=0.9,
+        timestamp=datetime.now() - timedelta(days=365 * 20),  # 20 years -- many half-lives
+    )
+    trust, note = _decayed_trust(ev)
+    assert trust == pytest.approx(0.9 * MIN_DECAY_FACTOR)
+    assert note is not None
+    assert "decayed from 0.90" in note
+
+
+async def test_decaying_the_losing_side_raises_confidence_in_the_real_engine():
+    # A single-stance verdict's confidence ratio is always 1.0 (or capped),
+    # regardless of decay -- scaling the only stance present changes
+    # nothing about net/total. Decay's effect is only visible with a real
+    # MIX of supporting and contradicting evidence, so that's what this
+    # test uses: an old, decayed CONTRADICTING piece should count for less,
+    # raising confidence in the (undated, undecayed) supporting side.
+    fresh_support = Evidence(source="a", snippet="x", stance="supports", trust=0.9)
+    old_contradict = Evidence(
+        source="b", snippet="y", stance="contradicts", trust=0.3,
+        timestamp=datetime.now() - timedelta(days=365 * 20),
+    )
+    baseline_contradict = Evidence(source="b", snippet="y", stance="contradicts", trust=0.3)  # undated twin
+
+    decayed_engine = VerificationEngine(domains={"test_domain": _FixedEvidenceAdapter([fresh_support, old_contradict])})
+    baseline_engine = VerificationEngine(domains={"test_domain": _FixedEvidenceAdapter([fresh_support, baseline_contradict])})
+    v_decayed = await decayed_engine.verify(_claim())
+    v_baseline = await baseline_engine.verify(_claim())
+
+    assert v_decayed.state == v_baseline.state == VerdictState.CONFIRMED
+    assert v_decayed.confidence > v_baseline.confidence  # weakening the opposing evidence raised confidence
+    assert any("time-decay" in r.lower() for r in v_decayed.reasoning)
+    assert not any("time-decay" in r.lower() for r in v_baseline.reasoning)
+
+
+async def test_min_decay_factor_can_never_flip_an_existing_single_source_verdict():
+    # engine.py's own MIN_DECAY_FACTOR comment states this property --
+    # verified here directly, not just asserted in a comment. Every current
+    # adapter's single-source trust is 0.9 (fpga_embedded.py's Vivado/SVD
+    # paths; robotics.py/research_web.py's LLM-verified single quotes) --
+    # decay must never be able to push a lone 0.9 piece below
+    # DECISION_THRESHOLD=0.5 purely from age, however old the evidence is.
+    from anticassiopeia.core.engine import DECISION_THRESHOLD, MIN_DECAY_FACTOR
+
+    assert 0.9 * MIN_DECAY_FACTOR >= DECISION_THRESHOLD
+
+    ev = [Evidence(
+        source="s", snippet="x", stance="supports", trust=0.9,
+        timestamp=datetime.now() - timedelta(days=365 * 100),  # absurdly old, well past any floor
+    )]
+    engine = VerificationEngine(domains={"test_domain": _FixedEvidenceAdapter(ev)})
+    v = await engine.verify(_claim())
+    assert v.state == VerdictState.CONFIRMED
 
 
 async def test_register_adds_a_domain_after_construction():

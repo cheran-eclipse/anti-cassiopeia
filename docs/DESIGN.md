@@ -57,9 +57,9 @@ once a real adapter exists to test either option against.
 
 ## 3. Scoring v2 — what would actually improve on the current placeholder
 
-Current rule (`engine.py`): trust-weighted sum, fixed thresholds
-(`DECISION_THRESHOLD=0.5`, `MIN_EVIDENCE_WEIGHT=0.3`). Known weaknesses,
-listed honestly rather than hidden:
+Current rule (`engine.py`): trust-weighted sum, fixed threshold
+(`DECISION_THRESHOLD=0.5`). Known weaknesses, listed honestly rather than
+hidden:
 
 - Thresholds are arbitrary, not fit to anything. They need real evidence
   data from at least one domain before they can be tuned, not guessed at
@@ -67,9 +67,23 @@ listed honestly rather than hidden:
 - No handling of evidence *redundancy* — five low-trust sources all
   pointing the same direction currently sum like five independent
   confirmations, which they usually aren't (e.g. five pages of the same
-  datasheet aren't five independent sources).
+  datasheet aren't five independent sources). **FIXED** (external
+  review): `_redundancy_collapsed_weight()` now collapses same-source
+  evidence to its single highest-trust piece before summing.
 - No time-decay — a 2019 synthesis report and a report from this morning
-  are weighted identically.
+  are weighted identically. **PARTIALLY FIXED** (item 19, external
+  review): `Evidence.timestamp` + `engine.py`'s `_decayed_trust()` now
+  decay a piece of evidence's trust by real age, with a floor
+  (`MIN_DECAY_FACTOR`) calibrated so it can never flip an existing
+  single-source verdict purely from age. Wired into exactly ONE domain so
+  far — `fpga_embedded.py`'s Vivado-report path, which is the only one
+  with a real, reliably-extractable date (the report's own
+  `| Date : ...` header line). NOT wired into `fpga_embedded.py`'s SVD
+  register path (no comparable real date field), nor into `ml_data.py`
+  (a re-computed statistic is always fresh at verify time, never stale),
+  `robotics.py`, or `research_web.py` (no real, trustworthy per-evidence
+  date source identified yet for either) — stated as open for those,
+  not faked with a formula fed a guessed date.
 
 None of this gets fixed speculatively. It gets revisited once `robotics`
 (or whichever domain goes first) is producing real `Evidence` lists to
