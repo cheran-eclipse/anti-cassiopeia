@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -41,10 +42,37 @@ async def main() -> int:
         return await _run(engine, case_files, base_url)
 
 
+def _needs_live_key(case: dict) -> bool:
+    """FOUND BUG (external review): `docker build`'s own smoke-test step runs
+    this script with no NEBIUS_API_KEY/TAVILY_API_KEY available at all (.env
+    is deliberately not copied into the image) -- every robotics case (that
+    adapter always needs a live LLM call, no offline path exists) and every
+    research_web mode-2 case (no pre-selected "url" in context -- those go
+    through propose()/_judge_stance(), also live) were silently resolving
+    to the wrong verdict and failing, not skipping, inside the build. Mode-1
+    research_web cases (an explicit "url" given) and every ml_data/
+    fpga_embedded case never touch the LLM client at all, so they're
+    unaffected either way -- same distinction tests/test_domains_robotics.py's
+    and test_domains_research_web.py's own `_requires_live_key` markers
+    already draw, applied here so a credential-less build can pass cleanly
+    instead of failing on cases it was never able to resolve correctly."""
+    domain = case["claim"]["domain"]
+    if domain == "robotics":
+        return True
+    if domain == "research_web" and "url" not in case["claim"].get("context", {}):
+        return True
+    return False
+
+
 async def _run(engine: VerificationEngine, case_files: list[Path], base_url: str) -> int:
-    passed, failed = 0, 0
+    have_live_key = bool(os.environ.get("NEBIUS_API_KEY"))
+    passed, failed, skipped = 0, 0, 0
     for path in case_files:
         case = json.loads(path.read_text())
+        if not have_live_key and _needs_live_key(case):
+            skipped += 1
+            print(f"[SKIP] {path.relative_to(CASES_DIR)} — needs a live NEBIUS_API_KEY, none set")
+            continue
         claim = Claim(**resolve(case["claim"], base_url))
         verdict = await engine.verify(claim)
         got = verdict.state.value
@@ -65,7 +93,8 @@ async def _run(engine: VerificationEngine, case_files: list[Path], base_url: str
         if not ok:
             print(f"         note: {case.get('note', '')}")
 
-    print(f"\n{passed} passed, {failed} failed, {len(case_files)} total.")
+    skip_note = f", {skipped} skipped (no NEBIUS_API_KEY)" if skipped else ""
+    print(f"\n{passed} passed, {failed} failed{skip_note}, {len(case_files)} total.")
     return 1 if failed else 0
 
 

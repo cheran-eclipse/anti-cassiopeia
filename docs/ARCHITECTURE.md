@@ -53,7 +53,7 @@ adapter should (see each adapter's `describe_gap()`).
 | `core/verdict.py` | done |
 | `core/domain.py` | done |
 | `core/engine.py` | done — simple scoring, now redundancy-aware and confidence-capped |
-| `domains/robotics.py` | real, live-verified · 3/4 parts sourced, 4th confirmed-unratable |
+| `domains/robotics.py` | real, live-verified · 3/4 parts sourced, 4th confirmed-unratable · runs on Nemotron Ultra |
 | `domains/ml_data.py` | real, offline, tested · known gaps disclosed below |
 | `domains/fpga_embedded.py` | real, offline, tested · timing-summary + real SVD register-map |
 | `domains/research_web.py` | real, two modes · Tavily primary search, DDG+Wikipedia fallback |
@@ -62,7 +62,7 @@ adapter should (see each adapter's `describe_gap()`).
 | `scripts/demo.py` | real end-to-end demo, 6 claims, all 4 domains |
 | `Dockerfile` | build-tested for real |
 | `.github/workflows/evals.yml` | written; CI run itself not observed |
-| `evals/` | 30 cases, all 4 domains, all passing |
+| `evals/` | 31 cases, all 4 domains, all passing (13 skip cleanly without a live key — see detail below) |
 
 (Rewritten to short cells after an external review noted the table was
 unreadable at a skim — paragraph-length history per cell. Nothing above
@@ -516,14 +516,22 @@ after `.env` was edited with a freshly rotated key — switched to
 values mean — see `domains/robotics.py`'s section for what that caused
 and how it was found. Now used for real by `domains/robotics.py`.
 
-**Nemotron swap in progress** (Apps and Agents track requirement — at
-least one NVIDIA open model called in the real request path, not just
-mentioned): `nvidia/Nemotron-3-Ultra-550b-a55b`,
-`nvidia/nemotron-3-super-120b-a12b`, and
-`nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` are all confirmed live on this
-account's catalog. This section gets updated with the final model choice
-and a real before/after comparison once that work lands — not claimed
-done before it is.
+**Nemotron swap DONE** (Apps and Agents track requirement — at least one
+NVIDIA open model called in the real request path, not just mentioned):
+`domains/robotics.py` now explicitly requests `nvidia/Nemotron-3-Ultra-550b-a55b`
+(`ROBOTICS_MODEL`, overriding `NEBIUS_MODEL`/.env) for every live
+`propose()` call — a real, live model in the request path, not a comment.
+`research_web.py` is unchanged, still `openai/gpt-oss-120b`. This wasn't a
+blanket swap: it's the outcome of an honest before/after comparison
+across all three Nemotron tiers (Ultra/Super/Nano) plus a one-pilot look
+at a fourth (3.5 Lightning), on both domains, at two sample sizes, that
+found and fixed three real pipeline bugs along the way (no `max_tokens`
+cap, no quote-length guidance, no entity-matching check in the stance
+prompt) before trusting the comparison that produced them. Full
+methodology, every pilot's real numbers, the bugs found, and why
+`research_web` deliberately stayed on the current default:
+[`stress_test/results/NEMOTRON_PIVOT_REPORT.md`](../stress_test/results/NEMOTRON_PIVOT_REPORT.md) —
+summarized in the README's own "How the model choice was made" section.
 
 ### `api/server.py` detail
 
@@ -565,29 +573,50 @@ assumed away.
 ### `scripts/demo.py`, `Dockerfile`, CI, `evals/` detail
 
 `scripts/demo.py`: real end-to-end demo, 6 claims across all 4 domains,
-no mocked output. `Dockerfile`: **build-tested for real** — `docker
-build` succeeds (the in-build `evals/run_evals.py` step passes the full
-suite), and the resulting container actually serves — `/health`,
-`/domains`, and `POST /verify` all verified live against a running
-container (not re-verified against the exact case count below; the
-build-test itself predates this session's additions, and the mechanism
-— eval suite as an in-build gate — is unaffected by how many cases it
-runs). `.github/workflows/evals.yml`: written, mirrors the exact
+no mocked output. `Dockerfile`: **build-tested for real, just now, with
+the current code** — `docker build --no-cache` succeeds, the resulting
+container's `/health`, `/domains`, and a real `POST /verify` round trip
+(ml_data, a genuine `confirmed` verdict with real evidence) all verified
+against a running container, right before this line was written, not
+inherited from an earlier session's claim.
+
+**FOUND BUG in the process of re-verifying this** (external review):
+the in-build `evals/run_evals.py` step had NO way to pass
+`NEBIUS_API_KEY`/`TAVILY_API_KEY` into the build (`.env` is deliberately
+not copied into the image — secrets don't belong baked into a layer),
+so every robotics case (always needs a live LLM call, no offline path
+exists) and every research_web mode-2 case (`live_multi_candidate_*`)
+was silently resolving to the wrong verdict and FAILING the build, not
+skipping it — 9 failures, confirmed by actually running it. This
+pre-dated this session's Nemotron/Tavily work; it just took that work
+making those calls newly load-bearing to surface it. Fixed:
+`run_evals.py`'s `_needs_live_key()` now skips (not fails) any case that
+genuinely needs a live key when `NEBIUS_API_KEY` isn't set, the same
+distinction the pytest suite's own `_requires_live_key` marker already
+draws — re-verified: `docker build --no-cache` now reports
+`17 passed, 0 failed, 13 skipped (no NEBIUS_API_KEY), 30 total` and
+exits 0.
+
+`.github/workflows/evals.yml`: written, mirrors the exact
 local commands already verified to work (`pip install -e .` +
-`python evals/run_evals.py`) — CI run itself not observed. `evals/`: 30
-cases across all 4 domains, all passing (`PYTHONPATH=. python
-evals/run_evals.py`), live LLM/network calls included — robotics' live
-round trip confirmed stable after the `retrieval/extract.py` prompt fix;
-ml_data (+3: multi-file, compound confirmed, compound one-part-false
-contradicted) and fpga_embedded (+4: real-format confirmed/contradicted,
-two real multi-corner cases, one register-map honest gap) grew an
-earlier pass, both fully offline and deterministic; this session added
-+1 robotics (Bar100XT confirmed + contradicted, replacing the old
-undetermined case — net +1 since one case was repurposed), +1
-fpga_embedded (a real SVD register-map confirmed case, alongside the
-pre-existing honest-gap case), and +1 research_web net (one case moved
-shape, one new contradicted-via-Tavily case added) — see each adapter's
-own detail section above for what changed and why.
+`python evals/run_evals.py`) — CI run itself not observed. `evals/`: 31
+cases across all 4 domains, all passing with a real key present
+(`PYTHONPATH=. python evals/run_evals.py`), live LLM/network calls
+included — robotics' live round trip confirmed stable after the
+`retrieval/extract.py` prompt fix; ml_data (+3: multi-file, compound
+confirmed, compound one-part-false contradicted) and fpga_embedded (+4:
+real-format confirmed/contradicted, two real multi-corner cases, one
+register-map honest gap) grew an earlier pass, both fully offline and
+deterministic; a later session added +1 robotics (Bar100XT confirmed +
+contradicted, replacing the old undetermined case — net +1 since one
+case was repurposed), +1 fpga_embedded (a real SVD register-map
+confirmed case, alongside the pre-existing honest-gap case), +1
+research_web net (one case moved
+shape, one new contradicted-via-Tavily case added), and +1 robotics
+(QuSpin QZFM Gen-3's confirmed-no-rating finding, previously described
+only in `docs/extracted/constellation-robotics-seed.md` §4 and not
+locked in by a test) — see each adapter's own detail section above for
+what changed and why.
 
 ## Open design decisions (not yet made)
 

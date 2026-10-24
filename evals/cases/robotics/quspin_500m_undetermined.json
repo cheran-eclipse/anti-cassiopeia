@@ -1,0 +1,5 @@
+{
+  "claim": {"text": "QuSpin QZFM Gen-3 survives 500 m depth", "domain": "robotics", "context": {}},
+  "expected_state": "undetermined",
+  "note": "QuSpin's own official product page (fetched live 2026-10-24, https://quspin.com/qzfm-gen-3 -- the whole page was read) states no pressure/depth/submersion rating at all. This is now a real, checked absence, not an unsourced gap -- but there is still no number to compare a claimed depth against, so this stays UNDETERMINED regardless of the depth asked about. Locks in the finding described in docs/extracted/constellation-robotics-seed.md §4; see also robotics.py's describe_gap()."
+}
