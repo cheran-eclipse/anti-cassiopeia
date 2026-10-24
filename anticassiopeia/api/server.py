@@ -60,6 +60,7 @@ import time
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from anticassiopeia.core import Claim, UnknownDomainError, VerificationEngine
@@ -88,6 +89,19 @@ app = FastAPI(
     title="Anti-Cassiopeia",
     description="Domain-agnostic verification: confirmed / contradicted / undetermined — never a guess dressed up as certainty.",
     version="0.1.0",
+)
+
+# CORS: the frontend is served from a different origin than this API.
+# allow_origins=["*"] is safe specifically because auth here is a header
+# (X-API-Key), not a cookie -- there's no ambient-credential/CSRF risk a
+# wildcard would normally introduce. allow_credentials stays False to match
+# (CORS forbids combining wildcard origins with credentials anyway).
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "X-API-Key"],
 )
 
 engine = VerificationEngine(domains=default_domains())
