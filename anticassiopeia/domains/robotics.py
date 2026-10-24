@@ -106,6 +106,7 @@ Ratings stated directly in metres are compared exactly.
 from __future__ import annotations
 
 import re
+from contextvars import ContextVar
 from dataclasses import dataclass, replace
 from pathlib import Path
 
@@ -119,6 +120,21 @@ from anticassiopeia.retrieval.extract import propose
 
 _CORPUS_DIR = Path(__file__).parent.parent / "corpus"
 _SEED_DOC = "docs/extracted/constellation-robotics-seed.md"
+
+# FOUND BUG (external review, verified against the real code): these were
+# `self._last_propose_errors`/`self._last_partial_gaps` instance attributes
+# -- default_domains() builds ONE adapter instance shared across every
+# concurrent request, so two interleaved verify() calls on the same instance
+# could read each other's gap diagnostic, a real race once this is reachable
+# by untrusted public traffic. Fixed with a ContextVar instead of `self`:
+# each incoming request runs in its own asyncio Task (FastAPI/Starlette's
+# own per-request behavior), and a Task gets an independent COPY of the
+# context at creation time, so a `.set()` inside one request's
+# gather_evidence() is invisible to every other concurrent request's Task --
+# no manual per-request cleanup needed, and no change to the DomainAdapter
+# interface (describe_partial_gaps()/describe_gap() still just take `claim`).
+_propose_errors_var: ContextVar[list[str]] = ContextVar("robotics_propose_errors", default=[])
+_partial_gaps_var: ContextVar[list[str]] = ContextVar("robotics_partial_gaps", default=[])
 
 # doc_id -> (corpus file, trust). Stance is NOT stored here — it is derived per claim.
 _SOURCES: dict[str, tuple[str, float]] = {
@@ -441,12 +457,12 @@ class RoboticsAdapter(DomainAdapter):
             elif not result.accepted:
                 partial_gaps.append(f"{doc_id}: proposed quote failed independent verification against the source chunk.")
 
-        self._last_propose_errors = propose_errors
-        self._last_partial_gaps = partial_gaps
+        _propose_errors_var.set(propose_errors)
+        _partial_gaps_var.set(partial_gaps)
         return evidence
 
     def describe_partial_gaps(self, claim: Claim) -> list[str]:
-        return list(getattr(self, "_last_partial_gaps", []))
+        return list(_partial_gaps_var.get())
 
     @staticmethod
     def _is_known_part(text: str) -> bool:
@@ -469,7 +485,7 @@ class RoboticsAdapter(DomainAdapter):
                     "Part is in the corpus and the depth condition parses fine, but the LLM "
                     f"propose step can't run: {self._client_error}"
                 ]
-            propose_errors = getattr(self, "_last_propose_errors", [])
+            propose_errors = _propose_errors_var.get()
             if propose_errors:
                 return [
                     "Part is in the corpus and the depth condition parses fine, but the live "

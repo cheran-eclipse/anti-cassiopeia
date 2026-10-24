@@ -90,7 +90,41 @@ class VerificationEngine:
                 f"Registered domains: {sorted(self._domains)}"
             )
 
-        evidence = await adapter.gather_evidence(claim)
+        # FOUND BUG (external review, verified against the real code):
+        # `Claim.context` is an unrestricted dict (verbatim from a POST
+        # /verify body), and adapter code assumes field TYPES without
+        # checking all of them -- `report_path: 123` (an int, not a str)
+        # crashes `Path(123)` with a TypeError; `metric: []` crashes
+        # `ctx["metric"].lower()` with an AttributeError; `url: 123`
+        # crashes research_web.py's urlparse() the same way. Each of
+        # these escaped as an unhandled 500, not a clean 4xx/UNDETERMINED
+        # -- centralized here, the ONE place every claim already flows
+        # through regardless of domain, rather than hand-auditing every
+        # field of every current (and future) adapter's context contract
+        # individually. This is deliberately broad (any Exception an
+        # adapter's own _check()-style validation didn't anticipate), on
+        # the same "never trust an adapter not to misbehave" principle
+        # the SSRF guard and path-safety checks already apply elsewhere --
+        # a bug in a FUTURE adapter's type-handling is caught here too,
+        # not just the four cases found this round.
+        try:
+            evidence = await adapter.gather_evidence(claim)
+        except Exception as exc:  # noqa: BLE001 -- deliberately broad, see comment above
+            return Verdict(
+                claim=claim,
+                state=VerdictState.UNDETERMINED,
+                confidence=None,
+                evidence=[],
+                reasoning=[
+                    f"Domain '{claim.domain}' could not process this claim's context: "
+                    f"{type(exc).__name__}: {exc}"
+                ],
+                missing=[
+                    "Claim.context has a field in a shape this domain's adapter could not handle "
+                    "(wrong type, missing nested key, or similar) — refusing to guess rather than "
+                    "letting the error propagate."
+                ],
+            )
         return self._score(claim, adapter, evidence)
 
     def _score(self, claim: Claim, adapter: DomainAdapter, evidence: list[Evidence]) -> Verdict:

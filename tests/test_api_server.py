@@ -165,3 +165,50 @@ def test_failed_auth_throttle_trips_independently_of_the_main_rate_limit(monkeyp
     ]
     assert statuses[: server_mod._FAILED_AUTH_BURST] == [401] * server_mod._FAILED_AUTH_BURST
     assert 429 in statuses[server_mod._FAILED_AUTH_BURST :]
+
+
+def test_nan_infinity_and_negative_tolerance_through_the_real_api_never_crash_or_confidently_lie(monkeypatch):
+    """FOUND BUG (external review, "the worst bug of this round"): sent
+    through the real /verify endpoint, not just the adapter in isolation --
+    proves the full stack (FastAPI's JSON parsing accepts the NaN/Infinity
+    extension, then the adapter) never turns unusable numeric input into a
+    confident wrong verdict or an unhandled crash."""
+    monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "test-key")
+    headers = {"content-type": "application/json", "X-API-Key": "test-key"}
+    bodies = {
+        "nan": '{"text": "x", "domain": "ml_data", "context": {"dataset_path": "evals/fixtures/sample_measurements.csv", "column": "voltage", "stat": "mean", "expected_value": NaN, "tolerance": 0.01}}',
+        "infinity": '{"text": "x", "domain": "ml_data", "context": {"dataset_path": "evals/fixtures/sample_measurements.csv", "column": "voltage", "stat": "mean", "expected_value": Infinity, "tolerance": 0.01}}',
+        "neg_infinity": '{"text": "x", "domain": "ml_data", "context": {"dataset_path": "evals/fixtures/sample_measurements.csv", "column": "voltage", "stat": "mean", "expected_value": -Infinity, "tolerance": 0.01}}',
+        "negative_tolerance": '{"text": "x", "domain": "ml_data", "context": {"dataset_path": "evals/fixtures/sample_measurements.csv", "column": "voltage", "stat": "mean", "expected_value": 5.0, "tolerance": -1.0}}',
+        "malformed_string": '{"text": "x", "domain": "ml_data", "context": {"dataset_path": "evals/fixtures/sample_measurements.csv", "column": "voltage", "stat": "mean", "expected_value": "not-a-number", "tolerance": 0.01}}',
+    }
+    for name, body in bodies.items():
+        resp = client.post("/verify", content=body, headers=headers)
+        assert resp.status_code == 200, f"{name}: expected a clean response, got {resp.status_code}: {resp.text}"
+        data = resp.json()
+        assert data["state"] == "undetermined", f"{name}: must never be a confident verdict from unusable input, got {data['state']!r}"
+        assert data["missing"], f"{name}: must name why, not just silently refuse"
+
+
+def test_malformed_context_types_never_crash_verify_with_a_500(monkeypatch):
+    """FOUND BUG (external review, verified against the real code):
+    Claim.context is an unrestricted dict, and adapter code assumes field
+    types without checking all of them -- report_path: 123 (not a str)
+    crashes Path(123) with a TypeError; metric: [] crashes .lower() with
+    an AttributeError; url: 123 crashes research_web.py's fetch the same
+    way. Each used to escape as an unhandled 500. Fixed centrally in
+    VerificationEngine.verify() (core/engine.py), not per-adapter."""
+    monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "test-key")
+    headers = {"content-type": "application/json", "X-API-Key": "test-key"}
+    bodies = {
+        "report_path_int": '{"text": "x", "domain": "fpga_embedded", "context": {"report_path": 123, "metric": "wns_ns", "comparator": ">=", "expected_value": 0}}',
+        "report_path_list": '{"text": "x", "domain": "fpga_embedded", "context": {"report_path": [], "metric": "wns_ns", "comparator": ">=", "expected_value": 0}}',
+        "metric_list": '{"text": "x", "domain": "fpga_embedded", "context": {"report_path": "evals/fixtures/vivado_timing_report_single_corner.rpt", "metric": [], "comparator": ">=", "expected_value": 0}}',
+        "url_int": '{"text": "x", "domain": "research_web", "context": {"url": 123, "quote": "x"}}',
+    }
+    for name, body in bodies.items():
+        resp = client.post("/verify", content=body, headers=headers)
+        assert resp.status_code == 200, f"{name}: must never be a 500, got {resp.status_code}: {resp.text}"
+        data = resp.json()
+        assert data["state"] == "undetermined", f"{name}: malformed context must never produce a confident verdict"
+        assert "could not process this claim's context" in data["reasoning"][0]

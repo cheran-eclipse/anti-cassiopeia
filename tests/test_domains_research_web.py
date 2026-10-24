@@ -7,6 +7,7 @@ import httpx
 import pytest
 
 import anticassiopeia.domains.research_web as research_web_mod
+import anticassiopeia.llm.nebius_client as nebius_client_mod
 from anticassiopeia.core import Claim
 from anticassiopeia.core.verdict import Evidence
 from anticassiopeia.domains.research_web import _MAX_RESPONSE_BYTES, ResearchWebAdapter, _is_near_duplicate_evidence, _safe_fetch
@@ -69,7 +70,7 @@ class _DummyAsyncClient:
     async def aclose(self) -> None:
         return None
 
-    def stream(self, method: str, url: str, headers: dict | None = None) -> "_DummyStream":
+    def stream(self, method: str, url: str, headers: dict | None = None, extensions: dict | None = None) -> "_DummyStream":
         return _DummyStream(self._response)
 
 
@@ -202,6 +203,49 @@ async def test_search_candidate_urls_does_not_fall_back_when_tavily_succeeds(mon
     assert urls == ["https://tavily.example/hit"]
 
 
+async def test_concurrent_requests_on_one_shared_adapter_instance_do_not_leak_gap_state(monkeypatch):
+    """Regression guard for the ContextVar fix (see the "HONEST SCOPE NOTE"
+    next to _fetch_error_var's definition for the precise, checked claim:
+    today's exact code already wrote its own gap value immediately before
+    every empty-evidence return, so this specific interleaving didn't
+    provably leak even under the OLD self-based design -- the fix is a
+    real robustness improvement for FUTURE code changes, not a proven
+    currently-firing exploit). This test proves the CURRENT behavior is
+    correct with REAL concurrent asyncio Tasks (the same mechanism FastAPI
+    uses to isolate concurrent requests) sharing ONE adapter instance,
+    exactly like default_domains() builds."""
+    b_is_done = asyncio.Event()
+
+    async def fake_safe_fetch(url: str, *, headers=None, block_private_networks=True):
+        if url == "https://a.example/":
+            await b_is_done.wait()  # A's fetch doesn't resolve until B has fully finished
+            raise httpx.HTTPError("A's own distinct network failure")
+        if url == "https://b.example/":
+            raise httpx.HTTPError("B's own distinct network failure")
+        raise AssertionError(f"unexpected url: {url}")
+
+    monkeypatch.setattr(research_web_mod, "_safe_fetch", fake_safe_fetch)
+
+    adapter = ResearchWebAdapter()  # ONE shared instance, like default_domains() builds
+    claim_a = Claim(text="a", domain="research_web", context={"url": "https://a.example/", "quote": "x"})
+    claim_b = Claim(text="b", domain="research_web", context={"url": "https://b.example/", "quote": "x"})
+
+    async def run_a():
+        ev = await adapter.gather_evidence(claim_a)
+        return adapter.describe_gap(claim_a, ev)
+
+    async def run_b():
+        ev = await adapter.gather_evidence(claim_b)
+        gap = adapter.describe_gap(claim_b, ev)
+        b_is_done.set()  # unblocks A's fetch -- B is now fully done, including its own describe_gap read
+        return gap
+
+    gap_a, gap_b = await asyncio.gather(run_a(), run_b())
+
+    assert "A's own distinct network failure" in gap_a[0]
+    assert "B's own distinct network failure" in gap_b[0]
+
+
 class _NetworkCallAttempted(AssertionError):
     """Raised if anything tries to actually open a connection -- used below to
     prove the SSRF guard rejects an unsafe URL BEFORE any network call, not
@@ -264,6 +308,81 @@ async def test_ssrf_guard_rejects_unsafe_url_before_any_network_call_mode2(monke
     assert ev == []
 
 
+async def test_dns_rebinding_cannot_retarget_the_actual_connection(monkeypatch):
+    """FOUND BUG (external review): _is_safe_to_fetch() used to validate the
+    hostname, then _safe_fetch() fetched the ORIGINAL hostname-based URL --
+    httpx resolves that hostname a SECOND time, independently, when it
+    actually opens the connection. A hostile authoritative DNS server can
+    answer the validation lookup with a public IP and the later connect-time
+    lookup with a private one; the two lookups aren't guaranteed to agree.
+
+    Proves the fix by checking the ACTUAL target httpx.AsyncClient.stream()
+    is called with: it must be the literal, already-validated IP, never the
+    hostname -- a literal IP can't be re-resolved to something else, which
+    is what actually closes the window (not just "we checked the hostname
+    once", which the old code already did and was still vulnerable)."""
+    real_getaddrinfo = asyncio.base_events.BaseEventLoop.getaddrinfo
+    call_count = {"n": 0}
+
+    async def fake_getaddrinfo(self, host, port, *args, **kwargs):
+        if host == "rebinding-target.example":
+            call_count["n"] += 1
+            # Always answers with the SAME real, public IP -- if _safe_fetch()
+            # ever asked a SECOND time (i.e. let httpx resolve the hostname
+            # again at connect time instead of connecting to the pinned IP
+            # directly), this fake would have no way to simulate "answers
+            # differently the second time" from inside httpx's own internals,
+            # so the only way to PROVE no second resolution happens at all is
+            # to check what URL was actually handed to the transport -- see
+            # the assertion below, not this counter (kept only as a secondary
+            # sanity signal that the FIRST, legitimate lookup still happens).
+            return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 0))]
+        return await real_getaddrinfo(self, host, port, *args, **kwargs)
+
+    monkeypatch.setattr(asyncio.base_events.BaseEventLoop, "getaddrinfo", fake_getaddrinfo)
+
+    captured_urls = []
+
+    class _FakeStream:
+        def __init__(self, response):
+            self._response = response
+
+        async def __aenter__(self):
+            return self._response
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+    def fake_stream(self, method, url, headers=None, extensions=None):
+        captured_urls.append((str(url), headers, extensions))
+        request = httpx.Request(method, url)
+        return _FakeStream(httpx.Response(200, text="no quote here", request=request))
+
+    monkeypatch.setattr(httpx.AsyncClient, "stream", fake_stream)
+
+    adapter = ResearchWebAdapter()
+    claim = Claim(
+        text="x", domain="research_web",
+        context={"url": "https://rebinding-target.example/page", "quote": "irrelevant"},
+    )
+    await adapter.gather_evidence(claim)
+
+    assert call_count["n"] == 1  # the one legitimate validation lookup happened
+    assert len(captured_urls) == 1
+    actual_url, actual_headers, actual_extensions = captured_urls[0]
+    # The real connection target is the literal IP -- NOT the hostname. A
+    # literal IP cannot be "re-resolved" to anything else, which is what
+    # actually closes the rebinding window (checking the hostname once,
+    # the OLD code's approach, is not enough on its own).
+    assert "93.184.216.34" in actual_url
+    assert "rebinding-target.example" not in actual_url
+    # Host header and SNI are explicitly preserved so the request still
+    # reaches the right virtual host and the TLS certificate check is
+    # against the real hostname, not the raw IP.
+    assert actual_headers.get("Host") == "rebinding-target.example"
+    assert actual_extensions.get("sni_hostname") == "rebinding-target.example"
+
+
 async def test_ssrf_guard_catches_a_redirect_to_an_unsafe_address_not_just_the_original_url(monkeypatch):
     """FOUND BUG (follow-up security review): the first version of this guard
     checked only the ORIGINAL url, then fetched with follow_redirects=True --
@@ -284,7 +403,7 @@ async def test_ssrf_guard_catches_a_redirect_to_an_unsafe_address_not_just_the_o
         async def __aexit__(self, exc_type, exc, tb):
             return False
 
-    def _fake_stream(self, method, url, headers=None):
+    def _fake_stream(self, method, url, headers=None, extensions=None):
         call_count["n"] += 1
         if call_count["n"] == 1:
             # A real, legitimate-looking first hop -- passes _is_safe_to_fetch
@@ -337,7 +456,7 @@ async def test_safe_fetch_caps_response_body_at_the_documented_limit(monkeypatch
             for i in range(0, len(oversized), chunk_size):
                 yield oversized[i : i + chunk_size]
 
-    monkeypatch.setattr(httpx.AsyncClient, "stream", lambda self, method, url, headers=None: _OversizedStream())
+    monkeypatch.setattr(httpx.AsyncClient, "stream", lambda self, method, url, headers=None, extensions=None: _OversizedStream())
 
     resp = await _safe_fetch("https://example.com/huge")
     assert len(resp.content) == _MAX_RESPONSE_BYTES
@@ -364,7 +483,7 @@ async def test_malformed_redirect_location_header_is_a_clean_refusal_not_a_crash
         async def __aexit__(self, exc_type, exc, tb):
             return False
 
-    def _fake_stream(self, method, url, headers=None):
+    def _fake_stream(self, method, url, headers=None, extensions=None):
         call_count["n"] += 1
         resp = httpx.Response(
             302, headers={"Location": "http://[::1"}, request=httpx.Request(method, url)
@@ -414,7 +533,7 @@ async def test_truncated_page_without_the_quote_is_undetermined_not_a_false_cont
             for i in range(0, len(body), chunk_size):
                 yield body[i : i + chunk_size]
 
-    monkeypatch.setattr(httpx.AsyncClient, "stream", lambda self, method, url, headers=None: _TruncatedStream())
+    monkeypatch.setattr(httpx.AsyncClient, "stream", lambda self, method, url, headers=None, extensions=None: _TruncatedStream())
 
     adapter = ResearchWebAdapter()
     claim = Claim(
@@ -455,7 +574,7 @@ async def test_total_timeout_bounds_a_slow_trickling_response(monkeypatch):
                 await asyncio.sleep(0.05)
                 yield b"x"
 
-    monkeypatch.setattr(httpx.AsyncClient, "stream", lambda self, method, url, headers=None: _SlowTrickleStream())
+    monkeypatch.setattr(httpx.AsyncClient, "stream", lambda self, method, url, headers=None, extensions=None: _SlowTrickleStream())
 
     start = time.monotonic()
     with pytest.raises(httpx.ReadTimeout):
@@ -604,6 +723,11 @@ async def test_multi_candidate_missing_key_is_a_named_gap_not_a_crash(monkeypatc
     reached only after a real fetch + real BM25 match, so this exercises the
     client-missing branch for real, not in isolation."""
     monkeypatch.delenv("NEBIUS_API_KEY", raising=False)
+    # See the identical note in test_domains_robotics.py's version of this
+    # test: nebius_client.py caches .env in a local dict at import time now,
+    # so delenv() alone no longer simulates "no key anywhere" -- this
+    # project's own real .env still has one cached.
+    monkeypatch.setitem(nebius_client_mod._DOTENV_VALUES, "NEBIUS_API_KEY", None)
 
     with serve_fixtures() as base_url:
 

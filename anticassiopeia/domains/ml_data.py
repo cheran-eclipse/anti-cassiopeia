@@ -383,6 +383,34 @@ class MLDataAdapter(DomainAdapter):
         if missing_keys:
             return f"Claim is missing required context key(s): {sorted(missing_keys)}."
 
+        # FOUND BUG (external review, "the worst bug of this round" — the
+        # exact failure mode this project exists to prevent, happening in
+        # its own core adapter): float("nan") parses successfully with no
+        # exception, so `expected_value: NaN` silently produced
+        # diff = abs(computed - nan) = nan, and `nan <= tolerance` is
+        # ALWAYS False in Python — a confidently WRONG "contradicted"
+        # verdict from unusable input, not an honest refusal. Same for
+        # ±Infinity, and for a negative tolerance (which would make even a
+        # dead-on-exact match report "contradicted" if tolerance is
+        # negative enough to make the <= comparison fail). Validated here,
+        # before any file I/O or computation — bad input is now an honest
+        # named gap, never a confident guess.
+        try:
+            expected_num = float(ctx["expected_value"])
+        except (TypeError, ValueError):
+            return f"'expected_value' is not a number: {ctx['expected_value']!r}."
+        if not math.isfinite(expected_num):
+            return f"'expected_value' must be a finite number, got {ctx['expected_value']!r}."
+        if "tolerance" in ctx:
+            try:
+                tolerance_num = float(ctx["tolerance"])
+            except (TypeError, ValueError):
+                return f"'tolerance' is not a number: {ctx['tolerance']!r}."
+            if not math.isfinite(tolerance_num):
+                return f"'tolerance' must be a finite number, got {ctx['tolerance']!r}."
+            if tolerance_num < 0:
+                return f"'tolerance' must not be negative, got {tolerance_num!r}."
+
         spec = ctx["dataset_path"]
         if not isinstance(spec, (str, list)):
             return f"'dataset_path' must be a string or a list of strings, got {spec!r}."

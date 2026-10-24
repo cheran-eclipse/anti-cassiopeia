@@ -103,6 +103,7 @@ same fix and same reasoning as `ml_data.py`'s `dataset_path`.
 
 from __future__ import annotations
 
+import math
 import re
 from pathlib import Path
 
@@ -174,6 +175,35 @@ def _coerce_expected_value(raw: float | int | str) -> float:
     how addresses/offsets are conventionally written) or a plain number — this
     accepts either, same spirit as `_parse_svd_int` for the file's own values."""
     return float(_parse_svd_int(raw) if isinstance(raw, str) else raw)
+
+
+def _validate_finite_numeric_context(expected_raw, tolerance_raw=None, *, coerce=float) -> str | None:
+    """FOUND BUG (external review, "the worst bug of this round" — the exact
+    failure mode this project exists to prevent, happening in its own core
+    adapter): `float("nan")`/`float("inf")` parse successfully with no
+    exception, so `expected_value: NaN` silently produced
+    diff = abs(measured - nan) = nan, and `nan <= 0` (the "==" comparator's
+    tolerance check) or any `nan`-involving comparison is ALWAYS False in
+    Python — a confidently WRONG "contradicted" verdict from unusable
+    input, not an honest refusal. Same for ±Infinity, and for a negative
+    tolerance. Shared by both `_check()` (Vivado timing) and
+    `_check_register()` (SVD) — same risk, same fix, one place."""
+    try:
+        expected_num = coerce(expected_raw)
+    except (TypeError, ValueError):
+        return f"'expected_value' is not a number or valid hex string: {expected_raw!r}."
+    if not math.isfinite(expected_num):
+        return f"'expected_value' must be a finite number, got {expected_raw!r}."
+    if tolerance_raw is not None:
+        try:
+            tolerance_num = float(tolerance_raw)
+        except (TypeError, ValueError):
+            return f"'tolerance' is not a number: {tolerance_raw!r}."
+        if not math.isfinite(tolerance_num):
+            return f"'tolerance' must be a finite number, got {tolerance_raw!r}."
+        if tolerance_num < 0:
+            return f"'tolerance' must not be negative, got {tolerance_num!r}."
+    return None
 
 
 def _parse_svd_int(text: str) -> int:
@@ -454,10 +484,9 @@ class FPGAEmbeddedAdapter(DomainAdapter):
         if comparator not in _COMPARATORS:
             return f"Unknown comparator '{comparator}'. Supported: {sorted(_COMPARATORS)}."
 
-        try:
-            _coerce_expected_value(ctx["expected_value"])
-        except (TypeError, ValueError):
-            return f"context['expected_value'] is not a number or valid hex string: {ctx['expected_value']!r}."
+        numeric_gap = _validate_finite_numeric_context(ctx["expected_value"], coerce=_coerce_expected_value)
+        if numeric_gap is not None:
+            return numeric_gap
 
         peripherals = _parse_svd_register_map(path)
         if not peripherals:
@@ -530,6 +559,10 @@ class FPGAEmbeddedAdapter(DomainAdapter):
         comparator = ctx["comparator"]
         if comparator not in _COMPARATORS:
             return f"Unknown comparator '{comparator}'. Supported: {sorted(_COMPARATORS)}."
+
+        numeric_gap = _validate_finite_numeric_context(ctx["expected_value"])
+        if numeric_gap is not None:
+            return numeric_gap
 
         report = FPGAEmbeddedAdapter._parse_report(path)
         if not report or all(not r["timing"] and not r["clocks"] for r in report.values()):

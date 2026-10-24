@@ -49,6 +49,33 @@ def multi_corner_report_path() -> str:
 # --- single-corner report (no "Corner:" label at all -> one corner, "DEFAULT") ---
 
 
+@pytest.mark.parametrize(
+    "expected_value,expected_gap_substring",
+    [
+        (float("nan"), "'expected_value' must be a finite number"),
+        (float("inf"), "'expected_value' must be a finite number"),
+        ("not-a-number", "'expected_value' is not a number"),
+    ],
+)
+async def test_nan_and_infinity_expected_value_is_an_honest_gap_not_a_confident_wrong_verdict(
+    single_corner_report_path, expected_value, expected_gap_substring
+):
+    """Same bug class, same fix, as ml_data.py's identically-named test:
+    float("nan")/float("inf") parse with no exception, and any comparison
+    against them (>=, <=, or the == comparator's epsilon check) is either
+    always False or nonsensical -- a confident wrong verdict from
+    unusable input, not an honest refusal."""
+    adapter = FPGAEmbeddedAdapter()
+    claim = Claim(
+        text="x", domain="fpga_embedded",
+        context={"report_path": single_corner_report_path, "metric": "wns_ns", "comparator": ">=", "expected_value": expected_value},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert expected_gap_substring in gap[0]
+
+
 async def test_confirms_a_design_timing_summary_field_that_clears_the_threshold(single_corner_report_path):
     adapter = FPGAEmbeddedAdapter()
     claim = Claim(
@@ -578,6 +605,29 @@ async def test_invalid_expected_value_is_a_named_gap_not_a_crash(svd_register_ma
     assert ev == []
     gap = adapter.describe_gap(claim, ev)
     assert "not a number" in gap[0].lower()
+
+
+async def test_nan_expected_value_on_a_register_map_claim_is_also_an_honest_gap(svd_register_map_path):
+    """Same bug class as the Vivado-path test above -- register-map claims
+    coerce expected_value through _coerce_expected_value, a different code
+    path, so this is checked separately rather than assumed covered."""
+    adapter = FPGAEmbeddedAdapter()
+    claim = Claim(
+        text="x",
+        domain="fpga_embedded",
+        context={
+            "report_path": svd_register_map_path,
+            "metric": "register_offset",
+            "peripheral": "RNG",
+            "register": "DATA",
+            "comparator": "==",
+            "expected_value": float("nan"),
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "must be a finite number" in gap[0]
 
 
 async def test_register_map_path_traversal_outside_allowed_directories_is_rejected():

@@ -136,19 +136,25 @@ the final response body at `_MAX_RESPONSE_BYTES` by streaming instead of
 loading the whole thing via `resp.text` — an unbounded fetch is its own,
 separate resource-exhaustion risk.
 
-KNOWN, ACCEPTED GAP — DNS REBINDING, not fixed: `_is_safe_to_fetch()`
-resolves the hostname once to decide safety, then `httpx` resolves the
-SAME hostname AGAIN (independently) to actually open the connection. A
-DNS-rebinding attack controls authoritative DNS for its own domain and
-can answer the first resolution with a public IP (passes the check) and
-the second, moments later, with an internal one (what's actually
-connected to) — the two lookups aren't guaranteed to agree. The real fix
-is to resolve once and connect directly to that validated IP (bypassing
-httpx's own resolution entirely, e.g. via a custom transport), which is
-substantially more invasive to httpx's normal request flow than this
-pass's fixes; deliberately not attempted here, stated plainly as an
-accepted residual risk rather than left undocumented or silently
-"handled" by the single-resolution check above.
+FIXED (external review; was "KNOWN, ACCEPTED GAP — DNS REBINDING, not
+fixed" above this line) — resolve-once, connect-to-that-exact-IP:
+`_is_safe_to_fetch()` used to resolve the hostname once to decide safety,
+then `httpx` resolved the SAME hostname AGAIN (independently) to actually
+open the connection. A DNS-rebinding attack controls authoritative DNS
+for its own domain and can answer the first resolution with a public IP
+(passes the check) and the second, moments later, with an internal one
+(what's actually connected to) — the two lookups weren't guaranteed to
+agree. Fixed in `_safe_fetch()`: the request is now sent to the LITERAL
+IP `_is_safe_to_fetch()` already validated (substituted into the URL in
+place of the hostname), not the hostname — httpx never gets a chance to
+resolve it a second time at all, closing the window completely rather
+than narrowing it. The correct `Host` header (http) and TLS SNI (https,
+via httpx's `sni_hostname` request extension) are set explicitly so the
+request still reaches the intended virtual host and the certificate is
+checked against the real hostname, not the raw IP. Verified by
+`test_dns_rebinding_cannot_retarget_the_actual_connection`, which checks
+the ACTUAL url/headers/extensions handed to the transport, not just that
+a validation function was called.
 """
 
 from __future__ import annotations
@@ -161,6 +167,7 @@ import re
 import socket
 import urllib.parse
 from collections.abc import Awaitable, Callable
+from contextvars import ContextVar
 from dataclasses import replace
 
 import httpx
@@ -214,6 +221,39 @@ _SEARCH_USER_AGENT = (
 _DDG_RESULT_LINK_RE = re.compile(r'class="result__a"[^>]+href="([^"]+)"')
 _DDG_REDIRECT_RE = re.compile(r"(?:^|//)duckduckgo\.com/l/\?uddg=([^&]+)")
 
+# FOUND BUG (external review, verified against the real code): these two were
+# `self._last_fetch_error`/`self._last_web_gap` instance attributes --
+# default_domains() builds ONE adapter instance shared across every
+# concurrent request, so two interleaved verify() calls on the same instance
+# could read each other's gap diagnostic, a real race once this is reachable
+# by untrusted public traffic (this module's own `_gather_single_page`
+# docstring already named the risk, but never fixed it). ContextVar instead
+# of `self`: each incoming request runs in its own asyncio Task
+# (FastAPI/Starlette's own per-request behavior), and a Task gets an
+# independent COPY of the context at creation time, so a `.set()` inside one
+# request's gather_evidence() is invisible to every other concurrent
+# request's Task -- no manual per-request cleanup needed, and no change to
+# the DomainAdapter interface (describe_gap() still just takes claim+evidence).
+_fetch_error_var: ContextVar[str | None] = ContextVar("research_web_fetch_error", default=None)
+_web_gap_var: ContextVar[str | None] = ContextVar("research_web_web_gap", default=None)
+
+# HONEST SCOPE NOTE on the above, checked carefully rather than assumed: the
+# exact race requires a "write, then yield again, then read" shape within
+# ONE task. Traced every exit path in this module (every empty-evidence
+# return writes its own gap value IMMEDIATELY before returning, with no
+# further await) and the real engine's call pattern (VerificationEngine.verify()
+# awaits gather_evidence(), then calls describe_gap() SYNCHRONOUSLY, no
+# await in between) -- together these mean this exact race isn't reachable
+# through any CURRENT real call path, verified by constructing the
+# vulnerable shape in isolation and confirming the real adapter code
+# doesn't have it on any exit path today. The ContextVar fix is still the
+# correct call: it replaces a correctness property that only held by
+# convention (every future exit path must remember to write-before-return)
+# with one that holds by construction (Task-scoped storage can't leak
+# across requests regardless of ordering) -- a real robustness
+# improvement against future code changes, not a claim that today's exact
+# code was already being exploited.
+
 _TAVILY_ENDPOINT = "https://api.tavily.com/search"
 
 
@@ -261,27 +301,34 @@ def _looks_like_block_page(html: str) -> bool:
 _LOCALHOST_NAMES = {"localhost", "localhost.localdomain"}
 
 
-async def _is_safe_to_fetch(url: str) -> tuple[bool, str | None]:
+async def _is_safe_to_fetch(url: str) -> tuple[bool, str | None, str | None]:
+    """Returns (is_safe, reason_if_not, pinned_ip_if_safe). The pinned IP is
+    one of the real addresses this exact call just resolved and validated —
+    see the DNS-rebinding fix in _safe_fetch() for why the caller connects
+    to THAT literal IP rather than letting httpx re-resolve the hostname a
+    second time at connect."""
     parsed = urllib.parse.urlsplit(url)
     if parsed.scheme not in ("http", "https"):
-        return False, f"URL scheme '{parsed.scheme}' is not http/https."
+        return False, f"URL scheme '{parsed.scheme}' is not http/https.", None
     host = parsed.hostname
     if not host:
-        return False, "URL has no hostname."
+        return False, "URL has no hostname.", None
     if host.lower() in _LOCALHOST_NAMES:
-        return False, f"Hostname '{host}' is localhost."
+        return False, f"Hostname '{host}' is localhost.", None
 
     try:
         loop = asyncio.get_running_loop()
         addrinfo = await loop.getaddrinfo(host, None)
     except (socket.gaierror, OSError) as exc:
-        return False, f"Hostname '{host}' could not be resolved ({exc}) -- fail closed, not fetched."
+        return False, f"Hostname '{host}' could not be resolved ({exc}) -- fail closed, not fetched.", None
 
+    resolved_ips: list[str] = []
     for *_rest, sockaddr in addrinfo:
         ip = ipaddress.ip_address(sockaddr[0])
         if not ip.is_global:
-            return False, f"Hostname '{host}' resolves to {ip}, which is not a global/public address."
-    return True, None
+            return False, f"Hostname '{host}' resolves to {ip}, which is not a global/public address.", None
+        resolved_ips.append(sockaddr[0])
+    return True, None, resolved_ips[0]
 
 
 class _FetchRefused(Exception):
@@ -322,10 +369,38 @@ async def _safe_fetch(
         # caller needs its own except clause for this.
         async with asyncio.timeout(timeout):
             for _hop in range(_MAX_REDIRECTS + 1):
+                request_url = current
+                request_headers = dict(headers) if headers else {}
+                request_extensions: dict = {}
                 if block_private_networks:
-                    safe, reason = await _is_safe_to_fetch(current)
+                    safe, reason, pinned_ip = await _is_safe_to_fetch(current)
                     if not safe:
                         raise _FetchRefused(f"Refused to fetch '{current}': {reason}")
+                    # FOUND BUG (external review): validating the hostname here and
+                    # then fetching the ORIGINAL hostname-based URL left a real
+                    # DNS-rebinding window -- httpx resolves the hostname a SECOND
+                    # time, independently, when it actually opens the connection; a
+                    # hostile authoritative DNS server can answer THIS validation
+                    # with a public IP and the LATER connect-time lookup with a
+                    # private one, and the two lookups aren't guaranteed to agree.
+                    # Closed by connecting to the EXACT IP just validated above --
+                    # no second resolution happens at all, so there's nothing left
+                    # for a rebinding attack to time -- while explicitly preserving
+                    # the correct Host header (http) and SNI (https, via httpx's
+                    # own `sni_hostname` extension) so the request still reaches the
+                    # right virtual host and the TLS certificate is checked against
+                    # the real hostname, not the raw IP.
+                    parsed = urllib.parse.urlsplit(current)
+                    original_host = parsed.hostname
+                    pinned_netloc = f"[{pinned_ip}]" if ":" in pinned_ip else pinned_ip
+                    if parsed.port:
+                        pinned_netloc += f":{parsed.port}"
+                    request_url = urllib.parse.urlunsplit(
+                        (parsed.scheme, pinned_netloc, parsed.path, parsed.query, parsed.fragment)
+                    )
+                    request_headers.setdefault("Host", original_host)
+                    if parsed.scheme == "https":
+                        request_extensions["sni_hostname"] = original_host
 
                 # Client is constructed lazily, only once the FIRST hop is confirmed
                 # safe -- a rejected url never causes so much as an AsyncClient to be
@@ -334,7 +409,9 @@ async def _safe_fetch(
                 if client is None:
                     client = httpx.AsyncClient(timeout=timeout, follow_redirects=False)
 
-                async with client.stream("GET", current, headers=headers) as streamed:
+                async with client.stream(
+                    "GET", request_url, headers=request_headers, extensions=request_extensions
+                ) as streamed:
                     if streamed.status_code in (301, 302, 303, 307, 308) and "location" in streamed.headers:
                         # FOUND BUG (follow-up security review): a malformed
                         # Location header (e.g. "http://[::1" or "http://a:b:c/")
@@ -565,31 +642,36 @@ class ResearchWebAdapter(DomainAdapter):
         try:
             resp = await _safe_fetch(url, block_private_networks=self._block_private_networks)
         except _FetchRefused as exc:
-            self._last_fetch_error = str(exc)
+            _fetch_error_var.set(str(exc))
             return []
         except httpx.HTTPError as exc:
             # Network failure is its own outcome — NOT silently treated as
             # "quote not found" / contradicts. The caller needs to know the
             # check didn't actually run, not that it ran and failed.
-            # NOTE: stored on self, unlike ml_data/fpga_embedded's stateless _check().
-            # Re-fetching inside describe_gap() to stay stateless would double the
-            # network cost for every gap explanation; the tradeoff is that two
-            # concurrent verify() calls on ONE adapter *instance* could race and
-            # report each other's fetch error. default_domains() builds one adapter
-            # instance per process, so don't share an adapter across concurrent
-            # requests without fixing this (e.g. return the error inline instead of
-            # through describe_gap) first.
-            self._last_fetch_error = f"Fetch of '{url}' failed: {exc!r}."
+            # FOUND BUG (external review, verified against the real code):
+            # this used to be stored on `self` (self._last_fetch_error), and
+            # default_domains() builds ONE adapter instance shared across
+            # every concurrent request -- two interleaved verify() calls on
+            # the same instance could read each other's fetch error, a real
+            # concurrency bug once this is reachable by untrusted public
+            # traffic. Fixed with a ContextVar instead: each incoming
+            # request runs in its own asyncio Task (FastAPI/Starlette's own
+            # per-request behavior), and a Task gets an independent COPY of
+            # the context at creation time -- a .set() here is invisible to
+            # every other concurrent request's Task, with no manual
+            # per-request cleanup needed (no interface change either:
+            # describe_gap() still just reads it back via .get()).
+            _fetch_error_var.set(f"Fetch of '{url}' failed: {exc!r}.")
             return []
 
         if resp.status_code != 200:
-            self._last_fetch_error = f"Fetch of '{url}' returned HTTP {resp.status_code}, not 200."
+            _fetch_error_var.set(f"Fetch of '{url}' returned HTTP {resp.status_code}, not 200.")
             return []
 
         page_text = _normalize(_strip_html(resp.text))
         found = _normalize(quote) in page_text
         if not found and _looks_like_block_page(resp.text):
-            self._last_fetch_error = (
+            _fetch_error_var.set(
                 f"Fetch of '{url}' appears to have returned a network block/proxy page (HTTP {resp.status_code}) "
                 "instead of the requested source content."
             )
@@ -603,7 +685,7 @@ class ResearchWebAdapter(DomainAdapter):
         # in what WAS retained; a found quote is still real evidence regardless
         # of truncation elsewhere in the page.
         if not found and resp.extensions.get("truncated"):
-            self._last_fetch_error = (
+            _fetch_error_var.set(
                 f"Fetch of '{url}' was truncated at {_MAX_RESPONSE_BYTES} bytes before the quote could be "
                 "confirmed or ruled out -- not treated as a confident contradiction."
             )
@@ -626,15 +708,15 @@ class ResearchWebAdapter(DomainAdapter):
     # --- mode 2: live multi-candidate search ---
 
     async def _gather_multi_candidate(self, claim: Claim) -> list[Evidence]:
-        self._last_web_gap = None
+        _web_gap_var.set(None)
         question = claim.context.get("quote") or claim.text
 
         candidate_urls = await self._search(question, 5)
         if not candidate_urls:
-            self._last_web_gap = (
+            _web_gap_var.set((
                 f"No live candidate pages found via search for {question!r} "
                 "(both the DuckDuckGo and Wikipedia search backends returned nothing)."
-            )
+            ))
             return []
 
         all_chunks: list[Chunk] = []
@@ -664,23 +746,23 @@ class ResearchWebAdapter(DomainAdapter):
             chunks_by_id.update({c.chunk_id: c for c in chunks})
 
         if not all_chunks:
-            self._last_web_gap = (
+            _web_gap_var.set((
                 f"Found {len(candidate_urls)} live candidate URL(s) but could not fetch any of them: "
                 + "; ".join(fetch_notes)
-            )
+            ))
             return []
 
         index = BM25Index(all_chunks)
         hits = index.search(question, top_k=10)
         if not hits:
-            self._last_web_gap = (
+            _web_gap_var.set((
                 f"Fetched {len(chunks_by_id)} chunk(s) across {len(candidate_urls)} live candidate page(s), "
                 "but none matched this claim's search terms at all (BM25 found zero overlap)."
-            )
+            ))
             return []
 
         if self._client is None:
-            self._last_web_gap = f"Live candidates and matching passages were found, but the LLM propose step can't run: {self._client_error}"
+            _web_gap_var.set(f"Live candidates and matching passages were found, but the LLM propose step can't run: {self._client_error}")
             return []
 
         # Grouped by SOURCE PAGE (not one pooled top-hit) — checking only the single
@@ -760,10 +842,10 @@ class ResearchWebAdapter(DomainAdapter):
             evidence.append(candidate_evidence)
 
         if not evidence:
-            self._last_web_gap = (
+            _web_gap_var.set((
                 f"Checked {len(hits_by_source)} distinct live source(s) with matching passages, but none "
                 "produced usable evidence: " + "; ".join(problems)
-            )
+            ))
         return evidence
 
     def describe_gap(self, claim: Claim, evidence: list[Evidence]) -> list[str]:
@@ -774,14 +856,14 @@ class ResearchWebAdapter(DomainAdapter):
             ctx_gap = self._check_ctx(ctx)
             if ctx_gap:
                 return [ctx_gap]
-            fetch_err = getattr(self, "_last_fetch_error", None)
+            fetch_err = _fetch_error_var.get(None)
             if fetch_err:
                 return [fetch_err]
             return [
                 "No fetched source found confirming or contradicting this claim. A "
                 "plausible-sounding citation is not evidence until it's actually retrieved."
             ]
-        web_gap = getattr(self, "_last_web_gap", None)
+        web_gap = _web_gap_var.get(None)
         if web_gap:
             return [web_gap]
         return [

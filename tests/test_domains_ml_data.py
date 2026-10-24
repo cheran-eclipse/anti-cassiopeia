@@ -36,6 +36,40 @@ def csv_path(tmp_path):
     return path
 
 
+@pytest.mark.parametrize(
+    "expected_value,tolerance,expected_gap_substring",
+    [
+        (float("nan"), 0.01, "'expected_value' must be a finite number"),
+        (float("inf"), 0.01, "'expected_value' must be a finite number"),
+        (float("-inf"), 0.01, "'expected_value' must be a finite number"),
+        (5.0, float("nan"), "'tolerance' must be a finite number"),
+        (5.0, -1.0, "'tolerance' must not be negative"),
+        ("not-a-number", 0.01, "'expected_value' is not a number"),
+    ],
+)
+async def test_nan_infinity_and_negative_tolerance_are_an_honest_gap_not_a_confident_wrong_verdict(
+    csv_path, expected_value, tolerance, expected_gap_substring
+):
+    """FOUND BUG (external review, "the worst bug of this round"):
+    float("nan") parses with no exception, so diff = abs(computed - nan)
+    is nan, and `nan <= tolerance` is ALWAYS False in Python -- this used
+    to silently produce a confident CONTRADICTED verdict from unusable
+    input, the exact failure mode this project exists to prevent, in its
+    own core adapter. Same for Infinity and a negative tolerance."""
+    adapter = MLDataAdapter()
+    claim = Claim(
+        text="x", domain="ml_data",
+        context={
+            "dataset_path": str(csv_path), "column": "voltage", "stat": "mean",
+            "expected_value": expected_value, "tolerance": tolerance,
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == [], f"expected_value={expected_value!r} must never produce a confident verdict"
+    gap = adapter.describe_gap(claim, ev)
+    assert expected_gap_substring in gap[0]
+
+
 async def test_confirms_a_correct_mean_within_tolerance(csv_path):
     adapter = MLDataAdapter()
     claim = Claim(

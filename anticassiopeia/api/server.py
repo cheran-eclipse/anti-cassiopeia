@@ -65,15 +65,23 @@ from pydantic import BaseModel
 from anticassiopeia.core import Claim, UnknownDomainError, VerificationEngine
 from anticassiopeia.domains import default_domains
 
-# FOUND BUG (follow-up security review): override=True (nebius_client.py's
-# own deliberate choice, for a different, dev-workflow reason explained in
-# its own docstring) would let a .env file take precedence over a
-# platform-injected secret (a real deployment's actual env vars, e.g. from
-# a container orchestrator's secret store) -- if a .env ever ended up in a
-# production image or working directory, it would SILENTLY WIN over the
-# real, intentionally-configured secret. override=False here means .env
-# only fills in what the real environment doesn't already set, which is the
-# safe direction for a server.
+# FOUND BUG (follow-up security review), mechanism actually fixed (not
+# just mitigated here): override=False below is the safe direction for a
+# server (.env only fills in what the real environment doesn't already
+# set) -- but `anticassiopeia.domains` is imported two lines below this
+# comment used to be read, BEFORE this call ever ran, and that import
+# transitively pulled in nebius_client.py, which used to call
+# `load_dotenv(override=True)` at ITS import time. That global override
+# fired first, so by the time this "safe" call executed, a stray `.env`
+# file could ALREADY have silently beaten a real, platform-injected
+# ANTICASSIOPEIA_API_KEY -- making this override=False a no-op in exactly
+# the case it existed to prevent. Actually fixed at the source:
+# nebius_client.py no longer calls load_dotenv() at all (see its own
+# module docstring, "FIXED BUG #2b") -- it reads `.env` into a private,
+# local dict and only ever consults it for its OWN three variable names,
+# so it can no longer mutate this process's environment for
+# ANTICASSIOPEIA_API_KEY or anything else this override=False call is
+# responsible for. Import order no longer matters for this specific risk.
 load_dotenv(override=False)
 
 app = FastAPI(

@@ -77,8 +77,24 @@ python-dotenv's default), which never overwrites a var already present in
 dev shell exports NEBIUS_API_KEY once, then `.env` gets edited later (e.g.
 a rotated key) — and the stale shell-exported value silently kept winning,
 producing a confusing live 401 even with a fresh, valid key sitting
-unread in `.env`. `load_dotenv(override=True)` below makes the file the
-source of truth, as it should be for a secret that's expected to rotate.
+unread in `.env`. The original fix used `load_dotenv(override=True)` to
+make the file the source of truth for this rotation case.
+
+FIXED BUG #2b (external review, superseding #2's mechanism, not its
+goal): `load_dotenv(override=True)` doesn't just override THIS module's
+three variables — it mutates the GLOBAL process environment for every
+name `.env` defines, including ones this module has nothing to do with.
+`anticassiopeia/api/server.py` imports this module (transitively, via
+`anticassiopeia.domains`) BEFORE running its own `load_dotenv(override=False)`
+for `ANTICASSIOPEIA_API_KEY` — so this module's global override had
+ALREADY run by the time server.py's own "safe" call executed, silently
+making it a no-op and letting a stray `.env` file beat a real,
+platform-injected `ANTICASSIOPEIA_API_KEY` in production. Fixed: this
+module now reads `.env` into a private, LOCAL dict (`dotenv_values()`,
+never `load_dotenv()`) and only ever consults it for its own three
+variable names (see `_env_or_dotenv()`) — the rotation-convenience
+behavior #2 wanted is preserved for those three names specifically, but
+nothing else in the process environment is ever touched.
 
 FIXED BUG #3 (found during the Nemotron pivot's pilot runs, see
 stress_test/results/NEMOTRON_PIVOT_REPORT.md): `complete()` returned
@@ -103,14 +119,37 @@ from __future__ import annotations
 import os
 
 import httpx
-from dotenv import load_dotenv
+from dotenv import dotenv_values
 
-# override=True: a .env file edited after this process' shell session started
-# (e.g. a rotated key) must win over whatever was already exported into
-# os.environ at shell startup — a stale already-exported value silently
-# shadowing a deliberately-updated .env file is exactly the kind of unflagged
-# gap this project exists to catch, not ship as the default.
-load_dotenv(override=True)
+# FOUND BUG (external review, verified against the real code): this used to
+# call `load_dotenv(override=True)` at import time -- which doesn't just set
+# THIS module's three variables, it mutates the GLOBAL process environment
+# for every name .env happens to define, including ones this module has
+# nothing to do with (ANTICASSIOPEIA_API_KEY, server.py's auth key). Because
+# anticassiopeia/api/server.py imports anticassiopeia.domains (which imports
+# this module, transitively, before server.py's own code runs) BEFORE its
+# own `load_dotenv(override=False)` call, that global override had ALREADY
+# happened by the time server.py's "safe" call ran -- making it a no-op, and
+# letting a stray .env file silently beat a real, platform-injected
+# ANTICASSIOPEIA_API_KEY in production. (server.py's own comment at the time
+# already named this exact bug -- the mechanism, this module mutating
+# os.environ at all, was never actually fixed.)
+#
+# Fixed by never touching os.environ globally: `dotenv_values()` loads .env
+# into this LOCAL dict only. The original reason override=True existed --
+# a `.env` edited after a shell session started (e.g. a rotated key) must
+# win over an already-exported stale shell value, see `_env_or_dotenv()`
+# below -- is preserved, but scoped to exactly the three variables THIS
+# module reads, never leaking into any other process env var.
+_DOTENV_VALUES = dotenv_values(".env")
+
+
+def _env_or_dotenv(name: str) -> str | None:
+    """.env wins over an already-exported process env var for these three
+    names specifically (the rotation-convenience behavior override=True used
+    to provide globally) -- but, unlike load_dotenv(override=True), this
+    never writes to os.environ and never affects any OTHER variable."""
+    return _DOTENV_VALUES.get(name) or os.environ.get(name)
 
 DEFAULT_BASE_URL = "https://api.tokenfactory.nebius.com/v1"
 DEFAULT_MODEL = "openai/gpt-oss-120b"
@@ -138,11 +177,11 @@ class NebiusTokenFactoryClient:
         timeout: float = 60.0,
         max_tokens: int = DEFAULT_MAX_TOKENS,
     ):
-        self.api_key = api_key or os.environ.get("NEBIUS_API_KEY")
+        self.api_key = api_key or _env_or_dotenv("NEBIUS_API_KEY")
         if not self.api_key:
             raise NebiusClientError("NEBIUS_API_KEY not set (pass api_key= or set the env var).")
-        self.base_url = base_url or os.environ.get("NEBIUS_BASE_URL", DEFAULT_BASE_URL)
-        self.model = model or os.environ.get("NEBIUS_MODEL", DEFAULT_MODEL)
+        self.base_url = base_url or _env_or_dotenv("NEBIUS_BASE_URL") or DEFAULT_BASE_URL
+        self.model = model or _env_or_dotenv("NEBIUS_MODEL") or DEFAULT_MODEL
         self.timeout = timeout
         self.max_tokens = max_tokens
 

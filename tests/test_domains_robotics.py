@@ -18,6 +18,7 @@ import os
 
 import pytest
 
+import anticassiopeia.llm.nebius_client as nebius_client_mod
 from anticassiopeia.core import Claim, VerdictState, VerificationEngine
 from anticassiopeia.domains.robotics import RoboticsAdapter
 from anticassiopeia.llm.nebius_client import NebiusClientError
@@ -234,6 +235,13 @@ async def test_no_api_key_is_a_named_gap_not_a_crash(monkeypatch):
     'nothing found'."""
     monkeypatch.delenv("NEBIUS_API_KEY", raising=False)
     monkeypatch.delenv("NEBIUS_BASE_URL", raising=False)
+    # nebius_client.py reads .env into a LOCAL, module-level dict at import
+    # time (see its "FIXED BUG #2b") specifically so a stray .env can't
+    # clobber unrelated process env vars -- but that means delenv() alone
+    # can no longer simulate "no key anywhere": this project's own real
+    # .env (loaded once, already cached) still has a real key in it. Clear
+    # the cached dict's entry too, for a real "no key configured at all".
+    monkeypatch.setitem(nebius_client_mod._DOTENV_VALUES, "NEBIUS_API_KEY", None)
     adapter = RoboticsAdapter()  # no client injected, and no key in env
     claim = Claim(text="Bar30 survives 500 m depth", domain="robotics")
     ev = await adapter.gather_evidence(claim)
