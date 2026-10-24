@@ -26,6 +26,7 @@ each module's own docstring for specifics.
 
 from anticassiopeia.retrieval.bm25 import BM25Index, ScoredChunk, tokenize
 from anticassiopeia.retrieval.chunking import Chunk, chunk_document
+from anticassiopeia.retrieval.document_ingest import DocumentIngestError, extract_text
 from anticassiopeia.retrieval.verify import Proposal, VerificationResult, verify_proposal
 
 __all__ = [
@@ -37,4 +38,6 @@ __all__ = [
     "Proposal",
     "VerificationResult",
     "verify_proposal",
+    "extract_text",
+    "DocumentIngestError",
 ]

@@ -59,12 +59,15 @@ import threading
 import time
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi import Depends, FastAPI, File, Header, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from anticassiopeia.api.upload_store import UploadStore
 from anticassiopeia.core import Claim, UnknownDomainError, VerificationEngine
 from anticassiopeia.domains import default_domains
+from anticassiopeia.retrieval import DocumentIngestError, extract_text
+from anticassiopeia.retrieval.document_ingest import SUPPORTED_EXTENSIONS
 
 # FOUND BUG (follow-up security review), mechanism actually fixed (not
 # just mitigated here): override=False below is the safe direction for a
@@ -105,6 +108,15 @@ app.add_middleware(
 )
 
 engine = VerificationEngine(domains=default_domains())
+upload_store = UploadStore()
+
+#: v2 master build prompt §3.1: generous enough for a real datasheet/
+#: report/CSV/PDF, far below anything that risks memory exhaustion --
+#: same reasoning research_web.py's _MAX_RESPONSE_BYTES already uses for
+#: fetched pages. Enforced by reading the upload with a size-aware guard
+#: (see _read_upload_within_limit below), not by trusting a
+#: Content-Length header a client could lie about.
+_MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 
 _API_KEY_HEADER = "X-API-Key"
 _RATE_LIMIT_PER_SECOND = 1.0  # sustained rate per API key
@@ -145,6 +157,19 @@ _buckets: dict[str, _TokenBucket] = {}
 _buckets_lock = threading.RLock()
 _auth_failure_buckets: dict[str, _TokenBucket] = {}
 _auth_failure_buckets_lock = threading.RLock()
+
+# v2 master build prompt §3.5: /upload needs its OWN rate limit, separate
+# from /verify's -- an unbounded upload endpoint is a new resource-
+# exhaustion surface /verify's limiter doesn't cover (uploads are bigger,
+# slower, and write to disk, unlike a /verify call). Same keyed-on-the-
+# validated-API-key reasoning as /verify's limiter (see _enforce_rate_limit
+# below), same _TokenBucket mechanism, deliberately a SEPARATE dict so a
+# caller hammering /upload can't also exhaust their /verify budget and
+# vice versa.
+_UPLOAD_RATE_LIMIT_PER_SECOND = 0.2  # one upload every 5s, sustained
+_UPLOAD_RATE_LIMIT_BURST = 3
+_upload_buckets: dict[str, _TokenBucket] = {}
+_upload_buckets_lock = threading.RLock()
 
 # FOUND BUG (follow-up security review): these dicts added one entry per
 # distinct API key / client IP FOREVER, with no eviction -- an attacker
@@ -231,6 +256,21 @@ def _enforce_rate_limit(api_key: str) -> None:
         raise HTTPException(status_code=429, detail="Rate limit exceeded for /verify. Try again shortly.")
 
 
+def _upload_bucket_for(client_key: str) -> _TokenBucket:
+    with _upload_buckets_lock:
+        bucket = _upload_buckets.get(client_key)
+        if bucket is None:
+            _make_room_for_one_more(_upload_buckets)
+            bucket = _TokenBucket(_UPLOAD_RATE_LIMIT_PER_SECOND, _UPLOAD_RATE_LIMIT_BURST)
+            _upload_buckets[client_key] = bucket
+        return bucket
+
+
+def _enforce_upload_rate_limit(api_key: str) -> None:
+    if not _upload_bucket_for(api_key).allow():
+        raise HTTPException(status_code=429, detail="Rate limit exceeded for /upload. Try again shortly.")
+
+
 class VerifyRequest(BaseModel):
     text: str
     domain: str
@@ -263,3 +303,46 @@ async def verify(req: VerifyRequest, api_key: str = Depends(_require_api_key)) -
     except UnknownDomainError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return verdict.to_dict()
+
+
+@app.post("/upload")
+async def upload(file: UploadFile = File(...), api_key: str = Depends(_require_api_key)) -> dict:
+    """v2 master build prompt §3.1: accepts a document, extracts text
+    (format-dispatched by anticassiopeia.retrieval.document_ingest -- see
+    §0.6 for the supported-extension list), stores the EXTRACTED TEXT
+    (never the raw path) under an opaque document_id, returns that id for
+    later /verify calls (robotics.py's document_id context field) to
+    reference. Same auth as /verify; a SEPARATE rate limit (see
+    _enforce_upload_rate_limit) since this is a bigger, slower, disk-
+    writing operation /verify's own limiter was never sized for."""
+    _enforce_upload_rate_limit(api_key)
+
+    filename = file.filename or "upload"
+    ext = filename[filename.rfind(".") :].lower() if "." in filename else ""
+    if ext not in SUPPORTED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file extension '{ext}'. Supported: {sorted(SUPPORTED_EXTENSIONS)}.",
+        )
+
+    # FOUND BUG pattern this guards against (same class already fixed
+    # elsewhere in this project, e.g. research_web.py's _MAX_RESPONSE_BYTES
+    # streaming cap): a client-supplied Content-Length header can lie.
+    # Reading one byte past the cap and checking length (rather than
+    # trusting the header) is what actually enforces the limit.
+    raw_bytes = await file.read(_MAX_UPLOAD_BYTES + 1)
+    if len(raw_bytes) > _MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Upload exceeds the {_MAX_UPLOAD_BYTES} byte limit.",
+        )
+    if not raw_bytes:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+
+    try:
+        text = extract_text(raw_bytes, filename)
+    except DocumentIngestError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    doc = upload_store.put(filename=filename, text=text, size_bytes=len(raw_bytes))
+    return {"document_id": doc.document_id, "filename": doc.filename, "size_bytes": doc.size_bytes}
