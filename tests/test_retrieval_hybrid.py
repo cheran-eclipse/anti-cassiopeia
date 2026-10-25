@@ -174,3 +174,51 @@ async def test_hybrid_result_with_no_bm25_hits_and_no_vector_is_empty_not_a_cras
     result = await index.search("xyzzy quux frobnicate completely unrelated gibberish", top_k=3, client=None)
     assert result.scored == []
     assert result.methods == ["bm25"]
+
+
+# --- mode= : evaluation-only isolation of each method ---
+
+
+async def test_mode_bm25_never_calls_embed_even_with_a_working_client():
+    client = _WorkingEmbedClient()
+    index = HybridIndex(_real_chunks())
+    await index.embed(client)
+    client.embed_calls.clear()  # reset after the index-time embed above
+
+    result = await index.search("Widget Mk4 IP68", top_k=3, client=client, mode="bm25")
+    assert result.methods == ["bm25"]
+    assert client.embed_calls == []  # proves the vector leg genuinely did not run
+
+
+async def test_mode_vector_never_consults_bm25_ranking():
+    client = _WorkingEmbedClient()
+    index = HybridIndex(_real_chunks())
+    await index.embed(client)
+
+    result = await index.search("xyzzy quux frobnicate -- zero BM25 overlap by design", top_k=3, client=client, mode="vector")
+    # BM25 would find nothing for this query; mode="vector" must still
+    # return ranked results purely from embeddings.
+    assert result.methods == ["vector"]
+    assert len(result.scored) > 0
+
+
+async def test_mode_vector_with_no_embeddings_available_returns_empty_not_bm25_fallback():
+    """mode="vector" is an evaluation isolation mode -- it must NOT
+    silently fall back to BM25 when embeddings aren't available, or the
+    eval harness using it to measure vector-only performance would
+    actually be measuring BM25 and mislabeling it."""
+    index = HybridIndex(_real_chunks())  # embed() never called
+    result = await index.search("Widget Mk4 IP68", top_k=3, client=None, mode="vector")
+    assert result.scored == []
+
+
+def test_search_rejects_an_invalid_mode():
+    import asyncio
+
+    index = HybridIndex(_real_chunks())
+
+    async def _run():
+        await index.search("x", top_k=1, client=None, mode="not-a-real-mode")
+
+    with pytest.raises(ValueError, match="mode must be"):
+        asyncio.run(_run())

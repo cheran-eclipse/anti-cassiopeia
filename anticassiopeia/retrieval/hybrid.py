@@ -185,37 +185,62 @@ class HybridIndex:
             # not programming errors to let propagate.
             self.embed_error = f"{type(exc).__name__}: {exc}"
 
-    async def search(self, query_text: str, *, top_k: int, client, pool: int | None = None) -> HybridSearchResult:
+    async def search(
+        self, query_text: str, *, top_k: int, client, pool: int | None = None, mode: str = "hybrid",
+    ) -> HybridSearchResult:
         """`client` is used ONLY to embed the query (chunk embedding
         already happened, or didn't, in `embed()` above) -- passed again
         here because the query is only known at search time. Same
         best-effort degradation as `embed()`: a query-embedding failure
         (including no vector index to search at all) falls back to
-        BM25-only for this one call without raising."""
+        BM25-only for this one call without raising.
+
+        `mode` -- same three values and same purpose as Constellation's
+        own HybridRetriever.search(): "hybrid" (default, production
+        behavior) runs both legs and fuses; "bm25" and "vector" exist
+        ONLY for evaluation (retrieval/evaluate.py's own harness needs to
+        measure each method in isolation to report honest per-method
+        numbers, not just the fused result) and are never used by any
+        production call site in this repo."""
+        if mode not in ("hybrid", "bm25", "vector"):
+            raise ValueError(f"mode must be 'hybrid', 'bm25', or 'vector', got {mode!r}")
         pool_size = pool or max(top_k * 3, 10)
 
-        bm25_hits = self._bm25.search(query_text, top_k=pool_size)
-        bm25_rank = {hit.chunk.chunk_id: rank for rank, hit in enumerate(bm25_hits, start=1)}
-        methods = ["bm25"]
+        bm25_rank: dict[str, int] = {}
+        bm25_hits: list[ScoredChunk] = []
+        methods: list[str] = []
+        if mode in ("hybrid", "bm25"):
+            bm25_hits = self._bm25.search(query_text, top_k=pool_size)
+            bm25_rank = {hit.chunk.chunk_id: rank for rank, hit in enumerate(bm25_hits, start=1)}
+            methods.append("bm25")
 
         vec_rank: dict[str, int] = {}
         vector_error: str | None = None
-        if self._vectors is not None and client is not None:
-            try:
-                query_vector = (await client.embed([query_text]))[0]
-                hits = self._vectors.search(query_vector, pool_size)
-                vec_rank = {chunk_id: rank for rank, (chunk_id, _sim) in enumerate(hits, start=1)}
-                methods.append("vector")
-            except (NebiusClientError, AttributeError, TypeError, IndexError, ValueError) as exc:
-                vector_error = f"{type(exc).__name__}: {exc}"
-        elif self._vectors is None:
-            vector_error = self.embed_error or "no vector index built for this corpus"
+        if mode in ("hybrid", "vector"):
+            if self._vectors is not None and client is not None:
+                try:
+                    query_vector = (await client.embed([query_text]))[0]
+                    hits = self._vectors.search(query_vector, pool_size)
+                    vec_rank = {chunk_id: rank for rank, (chunk_id, _sim) in enumerate(hits, start=1)}
+                    methods.append("vector")
+                except (NebiusClientError, AttributeError, TypeError, IndexError, ValueError) as exc:
+                    vector_error = f"{type(exc).__name__}: {exc}"
+            elif self._vectors is None:
+                vector_error = self.embed_error or "no vector index built for this corpus"
 
         if not vec_rank:
             # Pure BM25 order, UNCHANGED from BM25Index.search()'s own
             # output -- no RRF math applied when there's only one method,
             # so a vector-less call is byte-for-byte what it always was.
+            # (mode="vector" with no usable vectors correctly returns empty.)
             scored = bm25_hits[:top_k]
+            return HybridSearchResult(scored=scored, methods=methods or ["bm25"], vector_error=vector_error)
+
+        if not bm25_rank:
+            # mode="vector": rank purely by cosine similarity, no RRF needed
+            # (there is nothing to fuse against).
+            order = sorted(vec_rank, key=lambda cid: vec_rank[cid])[:top_k]
+            scored = [ScoredChunk(chunk=self._chunks_by_id[cid], score=1.0 / vec_rank[cid]) for cid in order]
             return HybridSearchResult(scored=scored, methods=methods, vector_error=vector_error)
 
         fused = rrf_fuse(bm25_rank, vec_rank)
