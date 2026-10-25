@@ -1,0 +1,17 @@
+{
+  "questions": [
+    {"id": "Q1", "file": "doc1_bluerov2_excerpt.txt", "question": "What is the maximum rated depth of the BlueROV2 with an aluminum tube?", "gold_quote": "Maximum Rated Depth (Aluminum): 300 m", "kind": "keyword-overlap"},
+    {"id": "Q2", "file": "doc1_bluerov2_excerpt.txt", "question": "How deep can the buoyancy foam go before its pressure rating is exceeded?", "gold_quote": "Buoyancy foam rated to 300 m", "kind": "paraphrase"},
+    {"id": "Q3", "file": "doc2_bluerov2_excerpt.txt", "question": "What is the maximum depth the BlueROV2 has actually been tested to, per the older revision?", "gold_quote": "Maximum Tested Depth (so far): 130 m", "kind": "paraphrase"},
+    {"id": "Q4", "file": "doc2_bluerov2_excerpt.txt", "question": "Which external sensor measures water pressure and temperature on the BlueROV2?", "gold_quote": "Blue Robotics Bar 30 Pressure/Depth & Temperature Sensor (external)", "kind": "paraphrase"},
+    {"id": "Q5", "file": "doc3_bar30_excerpt.txt", "question": "What pressure range can the Bar30 chip operate across?", "gold_quote": "Operating range: 0 to 30 bar, -20 to +85 C", "kind": "keyword-overlap"},
+    {"id": "Q6", "file": "doc4_bar100xt_excerpt.txt", "question": "How hot or cold can the Bar100XT sensor operate in terms of temperature?", "gold_quote": "Operating Range: 0 to 100 bar, -10 to +80 C", "kind": "paraphrase"},
+    {"id": "Q7", "file": "doc4_bar100xt_excerpt.txt", "question": "What is the Bar100XT's operating pressure range?", "gold_quote": "Operating Pressure Range: 0 to 100 bar", "kind": "keyword-overlap"},
+    {"id": "Q8", "file": "odrive_v3_6_specifications_excerpt.txt", "question": "How much peak current can each motor draw on the ODrive v3.6?", "gold_quote": "Peak current per motor: 120 Amps", "kind": "keyword-overlap"},
+    {"id": "Q9", "file": "odrive_v3_6_specifications_excerpt.txt", "question": "What voltage range does the 24V version of the ODrive v3.6 board accept?", "gold_quote": "12V to 24V for ODrive v3.6 24V", "kind": "paraphrase"},
+    {"id": "Q10", "file": "odrive_v3_6_specifications_excerpt.txt", "question": "How much current can the heatsink handle with basic fan cooling per channel?", "gold_quote": "Heatsink with basic fan cooling: 75A per channel", "kind": "keyword-overlap"},
+    {"id": "Q11", "file": "nasa_jpl_open_source_rover_readme_excerpt.txt", "question": "How long can the rover drive on a single battery charge over rough terrain?", "gold_quote": "expect to get at least 3 hours of drive time", "kind": "paraphrase"},
+    {"id": "Q12", "file": "nasa_jpl_open_source_rover_readme_excerpt.txt", "question": "How many motors does the NASA JPL Open Source Rover have?", "gold_quote": "number of motors: 10", "kind": "keyword-overlap"},
+    {"id": "Q13", "file": "nasa_jpl_open_source_rover_readme_excerpt.txt", "question": "At what voltage does the rover automatically shut off?", "gold_quote": "When the voltage drops below 13-14V, the rover will power down.", "kind": "paraphrase"}
+  ]
+}

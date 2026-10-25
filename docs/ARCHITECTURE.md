@@ -1157,6 +1157,95 @@ exactly the kind of case `claude/ANTI_CASSIOPEIA_COMPETITIVE_BENCHMARK_PROTOCOL.
 category 1 exists to probe at proper scale across many claims, not just
 this one.
 
+## Hybrid retrieval (BM25 + vector), ported from Constellation
+
+Built per `claude/ANTI_CASSIOPEIA_HYBRID_RETRIEVAL_BUILD_PROMPT.md`, in
+direct response to competitive-benchmark round 1's own finding: 3
+conservative misses and one dangerously-soft conspiracy verdict, all
+traced to BM25 finding nothing when a claim is phrased in different
+words than its best source — a gap BM25 structurally cannot close,
+regardless of tuning.
+
+**Ported, not invented**: `retrieval/hybrid.py`'s `HybridIndex`/
+`VectorIndex`/`rrf_fuse()` are a direct port of the sibling project
+`eclipse-constellation`'s own already-evaluated `HybridRetriever`/
+`VectorIndex` (RRF, k=60, the same standard constant, not re-tuned).
+`NebiusTokenFactoryClient.embed()` uses the same `Qwen/Qwen3-Embedding-8B`
+model and the same OpenAI-compatible `/embeddings` shape Constellation's
+own client already proved works on this provider — confirmed live
+against THIS account's own `GET /v1/models`, not assumed from
+Constellation's choice (a separate project, separate account).
+
+**Two integration points, deliberately different shapes** (per the
+build spec's own §2): `robotics.py`'s BYOE/pooled paths build a
+`HybridIndex` over the uploaded document(s)' chunks (closer to a direct
+`HybridRetriever` port); `research_web.py`'s multi-candidate path embeds
+the query plus that claim's freshly-fetched passages, RRF-fuses against
+the BM25 ranking already happening over them, then discards — no
+persistent index, since there's no persistent corpus to index.
+
+**Honest degradation, both at index time and query time,
+independently**: `embed()` catches `NebiusClientError` (a live failure)
+AND `AttributeError`/`TypeError` (a client that doesn't implement
+`embed()` at all — every existing offline test fake in this repo is
+exactly this shape) — either way, `HybridSearchResult.methods` records
+which method(s) actually ran, and a vector-less result is byte-for-byte
+the same ranking `BM25Index.search()` already produced before this
+build. 20+14+4+3 = new offline tests across `test_llm_nebius_client.py`
+(embed()'s own contract), `test_retrieval_hybrid.py` (RRF fusion,
+`VectorIndex`, degradation at both index and query time, the `mode=`
+eval-only isolation parameter), and `test_hybrid_retrieval_integration.py`
+(proving each domain adapter's wiring genuinely calls `embed()`, not
+just that degradation-with-no-embedder still works).
+
+**New honest limitation this build introduces** (see
+`retrieval/__init__.py`'s own updated docstring): there is still no
+persistent embedding — or chunk, or BM25 index — cache anywhere in this
+codebase. Every hybrid-search call re-chunks AND re-embeds its source
+text from scratch, same as BM25 already re-chunked and re-indexed on
+every call before this build existed. Querying the same uploaded
+document twice re-embeds it twice, at real added cost and latency. A
+persistent per-document cache keyed off `UploadStore`'s own
+`document_id` would close this — a real, separate architecture
+decision, named here for a future round, not hidden.
+
+**Real eval numbers** (`evals/retrieval/`, 13 hand-labelled questions
+across 6 real documents, live `Qwen/Qwen3-Embedding-8B` — see
+`evals/retrieval/RESULTS.md` for the full table and honest reading):
+on questions deliberately paraphrased away from their source wording,
+pure vector search has the best R@1 (0.50 vs. BM25's 0.36) — confirming
+the core hypothesis. Fused hybrid's own R@1 on those same paraphrased
+questions is, surprisingly, WORSE than either pure method alone (0.21)
+— reported as a real, measured, counterintuitive result, not smoothed
+over or tuned away on an N=7 sample. At R@3/hit@3 — the metric that
+actually matches how this pipeline uses retrieval (a top-k candidate
+list shown to `propose()`, never a blind trust of rank #1) — hybrid and
+vector both beat BM25 on paraphrased questions (0.86 vs. 0.79) and tie
+it on keyword-overlap questions (0.83 all three). **This is the build's
+real, defensible result: hybrid never makes recall-at-the-metric-that-
+matters worse, and measurably improves it for paraphrased claims** —
+not a universal "hybrid beats BM25" claim, which this sample is too
+small to support.
+
+**Live re-test of round 1's own failing claims** (§4.3 of the build
+spec), against the real `ResearchWebAdapter` with hybrid retrieval now
+live: **3 of 4 are now fixed.** The ARPANET "LOGIN" claim now correctly
+`CONFIRMED` (1.0 confidence, 2 real sources). The moon-landing
+conspiracy claim now correctly `CONTRADICTED` (0.90) on a REAL
+authoritative source (Wikipedia's own moon-landing-conspiracy-theories
+page, "regarded as pseudoscience and demonstrably false") — replacing
+round 1's fortuitous-but-weak fictional-movie-quote evidence entirely.
+The sunglasses/cancer fact-check claim now correctly `CONTRADICTED`
+(1.0 confidence, 3 real Full Fact sources). The 4th (the SpaceX viral-
+video claim) is still `UNDETERMINED` — but retrieval itself clearly
+improved: it now finds 4 real, topically-relevant sources (EarthSky,
+Wikipedia's own "2026 SpaceX lunar impact" page, BBC) where round 1
+found zero usable passages; the remaining gap is that those sources
+address the real underlying lunar-impact event, not the specific
+claim's nuance about one particular video being fake — a different,
+more subtle limitation than the original verbatim-query retrieval gap,
+not something this build claims to have also fixed.
+
 ## Open design decisions (not yet made)
 
 - Evidence retrieval inside each domain adapter: web search? local
