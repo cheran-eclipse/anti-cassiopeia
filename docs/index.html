@@ -770,7 +770,7 @@
           <select id="domainSelect"><option value="">Loading domains…</option></select>
         </div>
         <div class="field" style="margin-bottom:0;">
-          <label for="docSelect">Document (optional — robotics only)</label>
+          <label for="docSelect">Document (optional — v3: works for robotics/ml_data/fpga_embedded; pooled search is robotics only)</label>
           <select id="docSelect"><option value="">None — use fixed demo corpus / free text</option></select>
         </div>
       </div>
@@ -858,6 +858,12 @@
 
   var lastSubmission = null; // { text, domain, context } -- for single-verify retry
   var uploadedDocs = []; // { document_id, filename, size_bytes }
+  // v3 pooled search: a sentinel docSelect value distinct from any real
+  // document_id (which are secrets.token_urlsafe(32), never this short) --
+  // means "search across ALL of this caller's uploaded documents" instead
+  // of one pre-selected document_id (robotics-only; see server.py's
+  // context.document_pool).
+  var POOL_SENTINEL = "__search_all__";
 
   function getApiBase() {
     var v = (apiBaseInput.value || "").trim();
@@ -1065,6 +1071,15 @@
     noneOpt.value = "";
     noneOpt.textContent = "None — use fixed demo corpus / free text";
     docSelect.appendChild(noneOpt);
+
+    // v3: a 3rd choice alongside "none" / "one specific document" --
+    // robotics-only server-side, but offered regardless of domain here
+    // (same as the single-document option above it); the backend gives a
+    // clear named 400 if the selected domain doesn't support it.
+    var poolOpt = document.createElement("option");
+    poolOpt.value = POOL_SENTINEL;
+    poolOpt.textContent = "🔍 Search all uploaded documents (robotics only)";
+    docSelect.appendChild(poolOpt);
 
     if (uploadedDocs.length === 0) {
       var note = document.createElement("div");
@@ -1355,7 +1370,9 @@
     var context = isRetry && lastSubmission ? lastSubmission.context : Object.assign({}, pendingPresetContext || {});
     var apiKey = apiKeyInput.value;
 
-    if (!isRetry && docSelect.value) {
+    if (!isRetry && docSelect.value === POOL_SENTINEL) {
+      context.document_pool = true;
+    } else if (!isRetry && docSelect.value) {
       context.document_id = docSelect.value;
     }
 
@@ -1424,6 +1441,11 @@
       noneOpt.value = "";
       noneOpt.textContent = "No document";
       docSel.appendChild(noneOpt);
+      var poolOpt = document.createElement("option");
+      poolOpt.value = POOL_SENTINEL;
+      poolOpt.textContent = "🔍 Search all uploaded documents (robotics only)";
+      if (row.documentId === POOL_SENTINEL) poolOpt.selected = true;
+      docSel.appendChild(poolOpt);
       uploadedDocs.forEach(function (doc) {
         var opt = document.createElement("option");
         opt.value = doc.document_id;
@@ -1569,7 +1591,11 @@
       .filter(function (r) { return r.text.trim(); })
       .map(function (r) {
         var out = { text: r.text.trim() };
-        if (r.documentId) out.document_id = r.documentId;
+        if (r.documentId === POOL_SENTINEL) {
+          out.document_pool = true;
+        } else if (r.documentId) {
+          out.document_id = r.documentId;
+        }
         if (r.domain) out.domain = r.domain;
         return out;
       });
