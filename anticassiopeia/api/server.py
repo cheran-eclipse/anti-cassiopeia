@@ -117,18 +117,25 @@ app.add_middleware(
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
-#: v2 /verify/project: ml_data.py/fpga_embedded.py are path-based adapters
-#: (dataset_path/report_path), unlike robotics.py's text-based BYOE --
-#: deliberately NOT refactored to also accept raw text (that would touch
-#: already-hardened, heavily-tested file-reading/line-locator code in both
-#: adapters for no real benefit). Instead, /verify/project writes a
-#: resolved document's REAL extracted text out to a real file under THIS
-#: one fixed, server-owned directory (added to those two adapters'
-#: allowed_base_dirs via default_domains()'s extra_allowed_base_dirs
-#: param below) -- scoped to one request via a per-call tempfile.mkdtemp()
-#: subdirectory, deleted in a finally block right after that request's
-#: claims finish, so nothing here accumulates across requests the way
-#: upload_store's 24h-TTL in-memory text does.
+#: v2 /verify/project (and, as of v3 §1.1, plain /verify too): ml_data.py/
+#: fpga_embedded.py are path-based adapters (dataset_path/report_path),
+#: unlike robotics.py's text-based BYOE -- deliberately NOT refactored to
+#: also accept raw text (that would touch already-hardened, heavily-tested
+#: file-reading/line-locator code in both adapters for no real benefit).
+#: Instead, both endpoints write a resolved document's REAL extracted text
+#: out to a real file under THIS one fixed, server-owned directory (added
+#: to those two adapters' allowed_base_dirs via default_domains()'s
+#: extra_allowed_base_dirs param below) -- deliberately ONE shared
+#: directory, not two, now that both endpoints need it; nothing about the
+#: allowlisting or lifecycle below changes by sharing it. /verify/project
+#: scopes its writes to a per-call tempfile.mkdtemp() subdirectory, deleted
+#: in a finally block right after that request's claims finish. Plain
+#: /verify has no batch to scope a subdirectory to -- it writes ONE file
+#: directly under this directory (named after the document_id, which is
+#: already a long unguessable token, so no extra uniquing is needed) and
+#: deletes that one file in its own finally block right after
+#: engine.verify() returns. Either way nothing here accumulates across
+#: requests the way upload_store's 24h-TTL in-memory text does.
 _PROJECT_SCRATCH_DIR = _REPO_ROOT / "var" / "project_scratch"
 _PROJECT_SCRATCH_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -374,26 +381,63 @@ async def domains() -> dict:
 @app.post("/verify")
 async def verify(req: VerifyRequest, api_key: str = Depends(_require_api_key)) -> dict:
     _enforce_rate_limit(api_key)
-    context = _resolve_document_context(req.context)
+    context, scratch_path = _resolve_document_context(req.context, req.domain)
     claim = Claim(text=req.text, domain=req.domain, context=context)
     try:
         verdict = await engine.verify(claim)
     except UnknownDomainError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    finally:
+        # v3 §1.1: a single /verify call isn't a batch with one natural
+        # "end" to clean up at like /verify/project has -- this call wrote
+        # its own one scratch file (if any) above, and deletes that same
+        # one file here, every time, success or failure. missing_ok=True
+        # because a concurrent /verify call for the SAME document_id could
+        # already have deleted it first (harmless: both calls wrote
+        # identical content, derived from the same stored document).
+        if scratch_path is not None:
+            scratch_path.unlink(missing_ok=True)
     return verdict.to_dict()
 
 
-def _resolve_document_context(context: dict) -> dict:
-    """v2 master build prompt §3.2: if the caller's context names a
-    document_id (from a prior /upload), resolve it to the real extracted
-    text HERE, in the API layer, before any domain adapter ever sees the
-    claim -- robotics.py's BYOE path only ever reads context["document_text"]/
-    context["document_filename"], never document_id or the upload store
-    itself (see robotics.py's own docstring for why that layering is kept
-    clean). An unknown or expired document_id is a clean, explicit 400 --
+def _resolve_document_context(context: dict, domain: str) -> tuple[dict, Path | None]:
+    """v2 master build prompt §3.2, generalized by v3 §1.1: if the caller's
+    context names a document_id (from a prior /upload), resolve it to real
+    content HERE, in the API layer, before any domain adapter ever sees the
+    claim. An unknown or expired document_id is a clean, explicit 400 --
     NOT a silent fall-through to the fixed-corpus behavior a caller who
     explicitly asked to check against their own document would never want
     and would have no way to notice happened.
+
+    What "resolve" means depends on `domain`, same three-way split
+    /verify/project's _run_one_project_claim already established for the
+    project endpoint (see that function's own comments for the full
+    reasoning -- not repeated here):
+    - "robotics": inject document_text/document_filename directly --
+      robotics.py's BYOE path only ever reads those two context keys,
+      never document_id or the upload store itself (clean domain/api
+      layering, per that module's own docstring).
+    - "ml_data" / "fpga_embedded": both adapters are path-based
+      (dataset_path/report_path) and were deliberately NOT given a
+      document_text mode (see domains/__init__.py's docstring) -- so the
+      resolved document's real extracted text is written to a real,
+      server-owned scratch file under _PROJECT_SCRATCH_DIR (already in
+      both adapters' allowed_base_dirs), and that file's path becomes the
+      existing, unmodified dataset_path/report_path context field. This
+      endpoint fabricates NOTHING: every structured field those adapters
+      actually need (column/stat/..., peripheral/metric/...) still comes
+      from the caller's own context, this only auto-fills the one field
+      it legitimately knows -- which real file this document_id
+      corresponds to. The caller (this function's one caller, /verify)
+      is responsible for deleting the returned scratch_path afterward.
+    - anything else (most notably "research_web", which has no mode that
+      consumes an already-extracted document's text at all -- its two
+      modes are URL-fetch or live search) -- a clean, named 400, not a
+      silent no-op that would leave a caller thinking their uploaded
+      document was actually checked when it was quietly ignored.
+
+    Returns (resolved_context, scratch_path_or_None). scratch_path is only
+    ever non-None for the ml_data/fpga_embedded branch.
 
     `context` is a plain dict here (Pydantic already validated VerifyRequest.
     context as `dict`), so a non-string document_id (an int, a list, ...)
@@ -401,14 +445,26 @@ def _resolve_document_context(context: dict) -> dict:
     clean 400 below -- no separate type check needed."""
     document_id = context.get("document_id")
     if document_id is None:
-        return context
+        return context, None
     doc = upload_store.get(document_id) if isinstance(document_id, str) else None
     if doc is None:
         raise HTTPException(status_code=400, detail=f"Unknown or expired document_id: {document_id!r}.")
+
     resolved = dict(context)
-    resolved["document_text"] = doc.text
-    resolved.setdefault("document_filename", doc.filename)
-    return resolved
+    if domain == "robotics":
+        resolved["document_text"] = doc.text
+        resolved.setdefault("document_filename", doc.filename)
+        return resolved, None
+    if domain in ("ml_data", "fpga_embedded"):
+        scratch_path = _PROJECT_SCRATCH_DIR / f"{document_id}{_extension_of(doc.filename) or '.txt'}"
+        scratch_path.write_text(doc.text)
+        key = "dataset_path" if domain == "ml_data" else "report_path"
+        resolved[key] = str(scratch_path)
+        return resolved, scratch_path
+    raise HTTPException(
+        status_code=400,
+        detail=f"domain {domain!r} does not support a document_id-linked claim.",
+    )
 
 
 @app.post("/upload")
