@@ -53,6 +53,7 @@ unauthenticated monitoring/discovery is a normal, intentional tradeoff.
 
 from __future__ import annotations
 
+import hashlib
 import os
 import secrets
 import shutil
@@ -283,6 +284,16 @@ def _require_api_key(request: Request, x_api_key: str | None = Header(default=No
     return x_api_key
 
 
+def _owner_key_hash(api_key: str) -> str:
+    """v3 §2.1: SHA-256 of the validated API key, never the raw key -- used
+    to scope UploadStore.put()/list_for_owner() to "this caller's own
+    uploads" (see upload_store.py's own docstring for the full ownership
+    reasoning, including the honest shared-demo-key caveat). Hashing one
+    already-validated string is cheap; no reason to key a dict on the raw
+    secret when a hash does the same job."""
+    return hashlib.sha256(api_key.encode("utf-8")).hexdigest()
+
+
 def _enforce_rate_limit(api_key: str) -> None:
     if not _bucket_for(api_key).allow():
         raise HTTPException(status_code=429, detail="Rate limit exceeded for /verify. Try again shortly.")
@@ -467,6 +478,41 @@ def _resolve_document_context(context: dict, domain: str) -> tuple[dict, Path | 
     )
 
 
+@app.get("/documents")
+async def documents(api_key: str = Depends(_require_api_key)) -> dict:
+    """v3 §2.2: lists the CALLING API key's own currently-valid uploads --
+    needed so a caller (or the frontend) can discover what's poolable
+    before verifying (see §2.3's document_pool), and so GET /documents
+    actually proves the ownership plumbing added in §2.1 end-to-end before
+    pooled search is built on top of it. Same auth as /verify; reuses
+    /verify's OWN rate-limit bucket rather than getting a dedicated one --
+    this is a cheap in-memory dict scan (upload_store.list_for_owner), not
+    real work like /upload's disk I/O or /verify/project's live-LLM
+    fan-out, so it doesn't need the stricter, separate-bucket treatment
+    those two earned.
+
+    `seconds_until_expiry`, not a raw `uploaded_at`: StoredDocument's own
+    uploaded_at is `time.monotonic()`-based (see upload_store.py's own
+    docstring -- "not wall-clock display"), so handing it back to a caller
+    verbatim would be a meaningless number with no relation to wall-clock
+    time. "How much longer is this still valid" is the actually useful
+    derived quantity, and it's what this endpoint returns instead."""
+    _enforce_rate_limit(api_key)
+    owner_key_hash = _owner_key_hash(api_key)
+    now = time.monotonic()
+    return {
+        "documents": [
+            {
+                "document_id": doc.document_id,
+                "filename": doc.filename,
+                "size_bytes": doc.size_bytes,
+                "seconds_until_expiry": max(0.0, upload_store._ttl_seconds - (now - doc.uploaded_at)),
+            }
+            for doc in upload_store.list_for_owner(owner_key_hash)
+        ]
+    }
+
+
 @app.post("/upload")
 async def upload(file: UploadFile = File(...), api_key: str = Depends(_require_api_key)) -> dict:
     """v2 master build prompt §3.1: accepts a document, extracts text
@@ -506,7 +552,7 @@ async def upload(file: UploadFile = File(...), api_key: str = Depends(_require_a
     except DocumentIngestError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
-    doc = upload_store.put(filename=filename, text=text, size_bytes=len(raw_bytes))
+    doc = upload_store.put(filename=filename, text=text, size_bytes=len(raw_bytes), owner_key_hash=_owner_key_hash(api_key))
     return {"document_id": doc.document_id, "filename": doc.filename, "size_bytes": doc.size_bytes}
 
 

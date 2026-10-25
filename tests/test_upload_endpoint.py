@@ -216,6 +216,7 @@ def test_document_expires_after_its_ttl_and_then_resolves_as_unknown(monkeypatch
     server_mod.upload_store._documents[document_id] = doc.__class__(
         document_id=doc.document_id, filename=doc.filename, text=doc.text,
         size_bytes=doc.size_bytes, uploaded_at=doc.uploaded_at - server_mod.upload_store._ttl_seconds - 1,
+        owner_key_hash=doc.owner_key_hash,
     )
     resp = client.post(
         "/verify",
