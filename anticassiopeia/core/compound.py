@@ -26,14 +26,23 @@ partial-but-reachable is worse than honestly-incomplete-and-documented):
   CONFIRMED makes it CONFIRMED; anything else (an UNDETERMINED part, or
   no sub-claims survived decomposition at all) is UNDETERMINED. No
   OR/NOT connectives, no partial-credit scoring.
-- NOT wired to an HTTP endpoint in this round (see server.py — no
-  `/verify/compound` route exists) and not exposed through default_domains()
-  — this module is real, tested, standalone orchestration logic only,
-  reachable by importing it directly. Exposing it over HTTP needs its own
-  request/response schema, auth/rate-limit wiring consistent with
-  `/verify`, and its own endpoint-level tests — explicitly left for a
-  later round rather than half-wired in now (see docs/ARCHITECTURE.md's
-  "Item 20" section for the full list of what's built vs. not).
+- WIRED to an HTTP endpoint as of v3 §1.2 (`POST /verify/compound` in
+  `api/server.py`) — stale note from this module's original 2-hour-
+  budgeted round, corrected here rather than left to mislead a future
+  reader. The endpoint does NOT call `verify_compound()` below as one
+  atomic call, though — it calls `decompose_claim()` directly, checks a
+  hard cap on decomposed sub-claim count BEFORE verifying anything (this
+  function has no such cap, and verifying every part before checking one
+  would waste exactly the live calls a cap exists to bound), then runs
+  the same per-part `engine.verify()` + `rollup()` loop inline. See
+  `server.py`'s `verify_compound_endpoint()` docstring for why its own
+  signature doesn't line up with reusing this function directly.
+  `verify_compound()` itself remains real, tested, callable library code
+  — exercised directly by `tests/test_compound.py`, just not the code
+  path the live endpoint actually takes. Still NOT exposed through
+  `default_domains()` (never has been, and still shouldn't be — this
+  isn't a `DomainAdapter`). See docs/ARCHITECTURE.md's "Item 20" and
+  "v3 §1.2" sections for the full history.
 """
 
 from __future__ import annotations
