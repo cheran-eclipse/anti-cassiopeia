@@ -13,6 +13,100 @@ round — see §2's own scoping). Claims 1–7 (categories 1–6) ran through
 Anti-Cassiopeia and all 5 competitor variants; claims 8–9 (category 7)
 ran through Anti-Cassiopeia only, per §0.5/§3.3's own explicit exception.
 
+## ERRATUM (2026-10-25, same day) — Tavily was silently disabled for this entire run
+
+**Found after this report was first published, during follow-up work on
+a different question** ("could Tavily + Nemotron + Anti-Cassiopeia's own
+verification beat Perplexity"): `research_web.py`'s `_tavily_search()` —
+already the **primary** search backend in production, tried before DDG/
+Wikipedia — reads `os.environ.get("TAVILY_API_KEY")` directly, not
+`dotenv_values()`. `run_benchmark_round1.py` (like every other script in
+`stress_test/`, confirmed by inspection — `run_test1.py`, `run_test2.py`,
+`run_test2_bare.py`, every `run_test3_*.py`, `run_nemotron_pivot.py`)
+never called `load_dotenv()`, so `TAVILY_API_KEY` was never actually in
+the process environment during this run, even though `.env` has it.
+`_tavily_search()`'s own documented contract — "returns `[]` if the key
+isn't set" — fired silently, and every claim fell back to the much
+weaker DDG/Wikipedia backends, which is exactly what the original
+report's `missing` fields show ("both the DuckDuckGo and Wikipedia
+search backends returned nothing") without ever naming the real reason
+Tavily never got tried. **The live production server (`api/server.py`)
+was never affected** — it already calls `load_dotenv(override=False)` at
+import time. The real deployed service has always had Tavily active;
+only this project's own *measurement* of it, across its entire
+stress-test history, was crippled by a one-line omission.
+
+**Fixed** (commit `879511a`): `load_dotenv()` added to all 11 affected
+scripts. **Re-ran this round's full claim set with the fix in place.**
+Live search has real run-to-run variance (documented elsewhere in this
+project, and visible again here — several claims that were correct in
+the original run found a *different* real source on re-run, sometimes
+better, once worse), so the corrected numbers below are not a clean
+superset of the original table — they are what actually happened on a
+second, Tavily-active run, reported exactly as honestly as the first:
+
+| # | Claim | Ground truth | Anti‑Cassiopeia (Tavily active) | Bare model | Nebius‑agent | Generic RAG | Perplexity | Tavily+Gemini |
+|---|---|---|---|---|---|---|---|---|
+| 1 | Darwin/Wallace | contradicted | undetermined ⚠️ (flipped — see below) | contradicted ✅ | contradicted ✅ | contradicted ✅ | contradicted ✅ | contradicted ✅ |
+| 2 | ARPANET "LOGIN" | confirmed | **confirmed** ✅ (1.0) — **fixed** | confirmed ✅ | confirmed ✅ | confirmed ✅ | confirmed ✅ | confirmed ✅ |
+| 3 | Theogony | confirmed | undetermined ⚠️ (flipped — see below) | confirmed ✅ | undetermined ⚠️ | confirmed ✅ | confirmed ✅ | confirmed ✅ |
+| 4 | Moon landing hoax | contradicted | **contradicted** ✅ (0.90) — **fixed** | contradicted ✅ | contradicted ✅ | contradicted ✅ | contradicted ✅ | contradicted ✅ |
+| 5 | Dead Sea Scrolls | confirmed | confirmed ✅ (0.90) | confirmed ✅ | confirmed ✅ | confirmed ✅ | confirmed ✅ | confirmed ✅ |
+| 6a | Resurrection | *not scored* | **confirmed 🚨 — NEW, real finding, see below** | undetermined ✅ | confirmed 🚨 | confirmed 🚨 | undetermined ✅ | confirmed 🚨 |
+| 6b | Quran/Gabriel | *not scored* | undetermined ✅ (fix holds) | confirmed 🚨 | confirmed 🚨 | confirmed 🚨 | confirmed 🚨 | CRASH |
+| 7a | Sunglasses/cancer | contradicted | **contradicted** ✅ (1.0, 3 Full Fact sources) — **fixed** | *(no competitor row)* | | | | |
+| 7b | SpaceX Moon video | contradicted | undetermined ⚠️ (unchanged) | *(no competitor row)* | | | | |
+
+**3 of the original 4 misses are fixed outright** (ARPANET, moon-landing,
+sunglasses) once Tavily actually runs. **Two claims got WORSE on this
+run** (1, 3) — pure live-search variance (Darwin/Wallace and Theogony
+both found different, less-direct sources this time; neither is a
+regression from the Tavily fix, both are the same "search results vary
+run to run" honesty caveat this project has carried for a long time,
+now visible in a very concrete, countable way). **6a (resurrection) is
+a genuinely new, important finding, not noise — see below.**
+
+### New finding: the attributed-belief fix (commit `22d5677`) catches hedged sources, not confidently-worded ones
+
+With Tavily active, the resurrection probe found a different source than
+either prior run: **gotquestions.org**, a Christian apologetics Q&A
+site, stating flatly — no hedge at all — *"Three days later, His body
+and spirit were reunited, and He rose from the dead (John 20)."* The
+attributed-belief stance fix only catches a passage that **itself**
+hedges ("according to X tradition..."); it does nothing when the source
+is an unhedged, confidently-worded doctrinal/apologetics page asserting
+the supernatural claim as flat fact. `judge_stance()` correctly judged
+"supports" — the passage IS about the same claim, worded as a direct
+assertion — so the bug isn't in the stance judgment this time; it's one
+level up: **the system has no notion that some claim *types*
+(supernatural/doctrinal claims) cannot be confirmed by any web source's
+confident wording, hedged or not.** This is a deeper, more consequential
+gap than the one fixed earlier in this report, and it is **deliberately
+NOT patched in this pass** — a real fix here needs careful thought (how
+do you detect "this entire claim is a matter of faith" independent of
+how any given source phrases it, without either over-triggering on
+ordinary claims or needing a hand-maintained list of religious topics?),
+and this project's own discipline is not to ship an undercooked fix for
+something this sensitive under time pressure. Flagged here as the
+**single most important open finding** from this round — a strong
+category-6 candidate for round 2, and worth its own dedicated,
+careful-pass fix before then if the project owner wants to prioritize it.
+
+### Independent cross-confirmation: the hybrid-retrieval build's own live re-test agrees
+
+A separate build (hybrid BM25+vector retrieval, ported from
+Constellation — see `docs/ARCHITECTURE.md`) re-ran the same 4 originally-
+failing claims independently, with a different mechanism (better
+retrieval ranking, not Tavily-vs-no-Tavily) and found the same 3 of 4
+now resolve correctly (ARPANET, moon-landing, sunglasses), with the
+SpaceX video claim staying unresolved for a distinct, separate reason
+(a genuine claim-nuance gap — sources describe the real event but don't
+directly confirm or deny THIS SPECIFIC viral video is fake — not a
+retrieval-volume problem, confirmed by that build finding 4 real
+relevant sources this time, up from 0). Two independent fixes, two
+independent re-tests, converging on the same result is real corroboration,
+not a coincidence worth ignoring.
+
 ## Budget — actual spend, not estimated
 
 | Line | Cost |
