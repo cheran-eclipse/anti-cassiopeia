@@ -8,7 +8,7 @@ negation word anywhere in the preceding ~25 characters instead of one
 directly governing the canonical word, so it misparsed real model
 output. These four strings are copied verbatim (truncated to the
 relevant tail) from stress_test/results/test3_codeexec_raw.jsonl's
-ml_data-001854, ml_data-000529, ml_data-001217 and ml_data-000537."""
+quant-001854, quant-000529, quant-001217 and quant-000537."""
 
 import sys
 from pathlib import Path
@@ -103,7 +103,7 @@ def test_system_prompt_discloses_stdlib_only_sandbox():
     runs this script (confirmed: numpy IS present in this project's own dev
     venv via an unrelated dependency, pandas is NOT -- an accident of this
     one machine, not a declared contract). Fixed by stating the GUARANTEE
-    (stdlib-only, matching ml_data.py's own real constraint) rather than
+    (stdlib-only, matching quant.py's own real constraint) rather than
     describing one environment's current package list."""
     from run_test_codeexec import _build_system_prompt
 

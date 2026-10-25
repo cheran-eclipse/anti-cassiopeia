@@ -101,7 +101,7 @@ def test_compound_rate_limit_trips_after_the_burst_allowance_and_is_separate_fro
     statuses = [_compound("x").status_code for _ in range(server_mod._COMPOUND_RATE_LIMIT_BURST + 2)]
     assert 429 in statuses[server_mod._COMPOUND_RATE_LIMIT_BURST :]
     other_resp = client.post(
-        "/verify", json={"text": "x", "domain": "research_web", "context": {"url": "http://127.0.0.1:1/nope", "quote": "x"}},
+        "/verify", json={"text": "x", "domain": "searchlight", "context": {"url": "http://127.0.0.1:1/nope", "quote": "x"}},
         headers={"X-API-Key": "the-real-key"},
     )
     assert other_resp.status_code != 429
@@ -134,10 +134,10 @@ def test_compound_decomposition_blowup_is_a_422_before_any_subclaim_is_verified(
     """The cap must be enforced BEFORE verification -- proven by a capturing
     adapter asserting it was never called, not just by the status code."""
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
-    too_many = json.dumps({"parts": [{"text": f"part {i}", "domain": "robotics"} for i in range(server_mod._MAX_SUBCLAIMS + 1)]})
+    too_many = json.dumps({"parts": [{"text": f"part {i}", "domain": "substrate"} for i in range(server_mod._MAX_SUBCLAIMS + 1)]})
     monkeypatch.setattr(server_mod, "_compound_client", _FakeDecomposeClient(too_many))
-    fake_robotics = _FixedEvidenceAdapter("robotics")
-    monkeypatch.setitem(server_mod.engine._domains, "robotics", fake_robotics)
+    fake_robotics = _FixedEvidenceAdapter("substrate")
+    monkeypatch.setitem(server_mod.engine._domains, "substrate", fake_robotics)
 
     resp = _compound("way too many parts")
     assert resp.status_code == 422
@@ -147,10 +147,10 @@ def test_compound_decomposition_blowup_is_a_422_before_any_subclaim_is_verified(
 
 def test_compound_exactly_at_the_cap_is_allowed(monkeypatch):
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
-    exactly_cap = json.dumps({"parts": [{"text": f"part {i}", "domain": "robotics"} for i in range(server_mod._MAX_SUBCLAIMS)]})
+    exactly_cap = json.dumps({"parts": [{"text": f"part {i}", "domain": "substrate"} for i in range(server_mod._MAX_SUBCLAIMS)]})
     monkeypatch.setattr(server_mod, "_compound_client", _FakeDecomposeClient(exactly_cap))
-    fake_robotics = _FixedEvidenceAdapter("robotics", stance="supports")
-    monkeypatch.setitem(server_mod.engine._domains, "robotics", fake_robotics)
+    fake_robotics = _FixedEvidenceAdapter("substrate", stance="supports")
+    monkeypatch.setitem(server_mod.engine._domains, "substrate", fake_robotics)
 
     resp = _compound("exactly at the cap")
     assert resp.status_code == 200
@@ -162,9 +162,9 @@ def test_compound_exactly_at_the_cap_is_allowed(monkeypatch):
 
 def test_compound_rollup_confirmed_when_every_subclaim_confirms(monkeypatch):
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
-    monkeypatch.setattr(server_mod, "_compound_client", _FakeDecomposeClient(_two_part_decompose("robotics", "research_web")))
-    monkeypatch.setitem(server_mod.engine._domains, "robotics", _FixedEvidenceAdapter("robotics", stance="supports"))
-    monkeypatch.setitem(server_mod.engine._domains, "research_web", _FixedEvidenceAdapter("research_web", stance="supports"))
+    monkeypatch.setattr(server_mod, "_compound_client", _FakeDecomposeClient(_two_part_decompose("substrate", "searchlight")))
+    monkeypatch.setitem(server_mod.engine._domains, "substrate", _FixedEvidenceAdapter("substrate", stance="supports"))
+    monkeypatch.setitem(server_mod.engine._domains, "searchlight", _FixedEvidenceAdapter("searchlight", stance="supports"))
 
     resp = _compound("A and B")
     assert resp.status_code == 200
@@ -176,9 +176,9 @@ def test_compound_rollup_confirmed_when_every_subclaim_confirms(monkeypatch):
 
 def test_compound_rollup_contradicted_when_one_subclaim_contradicts(monkeypatch):
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
-    monkeypatch.setattr(server_mod, "_compound_client", _FakeDecomposeClient(_two_part_decompose("robotics", "research_web")))
-    monkeypatch.setitem(server_mod.engine._domains, "robotics", _FixedEvidenceAdapter("robotics", stance="supports"))
-    monkeypatch.setitem(server_mod.engine._domains, "research_web", _FixedEvidenceAdapter("research_web", stance="contradicts"))
+    monkeypatch.setattr(server_mod, "_compound_client", _FakeDecomposeClient(_two_part_decompose("substrate", "searchlight")))
+    monkeypatch.setitem(server_mod.engine._domains, "substrate", _FixedEvidenceAdapter("substrate", stance="supports"))
+    monkeypatch.setitem(server_mod.engine._domains, "searchlight", _FixedEvidenceAdapter("searchlight", stance="contradicts"))
 
     resp = _compound("A and B")
     body = resp.json()
@@ -186,16 +186,16 @@ def test_compound_rollup_contradicted_when_one_subclaim_contradicts(monkeypatch)
 
 
 def test_compound_unsupported_domain_part_becomes_a_null_verdict_subclaim(monkeypatch):
-    """decompose_claim() can classify a part as needing ml_data/fpga_embedded
+    """decompose_claim() can classify a part as needing quant/silicon
     (DECOMPOSABLE_DOMAINS excludes them) -- that part is never verified,
     kept as a named, visible gap (verdict: null), not silently dropped."""
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
     decompose_response = json.dumps({"parts": [
-        {"text": "A", "domain": "robotics"},
+        {"text": "A", "domain": "substrate"},
         {"text": "the dataset's mean voltage is 5.0", "domain": "unsupported"},
     ]})
     monkeypatch.setattr(server_mod, "_compound_client", _FakeDecomposeClient(decompose_response))
-    monkeypatch.setitem(server_mod.engine._domains, "robotics", _FixedEvidenceAdapter("robotics", stance="supports"))
+    monkeypatch.setitem(server_mod.engine._domains, "substrate", _FixedEvidenceAdapter("substrate", stance="supports"))
 
     resp = _compound("A and the dataset's mean voltage is 5.0")
     body = resp.json()

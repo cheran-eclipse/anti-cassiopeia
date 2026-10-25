@@ -1,0 +1,9 @@
+{
+  "claim": {
+    "text": "The blocked page states the reference pump is rated for 12 bar",
+    "domain": "searchlight",
+    "context": {"url": "{FIXTURE_BASE_URL}/blocked_page.html", "quote": "maximum operating pressure of 12 bar"}
+  },
+  "expected_state": "undetermined",
+  "note": "HTTP 200 serving a proxy/block page instead of the source: must be undetermined (check didn't run), not contradicted."
+}

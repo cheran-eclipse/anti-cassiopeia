@@ -196,7 +196,7 @@ async def test_adapter_partial_gaps_are_always_surfaced_in_reasoning():
 
 async def test_undated_evidence_never_decays():
     # Item 19: Evidence.timestamp defaults to None -- the vast majority of
-    # evidence today (freshly re-computed ml_data stats, live research_web
+    # evidence today (freshly re-computed quant stats, live searchlight
     # fetches, SVD register reads) must behave EXACTLY as before this
     # feature existed.
     ev = [Evidence(source="s", snippet="x", stance="supports", trust=0.9)]
@@ -257,8 +257,8 @@ async def test_decaying_the_losing_side_raises_confidence_in_the_real_engine():
 async def test_min_decay_factor_can_never_flip_an_existing_single_source_verdict():
     # engine.py's own MIN_DECAY_FACTOR comment states this property --
     # verified here directly, not just asserted in a comment. Every current
-    # adapter's single-source trust is 0.9 (fpga_embedded.py's Vivado/SVD
-    # paths; robotics.py/research_web.py's LLM-verified single quotes) --
+    # adapter's single-source trust is 0.9 (silicon.py's Vivado/SVD
+    # paths; substrate.py/searchlight.py's LLM-verified single quotes) --
     # decay must never be able to push a lone 0.9 piece below
     # DECISION_THRESHOLD=0.5 purely from age, however old the evidence is.
     from anticassiopeia.core.engine import DECISION_THRESHOLD, MIN_DECAY_FACTOR

@@ -1,9 +1,0 @@
-{
-  "claim": {
-    "text": "voltage column mean is 6.0V",
-    "domain": "ml_data",
-    "context": {"dataset_path": "evals/fixtures/sample_measurements.csv", "column": "voltage", "stat": "mean", "expected_value": 6.0, "tolerance": 0.01}
-  },
-  "expected_state": "contradicted",
-  "note": "Real mean is 5.0, not 6.0 — outside tolerance."
-}

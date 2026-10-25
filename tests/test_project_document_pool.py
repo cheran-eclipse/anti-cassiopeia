@@ -4,8 +4,8 @@ same pooled-search resolution plain /verify gained in §2.3, now usable
 inside a batch -- so one project call can mix claims pinned to one
 specific document with claims that search the whole caller's upload
 pool). Real HTTP, real uploads, real UploadStore/ownership -- the live
-robotics BYOE pooled pipeline itself is covered offline in
-tests/test_robotics_byoe_pool.py.
+substrate BYOE pooled pipeline itself is covered offline in
+tests/test_substrate_byoe_pool.py.
 """
 
 import io
@@ -55,7 +55,7 @@ def _upload(filename: str, content: bytes, api_key: str) -> str:
 
 
 class _CapturingAdapter(DomainAdapter):
-    domain_name = "robotics"
+    domain_name = "substrate"
     implemented = True
 
     def __init__(self, stance: str = "supports"):
@@ -83,19 +83,19 @@ def test_project_claim_with_document_id_and_document_pool_is_a_per_claim_error(m
 
 def test_project_document_pool_on_a_non_robotics_domain_is_a_named_per_claim_error(monkeypatch):
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
-    resp = _project([{"text": "x", "document_pool": True, "domain": "ml_data"}])
+    resp = _project([{"text": "x", "document_pool": True, "domain": "quant"}])
     claim0 = resp.json()["claims"][0]
-    assert "does not support document_pool search (robotics-only)" in claim0["error"]
+    assert "does not support document_pool search (substrate-only)" in claim0["error"]
 
 
 def test_project_document_pool_with_omitted_domain_defaults_to_robotics(monkeypatch):
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
     fake_adapter = _CapturingAdapter()
-    monkeypatch.setitem(server_mod.engine._domains, "robotics", fake_adapter)
+    monkeypatch.setitem(server_mod.engine._domains, "substrate", fake_adapter)
     resp = _project([{"text": "x", "document_pool": True}])
     assert resp.status_code == 200
     claim0 = resp.json()["claims"][0]
-    assert claim0["domain"] == "robotics"
+    assert claim0["domain"] == "substrate"
     assert claim0["error"] is None
 
 
@@ -106,7 +106,7 @@ def test_project_document_pool_injects_only_this_callers_own_uploads(monkeypatch
     _upload("not-mine.txt", b"someone else's content", api_key="key-b")
 
     fake_adapter = _CapturingAdapter()
-    monkeypatch.setitem(server_mod.engine._domains, "robotics", fake_adapter)
+    monkeypatch.setitem(server_mod.engine._domains, "substrate", fake_adapter)
     resp = _project([{"text": "x", "document_pool": True}], api_key="key-a")
     assert resp.status_code == 200
     pool_items = fake_adapter.received_claims[0].context["document_pool_items"]
@@ -121,7 +121,7 @@ def test_project_mixes_a_document_id_claim_and_a_document_pool_claim_in_one_batc
     _upload("manual.txt", b"The Widget Mk4 is IP68 rated.", api_key="the-real-key")
 
     fake_adapter = _CapturingAdapter()
-    monkeypatch.setitem(server_mod.engine._domains, "robotics", fake_adapter)
+    monkeypatch.setitem(server_mod.engine._domains, "substrate", fake_adapter)
 
     resp = _project([
         {"text": "mean voltage is 5.0", "document_id": csv_doc,
@@ -130,8 +130,8 @@ def test_project_mixes_a_document_id_claim_and_a_document_pool_claim_in_one_batc
     ])
     body = resp.json()
     assert all(c["error"] is None for c in body["claims"])
-    assert body["claims"][0]["domain"] == "ml_data"
-    assert body["claims"][1]["domain"] == "robotics"
+    assert body["claims"][0]["domain"] == "quant"
+    assert body["claims"][1]["domain"] == "substrate"
     pool_items = fake_adapter.received_claims[0].context["document_pool_items"]
     # pool search sees BOTH uploads (document_id pinning doesn't remove a
     # document from the pool -- they're independent ways to reference it)

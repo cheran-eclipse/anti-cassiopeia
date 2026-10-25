@@ -2,9 +2,9 @@
 Tests for POST /verify/project (v2 "bring your own evidence", Phase 2):
 multi-document domain sniffing + per-claim routing + rollup via
 core.compound's existing AND-semantics rollup(). Real uploads, real CSV/
-SVD/Vivado-report fixture content, real ml_data.py/fpga_embedded.py
+SVD/Vivado-report fixture content, real quant.py/silicon.py
 adapters computing against real scratch files this endpoint writes --
-only the robotics/research_web domains (which need a live LLM) are
+only the substrate/searchlight domains (which need a live LLM) are
 exercised through a capturing fake adapter here, same pattern
 test_upload_endpoint.py already established.
 """
@@ -58,7 +58,7 @@ def _upload(filename: str, content: bytes, api_key: str = "the-real-key") -> str
 
 
 class _CapturingAdapter(DomainAdapter):
-    domain_name = "robotics"
+    domain_name = "substrate"
     implemented = True
 
     def __init__(self, stance: str = "supports"):
@@ -86,7 +86,7 @@ def test_project_requires_a_nonempty_claims_list(monkeypatch):
 
 def test_project_rejects_too_many_claims(monkeypatch):
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
-    claims = [{"text": f"claim {i}", "domain": "research_web"} for i in range(server_mod._MAX_CLAIMS_PER_PROJECT + 1)]
+    claims = [{"text": f"claim {i}", "domain": "searchlight"} for i in range(server_mod._MAX_CLAIMS_PER_PROJECT + 1)]
     resp = _project(claims)
     assert resp.status_code == 400
     assert "at most" in resp.json()["detail"]
@@ -94,18 +94,18 @@ def test_project_rejects_too_many_claims(monkeypatch):
 
 def test_project_without_api_key_is_rejected(monkeypatch):
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
-    resp = client.post("/verify/project", json={"claims": [{"text": "x", "domain": "research_web"}]})
+    resp = client.post("/verify/project", json={"claims": [{"text": "x", "domain": "searchlight"}]})
     assert resp.status_code == 401
 
 
 def test_project_rate_limit_trips_after_the_burst_allowance_and_is_separate_from_verify(monkeypatch):
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
-    claims = [{"text": "x", "domain": "ml_data", "context": {}}]
+    claims = [{"text": "x", "domain": "quant", "context": {}}]
     statuses = [_project(claims).status_code for _ in range(server_mod._PROJECT_RATE_LIMIT_BURST + 2)]
     assert statuses[: server_mod._PROJECT_RATE_LIMIT_BURST].count(429) == 0
     assert 429 in statuses[server_mod._PROJECT_RATE_LIMIT_BURST :]
     verify_resp = client.post(
-        "/verify", json={"text": "x", "domain": "ml_data", "context": {}}, headers={"X-API-Key": "the-real-key"}
+        "/verify", json={"text": "x", "domain": "quant", "context": {}}, headers={"X-API-Key": "the-real-key"}
     )
     assert verify_resp.status_code != 429
 
@@ -137,7 +137,7 @@ def test_project_sniffs_csv_to_ml_data_and_computes_a_real_statistic(monkeypatch
     assert resp.status_code == 200
     body = resp.json()
     claim_result = body["claims"][0]
-    assert claim_result["domain"] == "ml_data"
+    assert claim_result["domain"] == "quant"
     assert claim_result["error"] is None
     assert claim_result["verdict"]["state"] == "confirmed"
     assert "Re-computed mean(voltage)" in claim_result["verdict"]["evidence"][0]["snippet"]
@@ -156,7 +156,7 @@ def test_project_sniffs_svd_to_fpga_embedded_register_claim(monkeypatch):
     }])
     assert resp.status_code == 200
     claim_result = resp.json()["claims"][0]
-    assert claim_result["domain"] == "fpga_embedded"
+    assert claim_result["domain"] == "silicon"
     assert claim_result["verdict"]["state"] == "confirmed"
 
 
@@ -170,22 +170,22 @@ def test_project_sniffs_rpt_with_timing_banner_to_fpga_embedded(monkeypatch):
     }])
     assert resp.status_code == 200
     claim_result = resp.json()["claims"][0]
-    assert claim_result["domain"] == "fpga_embedded"
+    assert claim_result["domain"] == "silicon"
     assert claim_result["verdict"]["state"] == "confirmed"
 
 
 def test_project_rpt_without_timing_banner_falls_back_to_robotics(monkeypatch):
     """A .rpt extension alone is not trusted as "definitely a Vivado
     report" -- content is cross-checked, same discipline
-    fpga_embedded.py's own _is_svd_file() already applies to .xml."""
+    silicon.py's own _is_svd_file() already applies to .xml."""
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
     fake_adapter = _CapturingAdapter()
-    monkeypatch.setitem(server_mod.engine._domains, "robotics", fake_adapter)
+    monkeypatch.setitem(server_mod.engine._domains, "substrate", fake_adapter)
     doc_id = _upload("notes.rpt", b"Just some plain notes, not a real Vivado report at all.")
     resp = _project([{"text": "the notes say something", "document_id": doc_id}])
     assert resp.status_code == 200
     claim_result = resp.json()["claims"][0]
-    assert claim_result["domain"] == "robotics"
+    assert claim_result["domain"] == "substrate"
     assert fake_adapter.received_claims[0].context["document_text"] == "Just some plain notes, not a real Vivado report at all."
 
 
@@ -201,50 +201,50 @@ def test_project_xml_with_device_tag_sniffs_to_fpga_embedded(monkeypatch):
         },
     }])
     claim_result = resp.json()["claims"][0]
-    assert claim_result["domain"] == "fpga_embedded"
+    assert claim_result["domain"] == "silicon"
 
 
 def test_project_plain_xml_without_device_tag_sniffs_to_robotics(monkeypatch):
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
     fake_adapter = _CapturingAdapter()
-    monkeypatch.setitem(server_mod.engine._domains, "robotics", fake_adapter)
+    monkeypatch.setitem(server_mod.engine._domains, "substrate", fake_adapter)
     doc_id = _upload("data.xml", b"<root><item>just generic xml, no device element</item></root>")
     resp = _project([{"text": "something about this xml", "document_id": doc_id}])
     claim_result = resp.json()["claims"][0]
-    assert claim_result["domain"] == "robotics"
+    assert claim_result["domain"] == "substrate"
 
 
 def test_project_txt_sniffs_to_robotics_byoe_and_injects_document_text(monkeypatch):
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
     fake_adapter = _CapturingAdapter()
-    monkeypatch.setitem(server_mod.engine._domains, "robotics", fake_adapter)
+    monkeypatch.setitem(server_mod.engine._domains, "substrate", fake_adapter)
     doc_id = _upload("manual.txt", b"The Widget Mk4 is IP68 rated.")
     resp = _project([{"text": "Is the Widget Mk4 IP68 rated?", "document_id": doc_id}])
     assert resp.status_code == 200
     claim_result = resp.json()["claims"][0]
-    assert claim_result["domain"] == "robotics"
+    assert claim_result["domain"] == "substrate"
     assert fake_adapter.received_claims[0].context["document_text"] == "The Widget Mk4 is IP68 rated."
     assert fake_adapter.received_claims[0].context["document_filename"] == "manual.txt"
 
 
 def test_project_caller_can_override_the_sniffed_domain_explicitly(monkeypatch):
-    """A .csv would normally sniff to ml_data -- an explicit domain in the
+    """A .csv would normally sniff to quant -- an explicit domain in the
     per-claim request overrides that, same "never override what the
     caller explicitly said" principle as plain /verify."""
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
     fake_adapter = _CapturingAdapter()
-    monkeypatch.setitem(server_mod.engine._domains, "robotics", fake_adapter)
+    monkeypatch.setitem(server_mod.engine._domains, "substrate", fake_adapter)
     doc_id = _upload("measurements.csv", _CSV_FIXTURE)
-    resp = _project([{"text": "something about this csv", "document_id": doc_id, "domain": "robotics"}])
+    resp = _project([{"text": "something about this csv", "document_id": doc_id, "domain": "substrate"}])
     claim_result = resp.json()["claims"][0]
-    assert claim_result["domain"] == "robotics"
+    assert claim_result["domain"] == "substrate"
     assert "voltage" in fake_adapter.received_claims[0].context["document_text"]
 
 
 def test_project_document_linked_to_an_unsupported_domain_is_a_named_per_claim_error(monkeypatch):
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
     doc_id = _upload("manual.txt", b"some text")
-    resp = _project([{"text": "x", "document_id": doc_id, "domain": "research_web"}])
+    resp = _project([{"text": "x", "document_id": doc_id, "domain": "searchlight"}])
     claim_result = resp.json()["claims"][0]
     assert claim_result["error"] is not None
     assert "does not support a document_id-linked claim" in claim_result["error"]
@@ -256,7 +256,7 @@ def test_project_document_linked_to_an_unsupported_domain_is_a_named_per_claim_e
 def test_project_rollup_confirmed_when_every_claim_confirms(monkeypatch):
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
     fake_adapter = _CapturingAdapter(stance="supports")
-    monkeypatch.setitem(server_mod.engine._domains, "robotics", fake_adapter)
+    monkeypatch.setitem(server_mod.engine._domains, "substrate", fake_adapter)
     csv_doc = _upload("measurements.csv", _CSV_FIXTURE)
     txt_doc = _upload("manual.txt", b"The Widget Mk4 is IP68 rated.")
     resp = _project([
@@ -272,7 +272,7 @@ def test_project_rollup_confirmed_when_every_claim_confirms(monkeypatch):
 def test_project_rollup_contradicted_when_one_claim_contradicts(monkeypatch):
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
     fake_adapter = _CapturingAdapter(stance="contradicts")
-    monkeypatch.setitem(server_mod.engine._domains, "robotics", fake_adapter)
+    monkeypatch.setitem(server_mod.engine._domains, "substrate", fake_adapter)
     csv_doc = _upload("measurements.csv", _CSV_FIXTURE)
     txt_doc = _upload("manual.txt", b"The Widget Mk4 is IP68 rated.")
     resp = _project([
@@ -288,7 +288,7 @@ def test_project_rollup_undetermined_when_a_claim_errors_out_but_nothing_contrad
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
     resp = _project([
         {"text": "x", "document_id": "never-issued"},
-        {"text": "y", "domain": "research_web", "context": {"url": "http://127.0.0.1:1/nope", "quote": "x"}},
+        {"text": "y", "domain": "searchlight", "context": {"url": "http://127.0.0.1:1/nope", "quote": "x"}},
     ])
     body = resp.json()
     assert body["rollup"]["state"] == "undetermined"

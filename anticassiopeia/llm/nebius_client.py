@@ -35,7 +35,7 @@ every time (8/8, then 6/6 on a second doc pair) — matching the cited
 
 ONE REAL BUG surfaced and fixed while confirming this, not a model
 limitation: the first 8/8 gpt-oss-120b run came back with `kind` always
-null, which would make domains/robotics.py (which requires
+null, which would make domains/substrate.py (which requires
 `kind == "rated"` to accept a depth figure) discard every proposal — a
 full regression, not an improvement. Investigated via retrieval/extract.py's
 own prompt: it told the model `"kind": "rated" or "tested" or null` with
@@ -105,7 +105,7 @@ budget on hidden reasoning/thinking content, leaving the visible
 `content` field literally `null` in an otherwise well-formed 200
 response — `KeyError`/`IndexError` don't catch that (the key is
 present, its value just isn't usable), so every caller's
-`raw.strip()` (extract.py's `_parse_response`, research_web.py's
+`raw.strip()` (extract.py's `_parse_response`, searchlight.py's
 `_judge_stance()`) crashed with `AttributeError: 'NoneType' object
 has no attribute 'strip'` instead of getting a named failure. Fixed
 here, once, at the source: a non-string `content` now raises
@@ -197,7 +197,7 @@ class NebiusTokenFactoryClient:
         # Deliberately a SEPARATE override from `model` above -- the chat model
         # this client completes() with and the model it embeds() with are two
         # different capabilities on two different endpoints; a caller
-        # overriding one (e.g. robotics.py's ROBOTICS_MODEL) must not silently
+        # overriding one (e.g. substrate.py's SUBSTRATE_MODEL) must not silently
         # also change the other.
         self.embedding_model = embedding_model or _env_or_dotenv("NEBIUS_EMBEDDING_MODEL") or DEFAULT_EMBEDDING_MODEL
 

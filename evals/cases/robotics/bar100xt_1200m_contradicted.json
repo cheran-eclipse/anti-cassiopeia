@@ -1,5 +1,0 @@
-{
-  "claim": {"text": "Bar100XT survives 1200 m depth", "domain": "robotics", "context": {}},
-  "expected_state": "contradicted",
-  "note": "Same sourced 0-100 bar rating as bar100xt_500m_confirmed.json (~995 m depth-equivalent), but 1200 m genuinely exceeds it — a ~21% shortfall, well outside the 5% gauge/absolute conversion margin, so this resolves cleanly rather than neutral."
-}

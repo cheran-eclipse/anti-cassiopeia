@@ -1,0 +1,15 @@
+{
+  "claim": {
+    "text": "design's clk_main meets 200 MHz timing",
+    "domain": "silicon",
+    "context": {
+      "report_path": "evals/fixtures/vivado_timing_report_single_corner.rpt",
+      "metric": "frequency_mhz",
+      "clock": "clk_main",
+      "comparator": ">=",
+      "expected_value": 200
+    }
+  },
+  "expected_state": "contradicted",
+  "note": "Same real report; clk_main's real 142.857 MHz fails a 200 MHz requirement."
+}

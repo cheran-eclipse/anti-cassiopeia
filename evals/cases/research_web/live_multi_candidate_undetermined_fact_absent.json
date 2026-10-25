@@ -1,9 +1,0 @@
-{
-  "claim": {
-    "text": "BlueROV2 comes with a 3 year manufacturer warranty",
-    "domain": "research_web",
-    "context": {}
-  },
-  "expected_state": "undetermined",
-  "note": "UPDATED this session: the ORIGINAL claim here ('BlueROV2 has a maximum operating time of 14 hours') no longer demonstrates this shape now that Tavily is the primary search backend (see research_web.py's module docstring) — Tavily finds a real distributor page (sepcotech.com) stating a real run-time figure that genuinely CONTRADICTS 14 hours, so that claim now correctly resolves CONTRADICTED instead (moved to live_multi_candidate_contradicted_via_tavily_distributor_page.json, a real improvement, not a regression). This claim replaces it for the 'candidates found, fact genuinely absent' shape: confirmed live, Tavily returns 3 real candidate pages for this query (none actually about BlueROV2 — unrelated warranty-news articles that merely share keywords), and the model honestly reports the warranty claim isn't stated in any of them rather than guessing. Still UNDETERMINED, same property as before — the specific sources found just changed."
-}

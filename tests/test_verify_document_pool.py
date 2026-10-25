@@ -4,8 +4,8 @@ POST /verify: context.document_pool=true resolves to the CALLING key's
 own currently-valid uploads (never another caller's), capped at
 _MAX_POOL_DOCUMENTS, injected as context["document_pool_items"] before
 any domain adapter runs -- real HTTP, real multipart uploads, real
-UploadStore/ownership. The live robotics BYOE pooled pipeline itself is
-covered offline in tests/test_robotics_byoe_pool.py; this file is pure
+UploadStore/ownership. The live substrate BYOE pooled pipeline itself is
+covered offline in tests/test_substrate_byoe_pool.py; this file is pure
 API-layer plumbing, same split test_upload_endpoint.py already
 established for the single-document case.
 """
@@ -53,7 +53,7 @@ def _upload(filename: str, content: bytes, api_key: str) -> str:
 
 
 class _CapturingAdapter(DomainAdapter):
-    domain_name = "robotics"
+    domain_name = "substrate"
     implemented = True
 
     def __init__(self):
@@ -71,16 +71,16 @@ def _verify(text: str, domain: str, context: dict, api_key: str = "the-real-key"
 def test_document_id_and_document_pool_together_is_a_clean_400(monkeypatch):
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
     doc_id = _upload("a.txt", b"hello", api_key="the-real-key")
-    resp = _verify("x", "robotics", {"document_id": doc_id, "document_pool": True})
+    resp = _verify("x", "substrate", {"document_id": doc_id, "document_pool": True})
     assert resp.status_code == 400
     assert "either document_id or document_pool, not both" in resp.json()["detail"]
 
 
 def test_document_pool_on_a_non_robotics_domain_is_a_named_400(monkeypatch):
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
-    resp = _verify("x", "ml_data", {"document_pool": True})
+    resp = _verify("x", "quant", {"document_pool": True})
     assert resp.status_code == 400
-    assert "does not support document_pool search (robotics-only)" in resp.json()["detail"]
+    assert "does not support document_pool search (substrate-only)" in resp.json()["detail"]
 
 
 def test_document_pool_injects_only_this_callers_own_uploads(monkeypatch):
@@ -90,9 +90,9 @@ def test_document_pool_injects_only_this_callers_own_uploads(monkeypatch):
     _upload("not-mine.txt", b"someone else's content", api_key="key-b")
 
     fake_adapter = _CapturingAdapter()
-    monkeypatch.setitem(server_mod.engine._domains, "robotics", fake_adapter)
+    monkeypatch.setitem(server_mod.engine._domains, "substrate", fake_adapter)
 
-    resp = _verify("x", "robotics", {"document_pool": True}, api_key="key-a")
+    resp = _verify("x", "substrate", {"document_pool": True}, api_key="key-a")
     assert resp.status_code == 200
     pool_items = fake_adapter.received_claim.context["document_pool_items"]
     assert pool_items == [("mine.txt", "my content")]
@@ -102,8 +102,8 @@ def test_document_pool_injects_only_this_callers_own_uploads(monkeypatch):
 def test_document_pool_with_no_uploads_resolves_to_an_empty_pool_not_an_error(monkeypatch):
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
     fake_adapter = _CapturingAdapter()
-    monkeypatch.setitem(server_mod.engine._domains, "robotics", fake_adapter)
-    resp = _verify("x", "robotics", {"document_pool": True})
+    monkeypatch.setitem(server_mod.engine._domains, "substrate", fake_adapter)
+    resp = _verify("x", "substrate", {"document_pool": True})
     assert resp.status_code == 200
     assert fake_adapter.received_claim.context["document_pool_items"] == []
     assert fake_adapter.received_claim.context["document_pool_total_available"] == 0
@@ -117,8 +117,8 @@ def test_document_pool_is_capped_and_total_available_is_the_real_count(monkeypat
         _upload(f"{i}.txt", f"content {i}".encode(), api_key="the-real-key")
 
     fake_adapter = _CapturingAdapter()
-    monkeypatch.setitem(server_mod.engine._domains, "robotics", fake_adapter)
-    resp = _verify("x", "robotics", {"document_pool": True})
+    monkeypatch.setitem(server_mod.engine._domains, "substrate", fake_adapter)
+    resp = _verify("x", "substrate", {"document_pool": True})
     assert resp.status_code == 200
     pool_items = fake_adapter.received_claim.context["document_pool_items"]
     assert len(pool_items) == 2  # capped
@@ -132,8 +132,8 @@ def test_document_pool_most_recent_items_preserve_real_text(monkeypatch):
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
     _upload("widget.txt", b"The Widget Mk4 is IP68 rated.", api_key="the-real-key")
     fake_adapter = _CapturingAdapter()
-    monkeypatch.setitem(server_mod.engine._domains, "robotics", fake_adapter)
-    resp = _verify("x", "robotics", {"document_pool": True})
+    monkeypatch.setitem(server_mod.engine._domains, "substrate", fake_adapter)
+    resp = _verify("x", "substrate", {"document_pool": True})
     assert resp.status_code == 200
     filename, text = fake_adapter.received_claim.context["document_pool_items"][0]
     assert filename == "widget.txt"

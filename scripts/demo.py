@@ -4,8 +4,8 @@ the real engine and prints each verdict with its evidence and locators.
 
 Nothing in this script is scripted/mocked — every verdict below comes from
 the actual VerificationEngine, the actual domain adapters, and (for
-robotics/ml_data/fpga_embedded) actual sourced facts or re-computed values.
-research_web's case does a real HTTP fetch of a local, version-controlled
+substrate/quant/silicon) actual sourced facts or re-computed values.
+searchlight's case does a real HTTP fetch of a local, version-controlled
 fixture page (evals/fixtures/web/) so the demo works offline and can't rot
 when a third-party site changes its text.
 
@@ -18,16 +18,16 @@ import asyncio
 
 from anticassiopeia.core import Claim, VerificationEngine
 from anticassiopeia.domains import default_domains
-from anticassiopeia.domains.research_web import ResearchWebAdapter
+from anticassiopeia.domains.searchlight import SearchlightAdapter
 from evals.fixture_server import resolve, serve_fixtures
 
 CASES: list[Claim] = [
-    Claim(text="BlueROV2 survives 500 m depth", domain="robotics"),
-    Claim(text="Bar30 survives 500 m depth", domain="robotics"),
-    Claim(text="Bar100XT survives 500 m depth", domain="robotics"),
+    Claim(text="BlueROV2 survives 500 m depth", domain="substrate"),
+    Claim(text="Bar30 survives 500 m depth", domain="substrate"),
+    Claim(text="Bar100XT survives 500 m depth", domain="substrate"),
     Claim(
         text="voltage column mean is 5.0V",
-        domain="ml_data",
+        domain="quant",
         context={
             "dataset_path": "evals/fixtures/sample_measurements.csv",
             "column": "voltage",
@@ -38,7 +38,7 @@ CASES: list[Claim] = [
     ),
     Claim(
         text="design's clk_main meets 100 MHz timing",
-        domain="fpga_embedded",
+        domain="silicon",
         context={
             "report_path": "evals/fixtures/vivado_timing_report_single_corner.rpt",
             "metric": "frequency_mhz",
@@ -49,7 +49,7 @@ CASES: list[Claim] = [
     ),
     Claim(
         text="the local fixture page states the reference pump is rated for 12 bar",
-        domain="research_web",
+        domain="searchlight",
         context={"url": "{FIXTURE_BASE_URL}/stable_page.html", "quote": "maximum operating pressure of 12 bar"},
     ),
 ]
@@ -58,12 +58,12 @@ _SYMBOL = {"confirmed": "✓", "contradicted": "✗", "undetermined": "?"}
 
 
 async def main() -> None:
-    # Same reasoning as evals/run_evals.py: this demo's research_web case
+    # Same reasoning as evals/run_evals.py: this demo's searchlight case
     # fetches its own local fixture server (127.0.0.1) on purpose -- the
-    # real default's SSRF guard (see research_web.py's docstring) would
+    # real default's SSRF guard (see searchlight.py's docstring) would
     # otherwise reject that fetch. Every other domain stays production-default.
     domains = default_domains()
-    domains["research_web"] = ResearchWebAdapter(block_private_networks=False)
+    domains["searchlight"] = SearchlightAdapter(block_private_networks=False)
     engine = VerificationEngine(domains=domains)
 
     print("=" * 72)

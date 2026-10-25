@@ -1,9 +1,0 @@
-{
-  "claim": {
-    "text": "voltage column mean is 5.0V in a dataset that doesn't exist",
-    "domain": "ml_data",
-    "context": {"dataset_path": "evals/fixtures/nope.csv", "column": "voltage", "stat": "mean", "expected_value": 5.0}
-  },
-  "expected_state": "undetermined",
-  "note": "Confirms a missing file produces a named gap, not a crash or a silent default."
-}

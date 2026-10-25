@@ -2,7 +2,7 @@
 Tests for /verify's opt-in context.include_summary (a short, best-effort,
 LLM-generated gloss of the already-computed verdict -- commentary, never
 a new source of evidence). All OFFLINE: server_mod._summary_client is
-monkeypatched to a fake, and server_mod.engine's robotics domain is
+monkeypatched to a fake, and server_mod.engine's substrate domain is
 monkeypatched to a fixed-evidence fake -- no live Nebius call needed.
 """
 
@@ -33,7 +33,7 @@ def _no_api_key_by_default(monkeypatch):
 
 
 class _FixedEvidenceAdapter(DomainAdapter):
-    domain_name = "robotics"
+    domain_name = "substrate"
     implemented = True
 
     def __init__(self, stance: str = "supports"):
@@ -58,14 +58,14 @@ class _FakeSummaryClient:
 def _verify(context: dict, api_key: str = "the-real-key"):
     return client.post(
         "/verify",
-        json={"text": "x", "domain": "robotics", "context": context},
+        json={"text": "x", "domain": "substrate", "context": context},
         headers={"X-API-Key": api_key},
     )
 
 
 def test_summary_is_absent_by_default(monkeypatch):
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
-    monkeypatch.setitem(server_mod.engine._domains, "robotics", _FixedEvidenceAdapter())
+    monkeypatch.setitem(server_mod.engine._domains, "substrate", _FixedEvidenceAdapter())
     monkeypatch.setattr(server_mod, "_summary_client", _FakeSummaryClient("should never be called"))
     resp = _verify({})
     assert resp.status_code == 200
@@ -76,7 +76,7 @@ def test_summary_is_absent_by_default(monkeypatch):
 
 def test_summary_is_generated_when_opted_in(monkeypatch):
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
-    monkeypatch.setitem(server_mod.engine._domains, "robotics", _FixedEvidenceAdapter())
+    monkeypatch.setitem(server_mod.engine._domains, "substrate", _FixedEvidenceAdapter())
     fake = _FakeSummaryClient("The evidence supports this claim.")
     monkeypatch.setattr(server_mod, "_summary_client", fake)
     resp = _verify({"include_summary": True})
@@ -90,7 +90,7 @@ def test_summary_is_generated_when_opted_in(monkeypatch):
 
 def test_summary_failure_never_fails_the_real_verdict(monkeypatch):
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
-    monkeypatch.setitem(server_mod.engine._domains, "robotics", _FixedEvidenceAdapter())
+    monkeypatch.setitem(server_mod.engine._domains, "substrate", _FixedEvidenceAdapter())
     monkeypatch.setattr(server_mod, "_summary_client", _FakeSummaryClient(NebiusClientError("Nebius Token Factory returned 500")))
     resp = _verify({"include_summary": True})
     assert resp.status_code == 200
@@ -102,7 +102,7 @@ def test_summary_failure_never_fails_the_real_verdict(monkeypatch):
 
 def test_summary_client_unavailable_is_a_named_summary_error_not_a_crash(monkeypatch):
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
-    monkeypatch.setitem(server_mod.engine._domains, "robotics", _FixedEvidenceAdapter())
+    monkeypatch.setitem(server_mod.engine._domains, "substrate", _FixedEvidenceAdapter())
     monkeypatch.setattr(server_mod, "_summary_client", None)
     monkeypatch.setattr(server_mod, "_summary_client_error", "NEBIUS_API_KEY not set.")
     resp = _verify({"include_summary": True})
@@ -121,7 +121,7 @@ def test_summary_works_for_ml_data_which_otherwise_makes_zero_llm_calls(monkeypa
     resp = client.post(
         "/verify",
         json={
-            "text": "the mean voltage is 5.0", "domain": "ml_data",
+            "text": "the mean voltage is 5.0", "domain": "quant",
             "context": {
                 "dataset_path": "evals/fixtures/sample_measurements.csv",
                 "column": "voltage", "stat": "mean", "expected_value": 5.0, "tolerance": 0.05,

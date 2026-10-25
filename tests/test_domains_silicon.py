@@ -1,0 +1,756 @@
+"""
+Tests the silicon adapter against a REAL EDA tool report format —
+Xilinx/AMD Vivado's `report_timing_summary` (Design Timing Summary +
+Clock Summary tables) — not an invented one. The column headers and
+table structure used in `evals/fixtures/vivado_timing_report*.rpt` were
+copied verbatim from a real, fetched open-source project's actual Vivado
+report; see `anticassiopeia/domains/silicon.py`'s module docstring
+for the exact URL and how that was verified. Only the numbers are
+synthetic, same convention `substrate.py`'s corpus excerpts already use.
+"""
+
+from pathlib import Path
+
+import pytest
+
+import anticassiopeia.domains.silicon as fpga_embedded_mod
+from anticassiopeia.core import Claim
+from anticassiopeia.domains.silicon import SiliconAdapter
+
+_SINGLE_CORNER_REPORT = "evals/fixtures/vivado_timing_report_single_corner.rpt"
+_MULTI_CORNER_REPORT = "evals/fixtures/vivado_timing_report.rpt"
+
+
+@pytest.fixture(autouse=True)
+def _allow_tmp_path_for_fixtures(monkeypatch, tmp_path):
+    """Same reasoning as test_domains_quant.py's identically-named fixture:
+    SiliconAdapter() now defaults to a FIXED allowlist for the
+    path-containment fix (see silicon.py's module docstring); this
+    module's own fixtures write real report files under pytest's tmp_path.
+    The dedicated traversal/symlink tests below escape outside tmp_path
+    too, so they still exercise the real check."""
+    monkeypatch.setattr(
+        fpga_embedded_mod, "_DEFAULT_ALLOWED_BASE_DIRS", [*fpga_embedded_mod._DEFAULT_ALLOWED_BASE_DIRS, tmp_path]
+    )
+
+
+@pytest.fixture
+def single_corner_report_path() -> str:
+    assert Path(_SINGLE_CORNER_REPORT).is_file()
+    return _SINGLE_CORNER_REPORT
+
+
+@pytest.fixture
+def multi_corner_report_path() -> str:
+    assert Path(_MULTI_CORNER_REPORT).is_file()
+    return _MULTI_CORNER_REPORT
+
+
+# --- single-corner report (no "Corner:" label at all -> one corner, "DEFAULT") ---
+
+
+@pytest.mark.parametrize(
+    "expected_value,expected_gap_substring",
+    [
+        (float("nan"), "'expected_value' must be a finite number"),
+        (float("inf"), "'expected_value' must be a finite number"),
+        ("not-a-number", "'expected_value' is not a number"),
+    ],
+)
+async def test_nan_and_infinity_expected_value_is_an_honest_gap_not_a_confident_wrong_verdict(
+    single_corner_report_path, expected_value, expected_gap_substring
+):
+    """Same bug class, same fix, as quant.py's identically-named test:
+    float("nan")/float("inf") parse with no exception, and any comparison
+    against them (>=, <=, or the == comparator's epsilon check) is either
+    always False or nonsensical -- a confident wrong verdict from
+    unusable input, not an honest refusal."""
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="x", domain="silicon",
+        context={"report_path": single_corner_report_path, "metric": "wns_ns", "comparator": ">=", "expected_value": expected_value},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert expected_gap_substring in gap[0]
+
+
+async def test_confirms_a_design_timing_summary_field_that_clears_the_threshold(single_corner_report_path):
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="worst setup slack is at least 0.1 ns",
+        domain="silicon",
+        context={"report_path": single_corner_report_path, "metric": "wns_ns", "comparator": ">=", "expected_value": 0.1},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert len(ev) == 1
+    assert ev[0].stance == "supports"  # real wns_ns is 0.320
+
+
+async def test_contradicts_a_design_timing_summary_field_that_fails_the_threshold(single_corner_report_path):
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="worst setup slack is at least 1.0 ns",
+        domain="silicon",
+        context={"report_path": single_corner_report_path, "metric": "wns_ns", "comparator": ">=", "expected_value": 1.0},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert len(ev) == 1
+    assert ev[0].stance == "contradicts"  # real wns_ns is 0.320, not >= 1.0
+
+
+async def test_equality_comparator_on_an_endpoint_count(single_corner_report_path):
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="TNS total endpoints is exactly 200",
+        domain="silicon",
+        context={
+            "report_path": single_corner_report_path,
+            "metric": "tns_total_endpoints",
+            "comparator": "==",
+            "expected_value": 200,
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev[0].stance == "supports"
+
+
+async def test_clock_frequency_metric_requires_and_uses_the_named_clock(single_corner_report_path):
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="clk_main runs at at least 100 MHz",
+        domain="silicon",
+        context={
+            "report_path": single_corner_report_path,
+            "metric": "frequency_mhz",
+            "clock": "clk_main",
+            "comparator": ">=",
+            "expected_value": 100,
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev[0].stance == "supports"  # real frequency is 142.857 MHz
+
+
+async def test_frequency_metric_without_a_clock_is_a_named_gap(single_corner_report_path):
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="x",
+        domain="silicon",
+        context={
+            "report_path": single_corner_report_path, "metric": "frequency_mhz", "comparator": ">=", "expected_value": 100
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "missing 'clock'" in gap[0].lower()
+    assert "clk_main" in gap[0]  # names what clocks WERE parsed
+
+
+async def test_unrecognized_metric_lists_the_fields_that_WERE_parsed(single_corner_report_path):
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="x",
+        domain="silicon",
+        context={"report_path": single_corner_report_path, "metric": "ghost_metric", "comparator": ">=", "expected_value": 0},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "wns_ns" in gap[0]  # names what it DID find, not just what it didn't
+
+
+async def test_unsupported_register_metric_name_against_a_vivado_report_is_an_honest_gap_not_a_guess(single_corner_report_path):
+    """Register-map claims ARE now supported (see the dedicated SVD tests
+    below) — but only against a real CMSIS-SVD file, and only under the
+    exact metric names this adapter recognizes (_REGISTER_METRICS). This
+    metric name ("register_address") isn't one of them, so it's treated
+    as an ordinary Vivado Design Timing Summary field name and correctly
+    not found — a named gap, never a fabricated address, same property
+    as before this session's SVD support was added."""
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="REG_CTRL is mapped at 0x40",
+        domain="silicon",
+        context={"report_path": single_corner_report_path, "metric": "register_address", "comparator": "==", "expected_value": 64},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "not found" in gap[0].lower()
+
+
+async def test_real_register_metric_name_against_a_vivado_report_is_also_an_honest_gap(single_corner_report_path):
+    """The inverse of the test above: a REAL register-map metric name, but
+    pointed at a Vivado timing report instead of an SVD file — must be
+    refused as a format mismatch, not silently parsed as if it were an SVD."""
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="x",
+        domain="silicon",
+        context={
+            "report_path": single_corner_report_path,
+            "metric": "register_offset",
+            "peripheral": "RNG",
+            "register": "DATA",
+            "comparator": "==",
+            "expected_value": "0xB0",
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "doesn't look like a cmsis-svd" in gap[0].lower()
+
+
+async def test_path_traversal_outside_allowed_directories_is_rejected():
+    """Same vulnerability and fix as test_domains_quant.py's identically-
+    named test: report_path previously went straight into Path(...) with
+    no containment check. This string starts under the real
+    evals/fixtures/ allowlist entry but ../ segments walk it out to a real
+    file outside every allowed directory."""
+    adapter = SiliconAdapter()
+    traversal_path = "evals/fixtures/" + "../" * 12 + "etc/passwd"
+    claim = Claim(
+        text="x", domain="silicon",
+        context={"report_path": traversal_path, "metric": "wns_ns", "comparator": ">=", "expected_value": 0},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "not within an allowed directory" in gap[0].lower()
+
+
+async def test_symlink_escaping_the_allowed_directory_is_rejected(tmp_path):
+    """Same symlink-escape vector as test_domains_quant.py's identically-
+    named test: a symlink living inside an allowed directory (tmp_path,
+    widened by this module's own autouse fixture) whose real target
+    resolves outside every allowed directory."""
+    target_outside_everything = Path("/etc/passwd")
+    assert target_outside_everything.is_file()
+    symlink_path = tmp_path / "escape.rpt"
+    symlink_path.symlink_to(target_outside_everything)
+
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="x", domain="silicon",
+        context={"report_path": str(symlink_path), "metric": "wns_ns", "comparator": ">=", "expected_value": 0},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "not within an allowed directory" in gap[0].lower()
+
+
+async def test_null_byte_in_path_is_a_clean_rejection_not_a_crash():
+    """Same fix as test_domains_quant.py's identically-named test: a path
+    with an embedded null byte made Path.resolve() raise ValueError, which
+    wasn't caught -- a 500 instead of a clean, named gap."""
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="x", domain="silicon",
+        context={"report_path": "evals/fixtures/x\x00/../../../../etc/passwd", "metric": "wns_ns", "comparator": ">=", "expected_value": 0},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "not within an allowed directory" in gap[0].lower()
+
+
+async def test_missing_report_file(tmp_path):
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="x",
+        domain="silicon",
+        context={"report_path": str(tmp_path / "nope.rpt"), "metric": "x", "comparator": ">=", "expected_value": 0},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "not found" in gap[0].lower()
+
+
+async def test_unrecognized_report_format_is_a_named_gap_not_a_crash(tmp_path):
+    path = tmp_path / "garbage.rpt"
+    path.write_text("this file has no Design Timing Summary or Clock Summary table in it at all\njust prose\n")
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="x",
+        domain="silicon",
+        context={"report_path": str(path), "metric": "wns_ns", "comparator": ">=", "expected_value": 0},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "not recognized" in gap[0].lower()
+
+
+# --- multi-corner report ("Corner: <NAME>" labels around repeated real-format blocks) ---
+
+
+async def test_multi_corner_report_reads_the_correct_corners_own_row(multi_corner_report_path):
+    adapter = SiliconAdapter()
+    slow = Claim(
+        text="SLOW_MAX worst setup slack is at least 0.5 ns",
+        domain="silicon",
+        context={
+            "report_path": multi_corner_report_path,
+            "metric": "wns_ns",
+            "corner": "SLOW_MAX",
+            "comparator": ">=",
+            "expected_value": 0.5,
+        },
+    )
+    fast = Claim(
+        text="FAST_MIN worst setup slack is at least 5 ns",
+        domain="silicon",
+        context={
+            "report_path": multi_corner_report_path,
+            "metric": "wns_ns",
+            "corner": "FAST_MIN",
+            "comparator": ">=",
+            "expected_value": 5,
+        },
+    )
+    slow_ev = await adapter.gather_evidence(slow)
+    fast_ev = await adapter.gather_evidence(fast)
+
+    assert slow_ev[0].stance == "supports"  # SLOW_MAX real wns_ns = 0.820
+    assert fast_ev[0].stance == "contradicts"  # FAST_MIN real wns_ns = 1.950, not >= 5
+    assert "corner=SLOW_MAX" in slow_ev[0].snippet
+    assert "corner=FAST_MIN" in fast_ev[0].snippet
+
+
+async def test_unknown_corner_is_a_named_gap_listing_real_corners(multi_corner_report_path):
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="x",
+        domain="silicon",
+        context={
+            "report_path": multi_corner_report_path,
+            "metric": "wns_ns",
+            "corner": "TYPICAL",
+            "comparator": ">=",
+            "expected_value": 0,
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "slow_max" in gap[0].lower()
+    assert "fast_min" in gap[0].lower()
+
+
+async def test_multi_corner_clock_summary_is_identical_across_corners_in_this_fixture(multi_corner_report_path):
+    """Both corners in this fixture share the same Clock Summary (only the
+    Design Timing Summary slack differs across corners, which is realistic —
+    clock frequencies come from the design's constraints, not the corner)."""
+    adapter = SiliconAdapter()
+    for corner in ("SLOW_MAX", "FAST_MIN"):
+        claim = Claim(
+            text=f"{corner}: clk_sys runs at at least 100 MHz",
+            domain="silicon",
+            context={
+                "report_path": multi_corner_report_path,
+                "metric": "frequency_mhz",
+                "clock": "clk_sys",
+                "corner": corner,
+                "comparator": ">=",
+                "expected_value": 100,
+            },
+        )
+        ev = await adapter.gather_evidence(claim)
+        assert ev[0].stance == "supports", corner
+
+
+# --- register-map claims (CMSIS-SVD) — see silicon.py's module docstring's
+# "REGISTER-MAP CLAIMS" section for the real file this is tested against and
+# why SVD, not a Vivado-specific format, was picked. ---
+
+_SVD_REGISTER_MAP = "evals/fixtures/esp32c2_register_map_excerpt.svd"
+
+
+@pytest.fixture
+def svd_register_map_path() -> str:
+    assert Path(_SVD_REGISTER_MAP).is_file()
+    return _SVD_REGISTER_MAP
+
+
+async def test_register_offset_claim_that_matches_is_confirmed(svd_register_map_path):
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="RNG's DATA register is at offset 0xB0",
+        domain="silicon",
+        context={
+            "report_path": svd_register_map_path,
+            "metric": "register_offset",
+            "peripheral": "RNG",
+            "register": "DATA",
+            "comparator": "==",
+            "expected_value": "0xB0",
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert len(ev) == 1
+    assert ev[0].stance == "supports"  # real addressOffset is 0xB0 (176)
+    assert ev[0].locator.endswith(":58")  # the exact <addressOffset> line
+
+
+async def test_register_offset_claim_that_disagrees_contradicts(svd_register_map_path):
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="RNG's DATA register is at offset 0x100",
+        domain="silicon",
+        context={
+            "report_path": svd_register_map_path,
+            "metric": "register_offset",
+            "peripheral": "RNG",
+            "register": "DATA",
+            "comparator": "==",
+            "expected_value": "0x100",
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev[0].stance == "contradicts"  # real offset is 0xB0, not 0x100
+
+
+async def test_peripheral_base_address_claim(svd_register_map_path):
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="BB peripheral is based at 0x6001D000",
+        domain="silicon",
+        context={
+            "report_path": svd_register_map_path,
+            "metric": "peripheral_base_address",
+            "peripheral": "BB",
+            "comparator": "==",
+            "expected_value": "0x6001D000",
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev[0].stance == "supports"
+
+
+async def test_field_bit_offset_and_width_claims(svd_register_map_path):
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="FFT_FORCE_PU field starts at bit 3 and is 1 bit wide",
+        domain="silicon",
+        context={
+            "report_path": svd_register_map_path,
+            "metric": "field_bit_offset",
+            "peripheral": "BB",
+            "register": "BBPD_CTRL",
+            "field": "FFT_FORCE_PU",
+            "comparator": "==",
+            "expected_value": 3,
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev[0].stance == "supports"  # real bitOffset is 3
+
+    claim2 = Claim(
+        text="FFT_FORCE_PU field is 1 bit wide",
+        domain="silicon",
+        context={
+            "report_path": svd_register_map_path,
+            "metric": "field_bit_width",
+            "peripheral": "BB",
+            "register": "BBPD_CTRL",
+            "field": "FFT_FORCE_PU",
+            "comparator": "==",
+            "expected_value": 1,
+        },
+    )
+    ev2 = await adapter.gather_evidence(claim2)
+    assert ev2[0].stance == "supports"
+
+
+async def test_register_size_bits_claim(svd_register_map_path):
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="DATA register is 32 bits wide",
+        domain="silicon",
+        context={
+            "report_path": svd_register_map_path,
+            "metric": "register_size_bits",
+            "peripheral": "RNG",
+            "register": "DATA",
+            "comparator": "==",
+            "expected_value": 32,
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev[0].stance == "supports"
+
+
+async def test_unknown_peripheral_is_a_named_gap_listing_real_peripherals(svd_register_map_path):
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="x",
+        domain="silicon",
+        context={
+            "report_path": svd_register_map_path,
+            "metric": "peripheral_base_address",
+            "peripheral": "NOPE",
+            "comparator": "==",
+            "expected_value": 0,
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "bb" in gap[0].lower() and "rng" in gap[0].lower()
+
+
+async def test_unknown_register_is_a_named_gap_listing_real_registers(svd_register_map_path):
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="x",
+        domain="silicon",
+        context={
+            "report_path": svd_register_map_path,
+            "metric": "register_offset",
+            "peripheral": "RNG",
+            "register": "GHOST_REG",
+            "comparator": "==",
+            "expected_value": 0,
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "data" in gap[0].lower()  # names the one register that WAS parsed
+
+
+async def test_unknown_field_is_a_named_gap_listing_real_fields(svd_register_map_path):
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="x",
+        domain="silicon",
+        context={
+            "report_path": svd_register_map_path,
+            "metric": "field_bit_width",
+            "peripheral": "BB",
+            "register": "BBPD_CTRL",
+            "field": "GHOST_FIELD",
+            "comparator": "==",
+            "expected_value": 0,
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "fft_force_pu" in gap[0].lower()
+
+
+async def test_register_missing_without_peripheral_base_address_metric_is_a_named_gap(svd_register_map_path):
+    """'register' is required for every register-map metric except
+    peripheral_base_address — must be a named gap, not a KeyError."""
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="x",
+        domain="silicon",
+        context={
+            "report_path": svd_register_map_path,
+            "metric": "register_offset",
+            "peripheral": "RNG",
+            "comparator": "==",
+            "expected_value": 0,
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "'register'" in gap[0]
+
+
+async def test_field_missing_for_a_field_metric_is_a_named_gap(svd_register_map_path):
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="x",
+        domain="silicon",
+        context={
+            "report_path": svd_register_map_path,
+            "metric": "field_bit_offset",
+            "peripheral": "BB",
+            "register": "BBPD_CTRL",
+            "comparator": "==",
+            "expected_value": 0,
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "'field'" in gap[0]
+
+
+async def test_invalid_expected_value_is_a_named_gap_not_a_crash(svd_register_map_path):
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="x",
+        domain="silicon",
+        context={
+            "report_path": svd_register_map_path,
+            "metric": "register_offset",
+            "peripheral": "RNG",
+            "register": "DATA",
+            "comparator": "==",
+            "expected_value": "not-a-number",
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "not a number" in gap[0].lower()
+
+
+async def test_nan_expected_value_on_a_register_map_claim_is_also_an_honest_gap(svd_register_map_path):
+    """Same bug class as the Vivado-path test above -- register-map claims
+    coerce expected_value through _coerce_expected_value, a different code
+    path, so this is checked separately rather than assumed covered."""
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="x",
+        domain="silicon",
+        context={
+            "report_path": svd_register_map_path,
+            "metric": "register_offset",
+            "peripheral": "RNG",
+            "register": "DATA",
+            "comparator": "==",
+            "expected_value": float("nan"),
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "must be a finite number" in gap[0]
+
+
+async def test_register_map_path_traversal_outside_allowed_directories_is_rejected():
+    """Same containment fix as the Vivado path (test_path_traversal_outside_allowed_directories_is_rejected
+    above) — register-map claims go through the SAME is_path_within_allowed_dirs
+    check, via _check_register(), not a second unguarded code path."""
+    adapter = SiliconAdapter()
+    traversal_path = "evals/fixtures/../../anticassiopeia/domains/silicon.py"
+    claim = Claim(
+        text="x",
+        domain="silicon",
+        context={
+            "report_path": traversal_path,
+            "metric": "register_offset",
+            "peripheral": "RNG",
+            "register": "DATA",
+            "comparator": "==",
+            "expected_value": 0,
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert ev == []
+    gap = adapter.describe_gap(claim, ev)
+    assert "not within an allowed directory" in gap[0].lower()
+
+
+# --- Item 19 (external review, time-decay): real Vivado reports carry a
+# real generation date; synthetic fixtures (no such line) and the SVD
+# register path (no comparable field) must never get one guessed. ---
+
+_DATED_REPORT_TEMPLATE = """Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+--------------------------------------------------------------------------------------
+| Tool Version      : Vivado v.2024.1 (lin64) Build 5076996 Wed May 22 18:36:09 MDT 2024
+| Date              : {date_line}
+--------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------------------------
+| Design Timing Summary
+| ---------------------
+------------------------------------------------------------------------------------------------
+
+    WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  THS Failing Endpoints  THS Total Endpoints     WPWS(ns)     TPWS(ns)  TPWS Failing Endpoints  TPWS Total Endpoints
+    -------      -------  ---------------------  -------------------      -------      -------  ---------------------  -------------------     --------     --------  ----------------------  --------------------
+      0.320        0.000                      0                  200        0.050        0.000                      0                  200        1.200        0.000                       0                   80
+
+All user specified timing constraints are met.
+"""
+
+
+def _dated_report(tmp_path, date_line: str) -> str:
+    path = tmp_path / "dated_timing_report.rpt"
+    path.write_text(_DATED_REPORT_TEMPLATE.format(date_line=date_line))
+    return str(path)
+
+
+async def test_real_vivado_date_header_is_extracted_as_evidence_timestamp(tmp_path):
+    report_path = _dated_report(tmp_path, "Wed Dec  7 18:59:42 2016")  # real, space-padded single-digit day
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="x", domain="silicon",
+        context={"report_path": report_path, "metric": "wns_ns", "comparator": ">=", "expected_value": 0.3},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert len(ev) == 1
+    assert ev[0].timestamp is not None
+    assert ev[0].timestamp.year == 2016 and ev[0].timestamp.month == 12 and ev[0].timestamp.day == 7
+
+
+async def test_a_report_with_no_date_line_gets_no_timestamp_never_guessed(single_corner_report_path):
+    """The real synthetic fixture (evals/fixtures/vivado_timing_report_single_corner.rpt)
+    has no "| Date : ..." line at all -- confirms this stays None, not some
+    fabricated fallback (e.g. file mtime, which would be today's date, not
+    the report's own claimed generation date)."""
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="x", domain="silicon",
+        context={"report_path": single_corner_report_path, "metric": "wns_ns", "comparator": ">=", "expected_value": 0.3},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert len(ev) == 1
+    assert ev[0].timestamp is None
+
+
+async def test_an_unparsable_date_line_gets_no_timestamp_not_a_crash(tmp_path):
+    report_path = _dated_report(tmp_path, "not a real date at all")
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="x", domain="silicon",
+        context={"report_path": report_path, "metric": "wns_ns", "comparator": ">=", "expected_value": 0.3},
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert len(ev) == 1
+    assert ev[0].timestamp is None
+
+
+async def test_old_real_report_date_produces_a_time_decay_reasoning_note_through_the_real_engine(tmp_path):
+    from anticassiopeia.core import VerificationEngine
+
+    report_path = _dated_report(tmp_path, "Wed Dec  7 18:59:42 2016")  # ~10 years old as of this project
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="x", domain="silicon",
+        context={"report_path": report_path, "metric": "wns_ns", "comparator": ">=", "expected_value": 0.3},
+    )
+    engine = VerificationEngine(domains={"silicon": adapter})
+    v = await engine.verify(claim)
+    assert v.state.value == "confirmed"  # MIN_DECAY_FACTOR guarantees this can't flip, see test_engine.py
+    assert any("time-decay" in r.lower() for r in v.reasoning)
+
+
+async def test_svd_register_path_never_gets_a_timestamp(svd_register_map_path):
+    """Item 19's deliberate scope exclusion: CMSIS-SVD files have no
+    comparable real generation-date field, so this path must never attach
+    one (confirmed via the real register-map evidence path, not fpga's
+    Vivado path above)."""
+    adapter = SiliconAdapter()
+    claim = Claim(
+        text="x", domain="silicon",
+        context={
+            "report_path": svd_register_map_path, "metric": "register_offset",
+            "peripheral": "RNG", "register": "DATA", "comparator": "==", "expected_value": 0,
+        },
+    )
+    ev = await adapter.gather_evidence(claim)
+    assert len(ev) == 1
+    assert ev[0].timestamp is None

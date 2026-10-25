@@ -10,9 +10,9 @@ not a production-ready feature, don't expect everything built,
 partial-but-reachable is worse than honestly-incomplete-and-documented):
 
 - DECOMPOSITION (the LLM pass) only ever classifies a sub-claim into
-  "robotics" or "research_web" -- the two domains that accept a bare,
+  "substrate" or "searchlight" -- the two domains that accept a bare,
   free-text claim with `context={}` and do their own retrieval. It
-  NEVER invents an `ml_data`/`fpga_embedded` sub-claim, because those
+  NEVER invents an `quant`/`silicon` sub-claim, because those
   domains need a real `dataset_path`/`report_path` and structured
   numeric context (column, stat, metric, comparator, expected_value)
   that nothing about a free-text sentence can honestly supply -- an LLM
@@ -55,8 +55,8 @@ from anticassiopeia.core.engine import VerificationEngine
 from anticassiopeia.core.verdict import Claim, Verdict, VerdictState
 
 #: The only domains decomposition is allowed to produce a sub-claim for —
-#: see module docstring for why ml_data/fpga_embedded are deliberately excluded.
-DECOMPOSABLE_DOMAINS = frozenset({"robotics", "research_web"})
+#: see module docstring for why quant/silicon are deliberately excluded.
+DECOMPOSABLE_DOMAINS = frozenset({"substrate", "searchlight"})
 
 _DECOMPOSE_SYSTEM_PROMPT = """You split ONE claim into its independent, individually \
 checkable parts (e.g. "X and Y" becomes two parts: "X" and "Y"). If the claim is not \
@@ -66,16 +66,16 @@ copying the claim text as-is.
 Each part must be a complete, self-contained, checkable statement in plain English \
 (it must make sense read on its own, with no "it"/"this" referring back to the other \
 part), and must be classified into EXACTLY ONE of these domains:
-- "robotics": a physical hardware/datasheet fact about named Blue Robotics hardware \
+- "substrate": a physical hardware/datasheet fact about named Blue Robotics hardware \
 (e.g. BlueROV2, Bar30, Bar100XT) or similar physical equipment.
-- "research_web": a general factual claim checkable against public web sources \
+- "searchlight": a general factual claim checkable against public web sources \
 (software, protocols, companies, people, standards, general technology facts).
 - "unsupported": a claim that needs a SPECIFIC dataset file/statistic or a SPECIFIC \
 FPGA timing/register report to check — do not guess a file path or a number; just \
 classify it "unsupported" and leave "text" as the original wording.
 
 Respond with ONLY this JSON shape, no other text, no markdown fences:
-{"parts": [{"text": "...", "domain": "robotics"|"research_web"|"unsupported"}, ...]}"""
+{"parts": [{"text": "...", "domain": "substrate"|"searchlight"|"unsupported"}, ...]}"""
 
 
 @dataclass(frozen=True)

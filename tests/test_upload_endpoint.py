@@ -4,8 +4,8 @@ your own evidence" build) -- real HTTP, real multipart upload, real
 extract_text(), real UploadStore. Only the LLM is out of scope here (no
 NEBIUS_API_KEY in test env): these tests cover the API-layer plumbing
 (auth, rate limit, size cap, extension allowlist, document_id resolution/
-error handling), not the live robotics BYOE pipeline itself (see
-tests/test_robotics_byoe.py for that, fully offline via a fake client).
+error handling), not the live substrate BYOE pipeline itself (see
+tests/test_substrate_byoe.py for that, fully offline via a fake client).
 """
 
 import io
@@ -84,7 +84,7 @@ def test_upload_rate_limit_is_separate_from_verify_rate_limit(monkeypatch):
         _upload(f"{i}.txt", b"hello")
     resp = client.post(
         "/verify",
-        json={"text": "x", "domain": "ml_data", "context": {}},
+        json={"text": "x", "domain": "quant", "context": {}},
         headers={"X-API-Key": "the-real-key"},
     )
     assert resp.status_code != 429
@@ -134,7 +134,7 @@ class _CapturingAdapter(DomainAdapter):
     resolved document_id -> document_text/document_filename in context
     BEFORE the domain adapter ever ran, without needing a live LLM key."""
 
-    domain_name = "robotics"
+    domain_name = "substrate"
     implemented = True
 
     def __init__(self):
@@ -149,7 +149,7 @@ def test_verify_with_unknown_document_id_is_a_clean_400_not_a_silent_fallback(mo
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
     resp = client.post(
         "/verify",
-        json={"text": "x", "domain": "robotics", "context": {"document_id": "never-issued"}},
+        json={"text": "x", "domain": "substrate", "context": {"document_id": "never-issued"}},
         headers={"X-API-Key": "the-real-key"},
     )
     assert resp.status_code == 400
@@ -160,7 +160,7 @@ def test_verify_with_non_string_document_id_is_a_clean_400_not_a_crash(monkeypat
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
     resp = client.post(
         "/verify",
-        json={"text": "x", "domain": "robotics", "context": {"document_id": 12345}},
+        json={"text": "x", "domain": "substrate", "context": {"document_id": 12345}},
         headers={"X-API-Key": "the-real-key"},
     )
     assert resp.status_code == 400
@@ -173,11 +173,11 @@ def test_verify_with_valid_document_id_injects_text_and_filename_before_the_adap
     document_id = upload_resp.json()["document_id"]
 
     fake_adapter = _CapturingAdapter()
-    monkeypatch.setitem(server_mod.engine._domains, "robotics", fake_adapter)
+    monkeypatch.setitem(server_mod.engine._domains, "substrate", fake_adapter)
 
     resp = client.post(
         "/verify",
-        json={"text": "Is the Widget Mk4 IP68 rated?", "domain": "robotics", "context": {"document_id": document_id}},
+        json={"text": "Is the Widget Mk4 IP68 rated?", "domain": "substrate", "context": {"document_id": document_id}},
         headers={"X-API-Key": "the-real-key"},
     )
     assert resp.status_code == 200
@@ -195,11 +195,11 @@ def test_verify_without_document_id_leaves_context_untouched(monkeypatch):
     exactly the context it sent, same as before this feature existed."""
     monkeypatch.setenv("ANTICASSIOPEIA_API_KEY", "the-real-key")
     fake_adapter = _CapturingAdapter()
-    monkeypatch.setitem(server_mod.engine._domains, "robotics", fake_adapter)
+    monkeypatch.setitem(server_mod.engine._domains, "substrate", fake_adapter)
 
     resp = client.post(
         "/verify",
-        json={"text": "x", "domain": "robotics", "context": {"depth_m": 500.0}},
+        json={"text": "x", "domain": "substrate", "context": {"depth_m": 500.0}},
         headers={"X-API-Key": "the-real-key"},
     )
     assert resp.status_code == 200
@@ -220,7 +220,7 @@ def test_document_expires_after_its_ttl_and_then_resolves_as_unknown(monkeypatch
     )
     resp = client.post(
         "/verify",
-        json={"text": "x", "domain": "robotics", "context": {"document_id": document_id}},
+        json={"text": "x", "domain": "substrate", "context": {"document_id": document_id}},
         headers={"X-API-Key": "the-real-key"},
     )
     assert resp.status_code == 400

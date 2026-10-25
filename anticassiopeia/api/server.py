@@ -11,7 +11,7 @@ even as domain adapters get real implementations behind it.
 
 AUTH + RATE LIMITING ON /verify (found during external security review:
 this endpoint had neither): /verify is the Nebius-budget-burning endpoint
-(robotics/research_web claims trigger real, billed LLM calls) and was
+(substrate/searchlight claims trigger real, billed LLM calls) and was
 open to anyone who could reach the server, with no per-caller limit at
 all — an easy way to run up a real bill or exhaust a live API key's
 quota. Fixed:
@@ -76,7 +76,7 @@ from anticassiopeia.domains import default_domains
 # Reused, not reimplemented, for /verify/project's domain sniffing below --
 # same "one place, not two that could drift" reasoning retrieval/stance.py's
 # own docstring already states for a different extraction.
-from anticassiopeia.domains.fpga_embedded import _DESIGN_TIMING_SUMMARY_HEADER_RE, _SVD_DEVICE_TAG_RE
+from anticassiopeia.domains.silicon import _DESIGN_TIMING_SUMMARY_HEADER_RE, _SVD_DEVICE_TAG_RE
 from anticassiopeia.llm.nebius_client import NebiusClientError, NebiusTokenFactoryClient
 from anticassiopeia.retrieval import DocumentIngestError, extract_text
 from anticassiopeia.retrieval.document_ingest import SUPPORTED_EXTENSIONS
@@ -121,9 +121,9 @@ app.add_middleware(
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
-#: v2 /verify/project (and, as of v3 §1.1, plain /verify too): ml_data.py/
-#: fpga_embedded.py are path-based adapters (dataset_path/report_path),
-#: unlike robotics.py's text-based BYOE -- deliberately NOT refactored to
+#: v2 /verify/project (and, as of v3 §1.1, plain /verify too): quant.py/
+#: silicon.py are path-based adapters (dataset_path/report_path),
+#: unlike substrate.py's text-based BYOE -- deliberately NOT refactored to
 #: also accept raw text (that would touch already-hardened, heavily-tested
 #: file-reading/line-locator code in both adapters for no real benefit).
 #: Instead, both endpoints write a resolved document's REAL extracted text
@@ -148,12 +148,12 @@ upload_store = UploadStore()
 
 # v3 §1.2: /verify/compound's OWN LLM client, for the decompose_claim() call
 # specifically -- separate from each domain adapter's own client (e.g.
-# robotics.py's ROBOTICS_MODEL override) since decomposition is a
+# substrate.py's SUBSTRATE_MODEL override) since decomposition is a
 # different task needing no particular model override. Constructed
 # eagerly but safely: NebiusTokenFactoryClient() only reads env vars, no
 # network call, so this is safe even when NEBIUS_API_KEY isn't set --
 # same "error surfaces per-call, not at import/construction time" pattern
-# robotics.py's own __init__ already establishes for exactly this reason.
+# substrate.py's own __init__ already establishes for exactly this reason.
 _compound_client: NebiusTokenFactoryClient | None
 try:
     _compound_client = NebiusTokenFactoryClient()
@@ -177,7 +177,7 @@ except NebiusClientError as exc:
     _summary_client_error = str(exc)
 
 #: Deliberately OFF by default, everywhere, for every domain -- including
-#: ml_data/fpga_embedded, which today make ZERO live LLM calls. This is a
+#: quant/silicon, which today make ZERO live LLM calls. This is a
 #: real, new, additional LLM call on top of whatever a claim's own domain
 #: already costs, so it only ever runs when a caller explicitly opts in
 #: via context.include_summary=true, accepting that cost for that one
@@ -207,7 +207,7 @@ async def _generate_summary(client: NebiusTokenFactoryClient, verdict_dict: dict
 
 #: v2 master build prompt §3.1: generous enough for a real datasheet/
 #: report/CSV/PDF, far below anything that risks memory exhaustion --
-#: same reasoning research_web.py's _MAX_RESPONSE_BYTES already uses for
+#: same reasoning searchlight.py's _MAX_RESPONSE_BYTES already uses for
 #: fetched pages. Enforced by reading the upload with a size-aware guard
 #: (see _read_upload_within_limit below), not by trusting a
 #: Content-Length header a client could lie about.
@@ -221,7 +221,7 @@ _MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 #: should exist and be stated, not implicit" discipline as every other cap
 #: in this file. When a caller has MORE than this many valid uploads, the
 #: truncation itself is stated in the verdict's own reasoning (see
-#: robotics.py's _gather_byoe_pool), never silently fewer than the caller
+#: substrate.py's _gather_byoe_pool), never silently fewer than the caller
 #: assumed.
 _MAX_POOL_DOCUMENTS = 10
 
@@ -464,7 +464,7 @@ class ProjectClaimRequest(BaseModel):
     the whole point of the project endpoint is routing a bundle of mixed
     documents without the caller having to pre-sort them by domain. A
     claim with no document_id and no explicit domain defaults to
-    research_web (free-text, no-file claims are exactly what that domain
+    searchlight (free-text, no-file claims are exactly what that domain
     is for -- see the v2 master build prompt's scenario #4/#5).
 
     `document_pool` (v3 §2.4): same pooled-search option plain /verify
@@ -476,9 +476,9 @@ class ProjectClaimRequest(BaseModel):
     batch, same principle _run_one_project_claim's own docstring already
     states). There's no document to sniff a domain FROM for a pool claim
     (sniffing needs one concrete uploaded document), so an omitted
-    `domain` on a pool claim defaults to "robotics" directly, rather than
-    falling through to research_web's own no-document default --
-    document_pool is robotics-only anyway (see §2.3's own scope note), so
+    `domain` on a pool claim defaults to "substrate" directly, rather than
+    falling through to searchlight's own no-document default --
+    document_pool is substrate-only anyway (see §2.3's own scope note), so
     that default is never wrong, only a convenience for a caller who
     didn't bother spelling out the only domain that could apply."""
 
@@ -537,8 +537,8 @@ async def verify(req: VerifyRequest, api_key: str = Depends(_require_api_key)) -
     ALREADY-COMPUTED verdict below -- see _generate_summary's own
     docstring for why this is commentary, never a new source of evidence,
     and why it's a real additional LLM call that only ever runs when
-    explicitly asked for, regardless of domain (including ml_data/
-    fpga_embedded, which otherwise make zero live LLM calls)."""
+    explicitly asked for, regardless of domain (including quant/
+    silicon, which otherwise make zero live LLM calls)."""
     _enforce_rate_limit(api_key)
     context, scratch_path = _resolve_document_context(req.context, req.domain, _owner_key_hash(api_key))
     claim = Claim(text=req.text, domain=req.domain, context=context)
@@ -593,32 +593,32 @@ def _resolve_document_context(context: dict, domain: str, owner_key_hash: str) -
     conflict, don't silently prefer one" discipline as every other
     request-shape check in this file.
 
-    POOLED SEARCH (document_pool=true), robotics-only: looks up the
+    POOLED SEARCH (document_pool=true), substrate-only: looks up the
     CALLING key's own currently-valid uploads via
     upload_store.list_for_owner(owner_key_hash) -- never any other
     caller's documents (see upload_store.py's own ownership docstring) --
-    caps at the _MAX_POOL_DOCUMENTS most recent, and hands robotics.py the
+    caps at the _MAX_POOL_DOCUMENTS most recent, and hands substrate.py the
     already-resolved (filename, text) pairs via
     context["document_pool_items"], plus the real total available via
-    context["document_pool_total_available"] (so robotics.py can name the
+    context["document_pool_total_available"] (so substrate.py can name the
     truncation in its own reasoning when a caller has more uploads than
-    fit under the cap -- see that module's _gather_byoe_pool). robotics.py
+    fit under the cap -- see that module's _gather_byoe_pool). substrate.py
     itself never imports UploadStore (clean domain/api layering, per that
     module's own docstring) -- it only ever reads context fields, exactly
     like the single-document document_text/document_filename path below.
     An empty pool (no valid uploads at all) is NOT an error here -- it's
-    resolved through fine, and robotics.py's own gather_evidence() turns
+    resolved through fine, and substrate.py's own gather_evidence() turns
     an empty document_pool_items list into an honest, named gap.
 
     What "resolve" means for document_id depends on `domain`, same
     three-way split /verify/project's _run_one_project_claim already
     established for the project endpoint (see that function's own
     comments for the full reasoning -- not repeated here):
-    - "robotics": inject document_text/document_filename directly --
-      robotics.py's BYOE path only ever reads those two context keys,
+    - "substrate": inject document_text/document_filename directly --
+      substrate.py's BYOE path only ever reads those two context keys,
       never document_id or the upload store itself (clean domain/api
       layering, per that module's own docstring).
-    - "ml_data" / "fpga_embedded": both adapters are path-based
+    - "quant" / "silicon": both adapters are path-based
       (dataset_path/report_path) and were deliberately NOT given a
       document_text mode (see domains/__init__.py's docstring) -- so the
       resolved document's real extracted text is written to a real,
@@ -631,19 +631,19 @@ def _resolve_document_context(context: dict, domain: str, owner_key_hash: str) -
       it legitimately knows -- which real file this document_id
       corresponds to. The caller (this function's one caller, /verify)
       is responsible for deleting the returned scratch_path afterward.
-    - anything else (most notably "research_web", which has no mode that
+    - anything else (most notably "searchlight", which has no mode that
       consumes an already-extracted document's text at all -- its two
       modes are URL-fetch or live search) -- a clean, named 400, not a
       silent no-op that would leave a caller thinking their uploaded
       document was actually checked when it was quietly ignored. The same
       named-400 treatment applies to document_pool for any domain other
-      than robotics (ml_data/fpga_embedded need one exact structured
-      file per claim, not a search across several; research_web has no
+      than substrate (quant/silicon need one exact structured
+      file per claim, not a search across several; searchlight has no
       document-consuming mode at all -- see the v3 master build prompt's
       §2.3 scope note).
 
     Returns (resolved_context, scratch_path_or_None). scratch_path is only
-    ever non-None for the document_id + ml_data/fpga_embedded branch.
+    ever non-None for the document_id + quant/silicon branch.
 
     `context` is a plain dict here (Pydantic already validated VerifyRequest.
     context as `dict`), so a non-string document_id (an int, a list, ...)
@@ -656,10 +656,10 @@ def _resolve_document_context(context: dict, domain: str, owner_key_hash: str) -
         raise HTTPException(status_code=400, detail="Specify either document_id or document_pool, not both.")
 
     if document_pool:
-        if domain != "robotics":
+        if domain != "substrate":
             raise HTTPException(
                 status_code=400,
-                detail=f"domain {domain!r} does not support document_pool search (robotics-only).",
+                detail=f"domain {domain!r} does not support document_pool search (substrate-only).",
             )
         all_owned = upload_store.list_for_owner(owner_key_hash)
         pool_docs = all_owned[:_MAX_POOL_DOCUMENTS]
@@ -675,14 +675,14 @@ def _resolve_document_context(context: dict, domain: str, owner_key_hash: str) -
         raise HTTPException(status_code=400, detail=f"Unknown or expired document_id: {document_id!r}.")
 
     resolved = dict(context)
-    if domain == "robotics":
+    if domain == "substrate":
         resolved["document_text"] = doc.text
         resolved.setdefault("document_filename", doc.filename)
         return resolved, None
-    if domain in ("ml_data", "fpga_embedded"):
+    if domain in ("quant", "silicon"):
         scratch_path = _PROJECT_SCRATCH_DIR / f"{document_id}{_extension_of(doc.filename) or '.txt'}"
         scratch_path.write_text(doc.text)
-        key = "dataset_path" if domain == "ml_data" else "report_path"
+        key = "dataset_path" if domain == "quant" else "report_path"
         resolved[key] = str(scratch_path)
         return resolved, scratch_path
     raise HTTPException(
@@ -732,7 +732,7 @@ async def upload(file: UploadFile = File(...), api_key: str = Depends(_require_a
     (format-dispatched by anticassiopeia.retrieval.document_ingest -- see
     §0.6 for the supported-extension list), stores the EXTRACTED TEXT
     (never the raw path) under an opaque document_id, returns that id for
-    later /verify calls (robotics.py's document_id context field) to
+    later /verify calls (substrate.py's document_id context field) to
     reference. Same auth as /verify; a SEPARATE rate limit (see
     _enforce_upload_rate_limit) since this is a bigger, slower, disk-
     writing operation /verify's own limiter was never sized for."""
@@ -747,7 +747,7 @@ async def upload(file: UploadFile = File(...), api_key: str = Depends(_require_a
         )
 
     # FOUND BUG pattern this guards against (same class already fixed
-    # elsewhere in this project, e.g. research_web.py's _MAX_RESPONSE_BYTES
+    # elsewhere in this project, e.g. searchlight.py's _MAX_RESPONSE_BYTES
     # streaming cap): a client-supplied Content-Length header can lie.
     # Reading one byte past the cap and checking length (rather than
     # trusting the header) is what actually enforces the limit.
@@ -782,22 +782,22 @@ def _sniff_domain_for_document(doc: StoredDocument) -> str:
     document_ingest.SUPPORTED_EXTENSIONS) plus, for the one genuinely
     ambiguous extension (.xml -- could be a real CMSIS-SVD register map OR
     just a generic XML document), the same real root-tag check
-    fpga_embedded.py's own _is_svd_file() uses.
+    silicon.py's own _is_svd_file() uses.
 
-    Returns "ml_data" | "fpga_embedded" | "robotics" -- robotics.py's BYOE
+    Returns "quant" | "silicon" | "substrate" -- substrate.py's BYOE
     path is the catch-all for any supported text-like format that isn't
     one of the two structured ones, per the master prompt's own wording
-    ("otherwise robotics' BYOE path")."""
+    ("otherwise substrate' BYOE path")."""
     ext = _extension_of(doc.filename)
     if ext == ".csv":
-        return "ml_data"
+        return "quant"
     if ext == ".svd":
-        return "fpga_embedded"
+        return "silicon"
     if ext == ".xml":
-        return "fpga_embedded" if _SVD_DEVICE_TAG_RE.search(doc.text[:4000]) else "robotics"
+        return "silicon" if _SVD_DEVICE_TAG_RE.search(doc.text[:4000]) else "substrate"
     if ext == ".rpt":
-        return "fpga_embedded" if _DESIGN_TIMING_SUMMARY_HEADER_RE.search(doc.text) else "robotics"
-    return "robotics"  # .txt/.md/.pdf/.docx -- free text, no structured shape to sniff
+        return "silicon" if _DESIGN_TIMING_SUMMARY_HEADER_RE.search(doc.text) else "substrate"
+    return "substrate"  # .txt/.md/.pdf/.docx -- free text, no structured shape to sniff
 
 
 @app.post("/verify/project")
@@ -814,8 +814,8 @@ async def verify_project(req: ProjectVerifyRequest, api_key: str = Depends(_requ
 
     DELIBERATELY NOT done here, stated plainly rather than silently
     assumed: core.compound.DECOMPOSABLE_DOMAINS (item 20's OWN
-    LLM-decomposition restriction to robotics/research_web) is NOT
-    loosened to include ml_data/fpga_embedded by this endpoint's
+    LLM-decomposition restriction to substrate/searchlight) is NOT
+    loosened to include quant/silicon by this endpoint's
     existence. decompose_claim() splits ONE free-text claim via an LLM
     call that never sees any uploaded document at all -- a real project
     scratch path existing HERE, for THIS endpoint's own explicitly-named
@@ -823,8 +823,8 @@ async def verify_project(req: ProjectVerifyRequest, api_key: str = Depends(_requ
     uploaded file a sub-claim it invents would even correspond to.
     Loosening that restriction would reintroduce exactly the
     fabricated-file-path risk item 20 was built to close. If a future
-    round wants an LLM to decompose a claim AND route parts to ml_data/
-    fpga_embedded, it needs its own explicit per-part document binding,
+    round wants an LLM to decompose a claim AND route parts to quant/
+    silicon, it needs its own explicit per-part document binding,
     not a relaxed domain set on the existing LLM-decomposition path.
     """
     _enforce_project_rate_limit(api_key)
@@ -887,18 +887,18 @@ async def _run_one_project_claim(claim_req: ProjectClaimRequest, scratch_dir: Pa
         # v3 §2.4: same pooled-search resolution as plain /verify's §2.3
         # (see _resolve_document_context's own docstring for the full
         # reasoning) -- ownership-scoped via upload_store.list_for_owner(),
-        # capped at _MAX_POOL_DOCUMENTS, robotics-only. No document_id
+        # capped at _MAX_POOL_DOCUMENTS, substrate-only. No document_id
         # to sniff a domain FROM here, so an omitted domain defaults
-        # directly to "robotics" (see ProjectClaimRequest's own
+        # directly to "substrate" (see ProjectClaimRequest's own
         # docstring) rather than falling through to the no-document
-        # research_web default below.
+        # searchlight default below.
         if domain is None:
-            domain = "robotics"
-        if domain != "robotics":
+            domain = "substrate"
+        if domain != "substrate":
             return {
                 **base_result,
                 "domain": domain,
-                "error": f"domain {domain!r} does not support document_pool search (robotics-only).",
+                "error": f"domain {domain!r} does not support document_pool search (substrate-only).",
             }
         all_owned = upload_store.list_for_owner(owner_key_hash)
         pool_docs = all_owned[:_MAX_POOL_DOCUMENTS]
@@ -912,10 +912,10 @@ async def _run_one_project_claim(claim_req: ProjectClaimRequest, scratch_dir: Pa
         if domain is None:
             domain = _sniff_domain_for_document(doc)
 
-        if domain == "robotics":
+        if domain == "substrate":
             context["document_text"] = doc.text
             context.setdefault("document_filename", doc.filename)
-        elif domain in ("ml_data", "fpga_embedded"):
+        elif domain in ("quant", "silicon"):
             # write the REAL extracted text to a REAL file under this
             # request's own scratch subdirectory (already in both adapters'
             # allowed_base_dirs -- see default_domains()'s
@@ -929,11 +929,11 @@ async def _run_one_project_claim(claim_req: ProjectClaimRequest, scratch_dir: Pa
             # corresponds to.
             scratch_path = scratch_dir / f"{claim_req.document_id}{_extension_of(doc.filename) or '.txt'}"
             scratch_path.write_text(doc.text)
-            key = "dataset_path" if domain == "ml_data" else "report_path"
+            key = "dataset_path" if domain == "quant" else "report_path"
             context[key] = str(scratch_path)
         else:
             # A document tied to a domain that has no defined way to consume
-            # one (research_web's two modes are URL-fetch or live search,
+            # one (searchlight's two modes are URL-fetch or live search,
             # neither of which is "here is a document's already-extracted
             # text") -- an honest, named per-claim error, not a silently
             # ignored document or a meaningless context key.
@@ -943,7 +943,7 @@ async def _run_one_project_claim(claim_req: ProjectClaimRequest, scratch_dir: Pa
                 "error": f"domain {domain!r} does not support a document_id-linked claim in this endpoint.",
             }
     elif domain is None:
-        domain = "research_web"  # no document, no explicit domain -- free-text default (see model docstring)
+        domain = "searchlight"  # no document, no explicit domain -- free-text default (see model docstring)
 
     claim = Claim(text=claim_req.text, domain=domain, context=context)
     try:
@@ -979,7 +979,7 @@ async def verify_compound_endpoint(req: CompoundVerifyRequest, api_key: str = De
     underlying reason at all: an LLM-invented sub-claim has no way to
     know which uploaded document, or pool, if any, it would even
     correspond to. Loosening either would reintroduce exactly the
-    fabricated-file-path risk DECOMPOSABLE_DOMAINS (robotics/research_web
+    fabricated-file-path risk DECOMPOSABLE_DOMAINS (substrate/searchlight
     only -- see core/compound.py's own docstring) already exists to
     close.
     """

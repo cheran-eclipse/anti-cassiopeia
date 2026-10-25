@@ -1,5 +1,0 @@
-{
-  "claim": {"text": "Bar30 survives 500 m depth", "domain": "robotics", "context": {}},
-  "expected_state": "contradicted",
-  "note": "Operating range 0-30 bar (unaltered chip-datasheet line) is ~296 m depth-equivalent, a ~40% shortfall against 500 m. A second, lower-trust 'neutral' piece of evidence about the real (non-canary) 50 bar absolute-max rating is intentionally excluded from the decision by the engine (stance=neutral) since it was not independently re-verified. See docs/extracted/constellation-robotics-seed.md §2."
-}

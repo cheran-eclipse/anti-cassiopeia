@@ -1,10 +1,10 @@
 """
 Tests for retrieval/stance.py's judge_stance() — the one shared place in
 the repo that decides "do these two already-verified texts agree",
-used by both research_web.py and robotics.py's BYOE/pool paths.
+used by both searchlight.py and substrate.py's BYOE/pool paths.
 
 All OFFLINE: a fake client, same dual-response convention established
-elsewhere in this repo (test_domains_research_web.py's/test_robotics_byoe.py's
+elsewhere in this repo (test_domains_searchlight.py's/test_substrate_byoe.py's
 own _FakeClient). This module's own prompt text can't be unit-tested for
 whether a REAL model reasons correctly from it (that needs a live call,
 see the causal-claim fix's own commit for the one deliberate live

@@ -1,5 +1,0 @@
-{
-  "claim": {"text": "Bar30 fails at 500 m depth", "domain": "robotics", "context": {}},
-  "expected_state": "confirmed",
-  "note": "Negated framing of bar30_500m, same sourced 0-30 bar rating (~298 m depth-equivalent). Used to get a BACKWARDS verdict because stance was fixed at authoring time against 'survives 500 m'. 'Fails' means beyond rated spec, not observed to break."
-}

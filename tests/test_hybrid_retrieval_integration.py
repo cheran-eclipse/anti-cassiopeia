@@ -1,6 +1,6 @@
 """
 Integration tests for the hybrid-retrieval build's two integration points
-(robotics.py's BYOE/pooled paths, and research_web.py's multi-candidate
+(substrate.py's BYOE/pooled paths, and searchlight.py's multi-candidate
 path) -- proving the WIRING is real, not dead code. retrieval/hybrid.py's
 own test_retrieval_hybrid.py already proves HybridIndex's fusion/
 degradation logic in isolation; this file proves each domain adapter
@@ -15,8 +15,8 @@ meaningful) embed() method -- no live Nebius call needed.
 import json
 
 from anticassiopeia.core import Claim
-from anticassiopeia.domains.research_web import ResearchWebAdapter
-from anticassiopeia.domains.robotics import RoboticsAdapter
+from anticassiopeia.domains.searchlight import SearchlightAdapter
+from anticassiopeia.domains.substrate import SubstrateAdapter
 from evals.fixture_server import serve_fixtures
 
 _DOCUMENT_TEXT = (
@@ -58,16 +58,16 @@ class _EmbeddingAwareFakeClient:
         return [[float((hash(t) >> (i * 4)) % 7) for i in range(self._dim)] for t in texts]
 
 
-# --- robotics.py's BYOE path ---
+# --- substrate.py's BYOE path ---
 
 
 async def test_byoe_calls_embed_when_the_client_supports_it():
     quote = "The Widget Mk4 enclosure carries an IP68 rating"
     client = _EmbeddingAwareFakeClient(_found_json("uploaded#0", quote))
-    adapter = RoboticsAdapter(client=client)
+    adapter = SubstrateAdapter(client=client)
     claim = Claim(
         text="The Widget Mk4 is IP68 rated",
-        domain="robotics",
+        domain="substrate",
         context={"document_text": _DOCUMENT_TEXT, "document_filename": "widget_mk4_manual.txt"},
     )
     evidence = await adapter.gather_evidence(claim)
@@ -80,16 +80,16 @@ async def test_byoe_calls_embed_when_the_client_supports_it():
     assert len(client.embed_calls) == 2
 
 
-# --- robotics.py's pooled BYOE path ---
+# --- substrate.py's pooled BYOE path ---
 
 
 async def test_pool_calls_embed_once_for_the_whole_combined_pool():
     quote = "The Widget Mk4 enclosure carries an IP68 rating"
     client = _EmbeddingAwareFakeClient(_found_json("doc0#0", quote))
-    adapter = RoboticsAdapter(client=client)
+    adapter = SubstrateAdapter(client=client)
     claim = Claim(
         text="The Widget Mk4 is IP68 rated",
-        domain="robotics",
+        domain="substrate",
         context={
             "document_pool": True,
             "document_pool_items": [("widget.txt", _DOCUMENT_TEXT)],
@@ -105,7 +105,7 @@ async def test_pool_calls_embed_once_for_the_whole_combined_pool():
     assert len(client.embed_calls) == 2
 
 
-# --- research_web.py's multi-candidate path ---
+# --- searchlight.py's multi-candidate path ---
 
 
 async def test_multi_candidate_calls_embed_for_the_fetched_passages_and_the_query():
@@ -115,8 +115,8 @@ async def test_multi_candidate_calls_embed_for_the_fetched_passages_and_the_quer
 
         quote = "The reference pump is rated for a maximum operating pressure of 12 bar."
         client = _EmbeddingAwareFakeClient(_found_json(f"{base_url}/stable_page.html#0", quote))
-        adapter = ResearchWebAdapter(client=client, search=fake_search, block_private_networks=False)
-        claim = Claim(text="the reference pump is rated for a maximum operating pressure of 12 bar", domain="research_web")
+        adapter = SearchlightAdapter(client=client, search=fake_search, block_private_networks=False)
+        claim = Claim(text="the reference pump is rated for a maximum operating pressure of 12 bar", domain="searchlight")
 
         evidence = await adapter.gather_evidence(claim)
 

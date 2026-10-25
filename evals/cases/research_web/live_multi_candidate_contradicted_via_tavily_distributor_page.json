@@ -1,9 +1,0 @@
-{
-  "claim": {
-    "text": "BlueROV2 has a maximum operating time of 14 hours",
-    "domain": "research_web",
-    "context": {}
-  },
-  "expected_state": "contradicted",
-  "note": "Confirmed live: Tavily (primary search backend as of this session — see research_web.py's module docstring) surfaces https://www.sepcotech.com/blue-robotics/bluerov2, a real Blue Robotics distributor page, which independently-verified-quotes 'Run Time ~2 hours normal / ~4 hours light use' — a real figure that genuinely contradicts the claimed 14 hours. Before this session, with only keyless DDG (anti-bot-blocked from this dev sandbox) and Wikipedia (whose BlueROV2 article states no runtime figure at all) as backends, this exact claim resolved UNDETERMINED for lack of any settling source — this case exists specifically to demonstrate Tavily's real, live improvement over that gap, not an invented example."
-}

@@ -15,22 +15,22 @@ from pathlib import Path
 
 from anticassiopeia.core import Claim, VerificationEngine
 from anticassiopeia.domains import default_domains
-from anticassiopeia.domains.research_web import ResearchWebAdapter
+from anticassiopeia.domains.searchlight import SearchlightAdapter
 from evals.fixture_server import resolve, serve_fixtures
 
 CASES_DIR = Path(__file__).parent / "cases"
 
 
 async def main() -> int:
-    # research_web's own 3 local_fixture_* cases fetch THIS repo's own local
+    # searchlight's own 3 local_fixture_* cases fetch THIS repo's own local
     # fixture server (127.0.0.1, see evals/fixture_server.py) for real, on
-    # purpose -- the SSRF guard research_web.py's real default now carries
+    # purpose -- the SSRF guard searchlight.py's real default now carries
     # (see that module's docstring) would otherwise reject that fetch before
     # it ever reached the block-page/quote check these cases exist to test.
     # Every OTHER domain still comes from default_domains()'s real,
-    # production-default instance; only research_web is overridden here.
+    # production-default instance; only searchlight is overridden here.
     domains = default_domains()
-    domains["research_web"] = ResearchWebAdapter(block_private_networks=False)
+    domains["searchlight"] = SearchlightAdapter(block_private_networks=False)
     engine = VerificationEngine(domains=domains)
     case_files = sorted(CASES_DIR.rglob("*.json"))
 
@@ -45,21 +45,21 @@ async def main() -> int:
 def _needs_live_key(case: dict) -> bool:
     """FOUND BUG (external review): `docker build`'s own smoke-test step runs
     this script with no NEBIUS_API_KEY/TAVILY_API_KEY available at all (.env
-    is deliberately not copied into the image) -- every robotics case (that
+    is deliberately not copied into the image) -- every substrate case (that
     adapter always needs a live LLM call, no offline path exists) and every
-    research_web mode-2 case (no pre-selected "url" in context -- those go
+    searchlight mode-2 case (no pre-selected "url" in context -- those go
     through propose()/_judge_stance(), also live) were silently resolving
     to the wrong verdict and failing, not skipping, inside the build. Mode-1
-    research_web cases (an explicit "url" given) and every ml_data/
-    fpga_embedded case never touch the LLM client at all, so they're
-    unaffected either way -- same distinction tests/test_domains_robotics.py's
-    and test_domains_research_web.py's own `_requires_live_key` markers
+    searchlight cases (an explicit "url" given) and every quant/
+    silicon case never touch the LLM client at all, so they're
+    unaffected either way -- same distinction tests/test_domains_substrate.py's
+    and test_domains_searchlight.py's own `_requires_live_key` markers
     already draw, applied here so a credential-less build can pass cleanly
     instead of failing on cases it was never able to resolve correctly."""
     domain = case["claim"]["domain"]
-    if domain == "robotics":
+    if domain == "substrate":
         return True
-    if domain == "research_web" and "url" not in case["claim"].get("context", {}):
+    if domain == "searchlight" and "url" not in case["claim"].get("context", {}):
         return True
     return False
 
@@ -77,7 +77,7 @@ async def _run(engine: VerificationEngine, case_files: list[Path], base_url: str
         verdict = await engine.verify(claim)
         got = verdict.state.value
 
-        # Most cases: one correct answer. A few (currently just research_web's
+        # Most cases: one correct answer. A few (currently just searchlight's
         # live example.com case) are genuinely environment-dependent — network
         # availability or third-party page drift changes the verdict — and declare the full set of
         # states that count as a pass via "acceptable_states" instead of a single

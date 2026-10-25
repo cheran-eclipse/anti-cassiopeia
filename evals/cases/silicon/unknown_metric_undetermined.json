@@ -1,0 +1,14 @@
+{
+  "claim": {
+    "text": "design hits an unreported metric",
+    "domain": "silicon",
+    "context": {
+      "report_path": "evals/fixtures/vivado_timing_report_single_corner.rpt",
+      "metric": "ghost_metric",
+      "comparator": ">=",
+      "expected_value": 0
+    }
+  },
+  "expected_state": "undetermined",
+  "note": "Confirms a metric absent from the real Vivado Design Timing Summary fields produces a named gap listing the fields that WERE parsed, not a crash or a silent default."
+}

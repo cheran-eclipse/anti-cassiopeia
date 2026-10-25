@@ -1,0 +1,15 @@
+{
+  "claim": {
+    "text": "design's clk_main meets 100 MHz timing",
+    "domain": "silicon",
+    "context": {
+      "report_path": "evals/fixtures/vivado_timing_report_single_corner.rpt",
+      "metric": "frequency_mhz",
+      "clock": "clk_main",
+      "comparator": ">=",
+      "expected_value": 100
+    }
+  },
+  "expected_state": "confirmed",
+  "note": "Real Vivado report_timing_summary format (Clock Summary table, verified against a real fetched open-source report — see silicon.py's module docstring). clk_main runs at 142.857 MHz, which clears a 100 MHz requirement."
+}

@@ -26,7 +26,7 @@ def test_document_ids_are_opaque_and_distinct_across_puts():
     doc2 = store.put(filename="a.txt", text="x", size_bytes=1, owner_key_hash="owner-a")
     assert doc1.document_id != doc2.document_id
     # long enough (secrets.token_urlsafe(32)) that it isn't a guessable path,
-    # unlike the raw filesystem paths ml_data.py/fpga_embedded.py have to
+    # unlike the raw filesystem paths quant.py/silicon.py have to
     # harden against in _path_safety.py (see this module's own docstring).
     assert len(doc1.document_id) > 32
 

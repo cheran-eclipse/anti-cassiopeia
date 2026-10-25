@@ -1,0 +1,9 @@
+{
+  "claim": {
+    "text": "BlueROV2 is a modular remotely operated underwater vehicle developed by Blue Robotics",
+    "domain": "searchlight",
+    "context": {}
+  },
+  "expected_state": "confirmed",
+  "note": "Live, multi-candidate path (no pre-selected URL): Wikipedia's search API surfaces the real 'BlueROV2' article (confirmed live, repeatedly) as a top candidate; the real article's own opening sentence ('BlueROV2 is a modular remotely operated underwater vehicle (ROV) developed by the American marine robotics company Blue Robotics.') genuinely supports this claim once fetched, chunked, BM25-matched, cited by the model, and independently re-verified against the real page text."
+}

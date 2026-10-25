@@ -1,0 +1,5 @@
+{
+  "claim": {"text": "Bar100XT survives 500 m depth", "domain": "substrate", "context": {}},
+  "expected_state": "confirmed",
+  "note": "Was UNDETERMINED (no sourced datasheet existed for this part — only a planning narrative in Constellation's own repo, demos/subsea_rov/README.md). Now sourced from Blue Robotics' own official BarXT product page, fetched live 2026-10-24 (https://bluerobotics.com/?p=219055): a stated 0-100 bar operating rating, ~995 m depth-equivalent, genuinely supports this claim. See docs/extracted/constellation-robotics-seed.md §3 and anticassiopeia/corpus/doc4_bar100xt_excerpt.txt."
+}

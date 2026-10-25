@@ -1,0 +1,9 @@
+{
+  "claim": {
+    "text": "BlueROV2 was developed by OpenROV",
+    "domain": "searchlight",
+    "context": {}
+  },
+  "expected_state": "contradicted",
+  "note": "Live, multi-candidate path: a false attribution. Wikipedia's real 'BlueROV2' article states it was developed by Blue Robotics (OpenROV appears on the same page only as a separate platform mentioned for comparison) — the model correctly cites the real, independently-verified sentence naming the actual developer, and the bounded stance-judgment call (on that already-verified quote, not on an unverified claim) correctly reports a conflict rather than a false 'supports'. This exact claim previously produced a FALSE 'supports' under an earlier token-overlap stance heuristic (common words dominated the overlap score) — fixed by replacing it with this bounded judgment call; see searchlight.py's module/function docstrings."
+}

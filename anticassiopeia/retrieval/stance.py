@@ -1,8 +1,8 @@
 """
 Stance judgment for an ALREADY-mechanically-verified quote.
 
-Extracted out of domains/research_web.py (2026-10-25, v2 "bring your own
-evidence" build) so domains/robotics.py's new free-text BYOE path can use
+Extracted out of domains/searchlight.py (2026-10-25, v2 "bring your own
+evidence" build) so domains/substrate.py's new free-text BYOE path can use
 the exact same judgment logic instead of a second hand-copied prompt —
 this is the one place in the repo that decides "do these two verified
 texts agree", and it should stay one place, not two that could drift.
@@ -15,7 +15,7 @@ catch — an unverified quote — stays fully mechanical, upstream of this
 file; only "do these two verified texts agree" is the model's job here,
 which is what it's actually good at.
 
-Two mechanical approaches were tried first (on research_web.py, before
+Two mechanical approaches were tried first (on searchlight.py, before
 this was its own module) and both failed on real live tests, not
 hypothetically:
   1. Strict substring check: broke on a true claim whose real confirming
@@ -39,7 +39,7 @@ from anticassiopeia.llm.nebius_client import NebiusTokenFactoryClient
 #: (2026-10-25, see claude/ANTI_CASSIOPEIA_STANCE_CAUSAL_CLAIM_FIX_PROMPT.md's
 #: addendum): on the real Wiesner/BB84 causal-claim pair (this module's own
 #: new "SECOND" prompt paragraph above), a real, REPRODUCED 10-call live
-#: comparison found `openai/gpt-oss-120b` (research_web.py's own propose()
+#: comparison found `openai/gpt-oss-120b` (searchlight.py's own propose()
 #: model) correct only 2/6 times, while this model was correct 5/5 on the
 #: identical, already-fixed prompt. A 5-pair balanced sample (3 "should be
 #: unrelated" / 2 "should be supports" cases) showed both models tied 5/5
@@ -47,16 +47,16 @@ from anticassiopeia.llm.nebius_client import NebiusTokenFactoryClient
 #: causal/relational judgments, not a general difference. This is NOT a
 #: recommendation to also move propose()/decompose() calls here --
 #: NEMOTRON_PIVOT_REPORT.md already found gpt-oss-120b strictly better at
-#: full-pipeline scale for research_web's OWN propose() step; this constant
-#: is scoped to judge_stance() only. robotics.py's own ROBOTICS_MODEL
+#: full-pipeline scale for searchlight's OWN propose() step; this constant
+#: is scoped to judge_stance() only. substrate.py's own SUBSTRATE_MODEL
 #: already happens to be this same model, for its own, broader reasons
 #: (see that module) -- not imported from here, to avoid coupling two
 #: adapters' otherwise-independent model choices to one shared constant
-#: for what is, for robotics.py, a coincidence.
+#: for what is, for substrate.py, a coincidence.
 RECOMMENDED_STANCE_MODEL = "nvidia/Nemotron-3-Ultra-550b-a55b"
 
 # FOUND BUG (external review, live, during the Nemotron pivot's pilot runs — not
-# hypothetical, discovered on research_web.py before this module existed): a
+# hypothetical, discovered on searchlight.py before this module existed): a
 # passage about the ESP32-S31 ("Espressif Systems has officially started mass
 # production of its new ESP32-S31 wireless microcontroller") was judged "supports"
 # for a claim about the plain ESP32 — a DIFFERENT, newer chip that merely shares

@@ -81,7 +81,7 @@ _DOC_TEXT = (
 class _NoEmbedClient:
     """A duck-typed client with ONLY complete() -- same shape as every
     existing offline test fake elsewhere in this repo (e.g.
-    test_robotics_byoe.py's _FakeClient). embed() must degrade to
+    test_substrate_byoe.py's _FakeClient). embed() must degrade to
     BM25-only against this, not crash -- this is the single most
     important regression this module's tests guard against, since every
     existing test file's fakes look exactly like this."""

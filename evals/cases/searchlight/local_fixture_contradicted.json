@@ -1,0 +1,9 @@
+{
+  "claim": {
+    "text": "The fixture page states the reference pump is rated for 20 bar",
+    "domain": "searchlight",
+    "context": {"url": "{FIXTURE_BASE_URL}/stable_page.html", "quote": "maximum operating pressure of 20 bar"}
+  },
+  "expected_state": "contradicted",
+  "note": "Page fetched fine and a fabricated-looking quote is absent from it: the 'plausible citation that isn't there' failure this domain exists to catch."
+}
