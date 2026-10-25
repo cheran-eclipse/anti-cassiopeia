@@ -89,6 +89,32 @@ RECOMMENDED_STANCE_MODEL = "nvidia/Nemotron-3-Ultra-550b-a55b"
 # for a causal/dependency claim specifically: does the passage actually
 # STATE that relationship, not just mention both things in a way that's
 # merely consistent with it.
+# FOUND BUG (live, 2026-10-25, competitive-benchmark round 1's category-6
+# calibration probe -- see claude/ANTI_CASSIOPEIA_COMPETITIVE_BENCHMARK_PROTOCOL.md
+# §1.6): the THIRD paragraph above fixed a passage that self-hedges
+# ("according to Islamic tradition..."), but a real, unhedged passage from
+# gotquestions.org (a Christian apologetics Q&A site) -- "Three days later,
+# His body and spirit were reunited, and He rose from the dead (John 20)" --
+# got "supports" for the flat claim "Jesus Christ physically rose from the
+# dead three days after his crucifixion", producing a confident CONFIRMED on
+# a matter of faith. judge_stance() was CORRECT that the passage addresses
+# the same claim, worded as a direct assertion -- the gap is one level up:
+# no passage's wording, hedged or not, can establish that a supernatural
+# event objectively happened, because no empirical evidence could, even in
+# principle. This is a DIFFERENT, deeper gap than the THIRD paragraph's
+# hedge-detection -- it applies regardless of how confidently a source is
+# worded. FOURTH check, below: is the CLAIM ITSELF (not the passage) an
+# assertion of a supernatural/metaphysical event as real-world fact? If so,
+# no "supports" passage can get through -- but a passage that explicitly
+# contests the claim on ordinary historical/scientific grounds still can,
+# since doubting a miracle rests on ordinary evidence in a way confirming
+# one never could. Carved out explicitly: a claim about what a text/
+# tradition SAYS (Theogony-shaped, category-3-style) or an ordinary
+# historical/archaeological claim (Dead Sea Scrolls, category-5-style) is
+# NOT a supernatural assertion and must keep confirming normally -- this
+# paragraph is scoped narrowly to claims asserting the supernatural event
+# itself as objective fact, not to religion/mythology/archaeology claims in
+# general.
 STANCE_SYSTEM_PROMPT = """You will be given a CLAIM and a PASSAGE. The passage has already been \
 independently confirmed to be real, verbatim text from a real, already-verified source — your \
 only job is to decide how it relates to the claim's SPECIFIC assertion, not just whether they \
@@ -131,6 +157,28 @@ underlying supernatural event itself as true — conflating the two turns "this 
 belief" into a false "this is a confirmed fact," which is exactly the kind of overconfident \
 answer this project exists to prevent, especially for claims about matters of faith that no web \
 source can actually settle either way.
+
+FOURTH, check whether the CLAIM ITSELF (not the passage) asserts that a supernatural or \
+metaphysical event literally, objectively happened in the real world -- a resurrection, a divine \
+revelation, a miracle, or the literal truth of a religious doctrine's supernatural content -- as \
+opposed to a claim about what a text, tradition, or group of people SAYS, RECORDS, or TEACHES \
+(e.g. "In Hesiod's Theogony, Cronus castrates Uranus", "the Gospels record that...", "Islamic \
+tradition teaches that...") or an ordinary historical/archaeological claim (e.g. when and where a \
+manuscript was found, who excavated a site) -- those remain ordinary, confirmable claims about \
+real, checkable facts (what a text says, what was found where and when), NOT supernatural \
+assertions, and this paragraph does not apply to them; judge them normally under the rules above. \
+For a claim that DOES assert a supernatural event as objective real-world fact: no source's \
+wording, however confident or authoritative-sounding, can establish that it actually happened, \
+because no empirical evidence could confirm it even in principle -- treat ANY passage that would \
+otherwise "support" this specific supernatural assertion as "unrelated" instead, even a passage \
+that states it as flat, unhedged fact with no caveat at all. This is NOT the same situation the \
+THIRD paragraph above covers (a passage that hedges its own wording) -- this applies regardless of \
+how the passage is worded, because the problem is the CLAIM's own unfalsifiable nature, not the \
+source's phrasing. A passage that explicitly CONTESTS or undermines the claim on ordinary \
+historical, textual, or scientific grounds (e.g. "no contemporary record corroborates this", \
+"textual analysis dates this account to long after the events it describes") is NOT blocked the \
+same way -- ordinary evidence CAN cast real doubt on a supernatural claim even though no evidence \
+can confirm one, so judge a genuinely contesting passage normally, as "contradicts".
 
 Reply with EXACTLY one word, nothing else:
 supports — the passage confirms the claim's specific assertion is true, about the SAME entity the \

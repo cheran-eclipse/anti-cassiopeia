@@ -179,3 +179,76 @@ async def test_claim_explicitly_about_what_a_tradition_believes_is_judged_normal
         "According to Islamic tradition, the revelation of the Quran to the Islamic prophet Muhammad began in 610 CE when the angel Gabriel appeared to Muhammad.",
     )
     assert result == "supports"
+
+
+# --- supernatural-claim fix (gotquestions.org, new -- deeper than hedge-detection) ---
+
+
+def test_supernatural_claim_guidance_is_present_in_the_prompt():
+    assert "FOURTH" in STANCE_SYSTEM_PROMPT
+    assert "no empirical evidence could confirm it even in principle" in STANCE_SYSTEM_PROMPT
+
+
+async def test_unhedged_confident_supernatural_source_scripted_as_unrelated():
+    """FOUND BUG (live, 2026-10-25, the resurrection calibration probe):
+    gotquestions.org (a Christian apologetics Q&A site) states, with NO
+    hedge at all -- "Three days later, His body and spirit were reunited,
+    and He rose from the dead (John 20)" -- which judge_stance() correctly
+    recognized as addressing the same claim, and WOULD give "supports" to
+    under the THIRD paragraph alone (that paragraph only catches a passage
+    that hedges ITS OWN wording; this one doesn't hedge at all). The
+    FOURTH paragraph must block "supports" here regardless of the
+    passage's confident wording, because the CLAIM itself (a literal
+    resurrection) is the unfalsifiable thing, not the source's phrasing.
+    Not a test of real model reasoning -- proves judge_stance() correctly
+    returns "unrelated" for this shape once the model (correctly
+    prompted) says so."""
+    client = _FakeClient("unrelated")
+    result = await judge_stance(
+        client,
+        "Jesus Christ physically rose from the dead three days after his crucifixion.",
+        "Three days later, His body and spirit were reunited, and He rose from the dead (John 20).",
+    )
+    assert result == "unrelated"
+
+
+async def test_mythology_as_text_claim_still_confirms_normally():
+    """No regression: a category-3-style claim about what a TEXT says
+    (not an assertion that a supernatural event objectively happened) is
+    explicitly carved out by the FOURTH paragraph and must keep
+    confirming exactly as before this fix."""
+    client = _FakeClient("supports")
+    result = await judge_stance(
+        client,
+        "In Hesiod's Theogony, Cronus castrates his father Uranus using a sickle given to him by his mother Gaia.",
+        "Hesiod's Theogony recounts that Cronus, armed with a sickle given to him by Gaia, castrated his father Uranus.",
+    )
+    assert result == "supports"
+
+
+async def test_archaeology_claim_still_confirms_normally():
+    """No regression: a category-5-style archaeological/historical claim
+    has no supernatural content at all -- the FOURTH paragraph must not
+    touch it."""
+    client = _FakeClient("supports")
+    result = await judge_stance(
+        client,
+        "The Dead Sea Scrolls were discovered by Bedouin shepherds in caves near Qumran beginning in 1947.",
+        "The Dead Sea Scrolls were first discovered in 1947 by Bedouin shepherds in caves near Qumran.",
+    )
+    assert result == "supports"
+
+
+async def test_a_passage_that_genuinely_contests_a_supernatural_claim_still_contradicts():
+    """The deliberate asymmetry: ordinary evidence CAN cast doubt on a
+    supernatural claim (a real historical/textual argument) even though
+    no evidence can confirm one -- a genuinely contesting passage must
+    still be allowed to "contradict", not be flattened to "unrelated"
+    along with everything else."""
+    client = _FakeClient("contradicts")
+    result = await judge_stance(
+        client,
+        "Jesus Christ physically rose from the dead three days after his crucifixion.",
+        "No contemporary Roman or Jewish record from that period corroborates the resurrection account, and textual critics date the earliest written reports to decades after the events they describe.",
+    )
+    assert result == "contradicts"

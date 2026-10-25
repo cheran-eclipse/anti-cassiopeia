@@ -96,6 +96,41 @@ not a real HTML parser — it will mis-handle `<script>`/`<style>` content
 and JS-rendered pages; good enough for a static page's body text, not a
 guarantee. Unchanged from before.
 
+HONEST LIMITATION, found live (2026-10-25, competitive-benchmark round 1,
+category 7 — "A video that went viral online shows a SpaceX Falcon 9
+rocket crashing into the Moon"): this adapter cannot verify a claim about
+whether a SPECIFIC piece of media (a video, an image) is authentic, as
+opposed to verifying a factual assertion about the real world. Two
+separate, genuine, structural reasons, not one fixable bug:
+  1. The one source type that actually settles "is this specific video
+     real or fake" is a fact-checking organization's own forensic writeup
+     (e.g. Full Fact's astronomer-consulted analysis of this exact clip) —
+     and that class of site is frequently protected by bot-detection WAFs
+     this project's keyless HTTP client cannot get past. Confirmed live:
+     `https://factcheck.afp.com/doc.afp.com.C46B6WF` (a real, on-point AFP
+     Fact Check article Tavily correctly surfaced as a candidate) returns
+     a real HTTP 403 "Access Denied" (Akamai/Edgesuite) when fetched here
+     — correctly detected as a block page by `_looks_like_block_page()`
+     and never treated as real content, but that also means its content
+     is simply never seen. Same class of limitation as Snopes's HTTP 402
+     and DDG's anti-bot challenge, documented above and in
+     `stress_test/results/BENCHMARK_ROUND1_REPORT.md`'s own category-7
+     sourcing section — not new to this finding, just hit again here.
+  2. Even a FETCHABLE source describing the real underlying event (e.g.
+     Wikipedia's own page on the real impact that inspired the fake video)
+     only ever addresses whether the EVENT happened — never whether a
+     named VIDEO is a genuine recording of it. `judge_stance()` correctly
+     (not a bug) judges such a passage "unrelated" to the claim's actual
+     assertion, since confirming the event is not the same as confirming
+     the video. Verifying a specific media artifact's authenticity is a
+     different task — closer to deepfake/media-forensics detection — than
+     verifying a textual factual claim, and this adapter has no mechanism
+     for it (nor should it try to infer video authenticity from text-only
+     web search); stated plainly as an out-of-scope claim type, same
+     convention as this project's own "no OCR" (document_ingest.py) and
+     "BM25-only, no embeddings" (retrieval/__init__.py, before the hybrid-
+     retrieval build) limitations.
+
 STATUS: mode 1 real, network-dependent, unchanged. Mode 2 real and
 LIVE-VERIFIED end to end against real Wikipedia pages (see
 tests/test_domains_searchlight.py's live-gated tests and
