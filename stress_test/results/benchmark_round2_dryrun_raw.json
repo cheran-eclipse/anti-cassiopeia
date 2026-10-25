@@ -1,0 +1,208 @@
+{
+  "mode": "dryrun",
+  "n_claims": 5,
+  "scorecard": [
+    {
+      "claim_id": "chatgpt-001",
+      "category": 1,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "claim_text": "The development of modern quantum mechanics was caused solely by Werner Heisenberg's matrix mechanics, with Schr\u00f6dinger's wave mechanics playing no substantive role in the theory's formulation.",
+      "ground_truth": "contradicted",
+      "ground_truth_note": "Schr\u00f6dinger's wave mechanics (1926) was an independent, complementary formulation to Heisenberg's matrix mechanics (1925); Schr\u00f6dinger himself (and later Dirac) proved the two formulations mathematically equivalent. 'Solely caused by Heisenberg, no substantive role for Schr\u00f6dinger' is false.",
+      "ground_truth_sources": [],
+      "anti_cassiopeia": {
+        "predicted": "undetermined",
+        "severity": "conservative_miss",
+        "confidence": null
+      },
+      "competitors": {
+        "bare_model": {
+          "predicted": "contradicted",
+          "severity": "correct"
+        },
+        "nebius_agent": {
+          "predicted": "contradicted",
+          "severity": "correct"
+        },
+        "generic_rag": {
+          "predicted": "contradicted",
+          "severity": "correct"
+        },
+        "perplexity": {
+          "predicted": "contradicted",
+          "severity": "correct"
+        },
+        "tavily_gemini": {
+          "predicted": "contradicted",
+          "severity": "correct"
+        }
+      }
+    },
+    {
+      "claim_id": "chatgpt-002",
+      "category": 1,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "claim_text": "The 1969 ARPANET was the first computer network ever built, and every subsequent computer network descended directly from its original architecture.",
+      "ground_truth": "contradicted",
+      "ground_truth_note": "ARPANET (1969) was not the first computer network (e.g. the UK's NPL network and France's Cyclades were contemporaneous/independent efforts), and not every later network architecturally descends from it (X.25, Minitel, Ethernet-based LANs etc. have separate lineages).",
+      "ground_truth_sources": [],
+      "anti_cassiopeia": {
+        "predicted": "undetermined",
+        "severity": "conservative_miss",
+        "confidence": null
+      },
+      "competitors": {
+        "bare_model": {
+          "predicted": "contradicted",
+          "severity": "correct"
+        },
+        "nebius_agent": {
+          "predicted": "contradicted",
+          "severity": "correct"
+        },
+        "generic_rag": {
+          "predicted": "contradicted",
+          "severity": "correct"
+        },
+        "perplexity": {
+          "predicted": "contradicted",
+          "severity": "correct"
+        },
+        "tavily_gemini": {
+          "predicted": "contradicted",
+          "severity": "correct"
+        }
+      }
+    },
+    {
+      "claim_id": "chatgpt-003",
+      "category": 1,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "claim_text": "The first human-made object to reach space was the German V-2 rocket, and the first V-2 flight to reach space occurred after the end of World War II.",
+      "ground_truth": "contradicted",
+      "ground_truth_note": "V-2 test MW 18014 reached ~174-176 km apogee on 20 June 1944 -- during WWII, not after it. The claim's chronological qualifier is false even though the V-2/first-spaceflight association itself is correct.",
+      "ground_truth_sources": [
+        "https://en.wikipedia.org/wiki/MW_18014"
+      ],
+      "anti_cassiopeia": {
+        "predicted": "contradicted",
+        "severity": "correct",
+        "confidence": 0.9
+      },
+      "competitors": {
+        "bare_model": {
+          "predicted": "contradicted",
+          "severity": "correct"
+        },
+        "nebius_agent": {
+          "predicted": "contradicted",
+          "severity": "correct"
+        },
+        "generic_rag": {
+          "predicted": "undetermined",
+          "severity": "conservative_miss"
+        },
+        "perplexity": {
+          "predicted": "confirmed",
+          "severity": "dangerous"
+        },
+        "tavily_gemini": {
+          "predicted": "contradicted",
+          "severity": "correct"
+        }
+      }
+    },
+    {
+      "claim_id": "chatgpt-004",
+      "category": 1,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "claim_text": "The 1905 photoelectric-effect paper by Albert Einstein was written after Robert Millikan had experimentally confirmed Einstein's proposed linear relationship between electron kinetic energy and incident light frequency.",
+      "ground_truth": "contradicted",
+      "ground_truth_note": "Einstein's photoelectric-effect paper was published 1905. Millikan's definitive experimental confirmation of Einstein's linear energy-frequency relationship came in 1914-1916, nearly a decade later. The claim reverses the real chronology.",
+      "ground_truth_sources": [],
+      "anti_cassiopeia": {
+        "predicted": "contradicted",
+        "severity": "correct",
+        "confidence": 1.0
+      },
+      "competitors": {
+        "bare_model": {
+          "predicted": "contradicted",
+          "severity": "correct"
+        },
+        "nebius_agent": {
+          "predicted": "contradicted",
+          "severity": "correct"
+        },
+        "generic_rag": {
+          "predicted": "contradicted",
+          "severity": "correct"
+        },
+        "perplexity": {
+          "predicted": "contradicted",
+          "severity": "correct"
+        },
+        "tavily_gemini": {
+          "predicted": "contradicted",
+          "severity": "correct"
+        }
+      }
+    },
+    {
+      "claim_id": "chatgpt-030",
+      "category": 1,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "claim_text": "The 1919 solar-eclipse observations associated with Arthur Eddington provided an important early test of general relativity's prediction of starlight deflection, but the observations' precision and interpretation have been the subject of later historical and scientific reassessment.",
+      "ground_truth": "confirmed",
+      "ground_truth_note": "Literature is genuinely split (Earman & Glymour 1980 alleged bias; Kennefick 2009 and Gilmore & Tausch-Pebody 2020 reanalyses largely vindicate Eddington's data treatment), which is exactly what the claim's own hedged wording describes ('important early test... subject to later historical and scientific reassessment'). The claim's hedging matches the real, contested historiography well.",
+      "ground_truth_sources": [
+        "https://arxiv.org/pdf/2010.13744",
+        "https://physicstoday.aip.org/features/testing-relativity-from-the-1919-eclipse-a-question-of-bias"
+      ],
+      "anti_cassiopeia": {
+        "predicted": "undetermined",
+        "severity": "conservative_miss",
+        "confidence": null
+      },
+      "competitors": {
+        "bare_model": {
+          "predicted": "confirmed",
+          "severity": "correct"
+        },
+        "nebius_agent": {
+          "predicted": "undetermined",
+          "severity": "conservative_miss"
+        },
+        "generic_rag": {
+          "predicted": "confirmed",
+          "severity": "correct"
+        },
+        "perplexity": {
+          "predicted": "confirmed",
+          "severity": "correct"
+        },
+        "tavily_gemini": {
+          "predicted": "confirmed",
+          "severity": "correct"
+        }
+      }
+    }
+  ],
+  "budget": {
+    "anti_cassiopeia_usd": 0.032771800000000004,
+    "nebius_competitors_usd": 0.014720249999999999,
+    "perplexity_usd": 0.00067,
+    "gemini_usd": 0.0023404,
+    "tavily_calls": 5
+  }
+}

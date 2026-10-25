@@ -3366,3 +3366,397 @@ four real `ml_data` rows.
 - Tavily+Gemini predicted: **CRASH**, ground truth: **undetermined** (crash)
 - Error: `ReadTimeout: `
 
+
+## Test #3 Perplexity batch `round2-dryrun` — 1 dangerous/crash result(s) (external API baseline; not a pipeline bug)
+
+### chatgpt-003 (research_web, tier 1)
+- Claim: `{"text": "The first human-made object to reach space was the German V-2 rocket, and the first V-2 flight to reach space occurred after the end of World War II.", "domain": "research_web", "context": {}}`
+- Perplexity predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+
+## Test #2 bare-Nebius batch `test3-round2` — 17 dangerous/crash result(s) (baseline, not a pipeline bug)
+
+### gemini-012 (research_web, tier 1)
+- Claim: `{"text": "Isaac Newton independently developed calculus at the exact same time as Gottfried Wilhelm Leibniz, leading to a bitter priority dispute over mathematical notation.", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### gemini-013 (research_web, tier 1)
+- Claim: `{"text": "The Roman Emperor Claudius personally participated in the conquest of Britain in 43 CE, arriving with war elephants to intimidate the Catuvellauni tribe.", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### gemini-024 (research_web, tier 1)
+- Claim: `{"text": "During the medieval period, European physicians routinely prescribed powdered mummy imported from Egypt as a universal panacea for physical ailments.", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### gemini-044 (research_web, tier 1)
+- Claim: `{"text": "During the 1960s, the CIA spent millions of dollars on a covert project called Acoustic Kitty, which involved surgically implanting microphones and transmitters into live cats to spy on Soviet officials.", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### perplexity-001 (research_web, tier 1)
+- Claim: `{"text": "The first successful public demonstration of a practical electric telegraph in 1837 was made by William Fothergill Cooke and Charles Wheatstone in London.", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### chatgpt-010 (research_web, tier 1)
+- Claim: `{"text": "In the Iliad, Hephaestus constructs automated golden attendants who assist him, explicitly depicting artificial servants in the poem.", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### chatgpt-011 (research_web, tier 1)
+- Claim: `{"text": "In Hesiod's Theogony, Athena is described as emerging fully armed from Zeus's head after Zeus swallows Metis.", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### gemini-027 (research_web, tier 1)
+- Claim: `{"text": "The Voynich Manuscript, an illustrated codex written in an undeciphered script, was carbon-dated to the early 15th century and originates from northern Italy.", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### gemini-031 (research_web, tier 1)
+- Claim: `{"text": "The 1918 influenza pandemic originated in military swine farms in rural Kansas before spreading globally via troop movements during World War I.", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### chatgpt-029 (research_web, tier 1)
+- Claim: `{"text": "The Buddha attained a state of enlightenment that transcended ordinary human cognition, and this metaphysical event is established as an objectively verified fact independently of Buddhist tradition.", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### chatgpt-040 (research_web, tier 1)
+- Claim: `{"text": "The resurrection of Osiris, as depicted in ancient Egyptian religious traditions, is established as a literal supernatural event by archaeological evidence independently of those traditions' religious claims.", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### gemini-008 (research_web, tier 1)
+- Claim: `{"text": "Gautama Buddha attained complete enlightenment and entered final Nirvana under a sacred fig tree in Bodh Gaya after resisting the temptations of the demon Mara.", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### gemini-017 (research_web, tier 1)
+- Claim: `{"text": "The Prophet Muhammad ascended to heaven from Jerusalem on a winged steed named Buraq during the Night Journey described in Islamic tradition.", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### gemini-028 (research_web, tier 1)
+- Claim: `{"text": "Siddhartha Gautama walked on water and performed instantaneous teleportation across river valleys during his travels in ancient India.", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### gemini-038 (research_web, tier 1)
+- Claim: `{"text": "The Virgin Mary appeared to three shepherd children in F\u00e1tima, Portugal in 1917, performing the documented Miracle of the Sun where the solar disk appeared to dance in the sky.", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### gemini-048 (research_web, tier 1)
+- Claim: `{"text": "In 1823, Joseph Smith was physically visited by the resurrected angel Moroni, who directed him to unearth a set of engraved golden plates buried in a hill in Manchester, New York.", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### perplexity-014 (research_web, tier 1)
+- Claim: `{"text": "The Hindu deity Krishna literally lifted Govardhan Hill to shelter villagers from a storm.", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+
+## Test #3 nebius-agent batch `round2` — 10 dangerous/crash result(s) (isolates the value of skipping verify_proposal(); not a pipeline bug)
+
+### gemini-012 (research_web, tier 1)
+- Claim: `{"text": "Isaac Newton independently developed calculus at the exact same time as Gottfried Wilhelm Leibniz, leading to a bitter priority dispute over mathematical notation.", "domain": "research_web", "context": {}}`
+- Nebius-agent (no verify) predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### perplexity-001 (research_web, tier 1)
+- Claim: `{"text": "The first successful public demonstration of a practical electric telegraph in 1837 was made by William Fothergill Cooke and Charles Wheatstone in London.", "domain": "research_web", "context": {}}`
+- Nebius-agent (no verify) predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### perplexity-028 (research_web, tier 1)
+- Claim: `{"text": "In the Popol Vuh, the Hero Twins defeat the lords of Xibalba through trials and deception.", "domain": "research_web", "context": {}}`
+- Nebius-agent (no verify) predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### gemini-015 (research_web, tier 1)
+- Claim: `{"text": "The Apollo 11 moon landings were meticulously staged and filmed inside a secure Hollywood soundstage under the direction of Stanley Kubrick.", "domain": "research_web", "context": {}}`
+- Nebius-agent (no verify) predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### gemini-039 (research_web, tier 1)
+- Claim: `{"text": "Water molecules can retain a permanent energetic memory of chemical substances that were previously dissolved in them, even after infinite dilution.", "domain": "research_web", "context": {}}`
+- Nebius-agent (no verify) predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### gemini-027 (research_web, tier 1)
+- Claim: `{"text": "The Voynich Manuscript, an illustrated codex written in an undeciphered script, was carbon-dated to the early 15th century and originates from northern Italy.", "domain": "research_web", "context": {}}`
+- Nebius-agent (no verify) predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### gemini-008 (research_web, tier 1)
+- Claim: `{"text": "Gautama Buddha attained complete enlightenment and entered final Nirvana under a sacred fig tree in Bodh Gaya after resisting the temptations of the demon Mara.", "domain": "research_web", "context": {}}`
+- Nebius-agent (no verify) predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### gemini-017 (research_web, tier 1)
+- Claim: `{"text": "The Prophet Muhammad ascended to heaven from Jerusalem on a winged steed named Buraq during the Night Journey described in Islamic tradition.", "domain": "research_web", "context": {}}`
+- Nebius-agent (no verify) predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### gemini-038 (research_web, tier 1)
+- Claim: `{"text": "The Virgin Mary appeared to three shepherd children in F\u00e1tima, Portugal in 1917, performing the documented Miracle of the Sun where the solar disk appeared to dance in the sky.", "domain": "research_web", "context": {}}`
+- Nebius-agent (no verify) predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### gemini-048 (research_web, tier 1)
+- Claim: `{"text": "In 1823, Joseph Smith was physically visited by the resurrected angel Moroni, who directed him to unearth a set of engraved golden plates buried in a hill in Manchester, New York.", "domain": "research_web", "context": {}}`
+- Nebius-agent (no verify) predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+
+## Test #3 generic-RAG batch `round2` — 18 dangerous/crash result(s) (a naive off-the-shelf-style baseline; not a pipeline bug)
+
+### gemini-011 (research_web, tier 1)
+- Claim: `{"text": "The printing press invented by Johannes Gutenberg in the 15th century was directly copied from movable type printing technology imported from Korean dynasties via Silk Road merchants.", "domain": "research_web", "context": {}}`
+- Generic-RAG predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### gemini-012 (research_web, tier 1)
+- Claim: `{"text": "Isaac Newton independently developed calculus at the exact same time as Gottfried Wilhelm Leibniz, leading to a bitter priority dispute over mathematical notation.", "domain": "research_web", "context": {}}`
+- Generic-RAG predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### chatgpt-005 (research_web, tier 1)
+- Claim: `{"text": "In the 1925 paper introducing matrix mechanics, Werner Heisenberg formulated quantum mechanics using noncommuting quantities before Max Born and Pascual Jordan developed the matrix formulation more explicitly.", "domain": "research_web", "context": {}}`
+- Generic-RAG predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### gemini-024 (research_web, tier 1)
+- Claim: `{"text": "During the medieval period, European physicians routinely prescribed powdered mummy imported from Egypt as a universal panacea for physical ailments.", "domain": "research_web", "context": {}}`
+- Generic-RAG predicted: **CRASH**, ground truth: **confirmed** (crash)
+- Error: `NebiusClientError: Nebius response had no usable content (got None, finish_reason='stop') — likely truncated by the token limit: {'id': 'chatcmpl-a5bfe598-e48d-45c7-bd42-e8d476c49371', 'choices': [{'finish_reason': 'stop', 'index': 0, 'logprobs': None, 'message': {'content': None, 'refusal': None, 'role': 'assistant', 'annotations': None, 'audio': None, 'function_call': None, 'tool_calls': [], 'reasoning': '<|message|>assistant<|channel|>analysis<|message|><|start|> 0 1 1<|message|>We 0<|message|>We 0<|message|>'}, 'stop_reason': 200012, 'token_ids': None, 'routed_experts': None}], 'created': 1792968872, 'model': 'openai/gpt-oss-120b', 'object': 'chat.completion', 'moderation': None, 'service_tier': None, 'system_fingerprint': 'vllm-v0.22.0-tp4-3e04bf1c', 'usage': {'completion_tokens': 27, 'prompt_tokens': 836, 'total_tokens': 863, 'completion_tokens_details': None, 'prompt_tokens_details': {'audio_tokens': None, 'cached_tokens': 64}}, 'prompt_logprobs': None, 'prompt_token_ids': None, 'prompt_text': None, 'kv_transfer_params': None}`
+
+### perplexity-001 (research_web, tier 1)
+- Claim: `{"text": "The first successful public demonstration of a practical electric telegraph in 1837 was made by William Fothergill Cooke and Charles Wheatstone in London.", "domain": "research_web", "context": {}}`
+- Generic-RAG predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### gemini-045 (research_web, tier 1)
+- Claim: `{"text": "In Homer's Iliad, the Greeks finally breach the walls of Troy by hiding elite soldiers inside a giant wooden horse and sneaking it through the city gates.", "domain": "research_web", "context": {}}`
+- Generic-RAG predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### gemini-027 (research_web, tier 1)
+- Claim: `{"text": "The Voynich Manuscript, an illustrated codex written in an undeciphered script, was carbon-dated to the early 15th century and originates from northern Italy.", "domain": "research_web", "context": {}}`
+- Generic-RAG predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### chatgpt-016 (research_web, tier 1)
+- Claim: `{"text": "The resurrection of Jesus of Nazareth occurred as a literal supernatural event in the physical world, independently of what historical evidence can establish.", "domain": "research_web", "context": {}}`
+- Generic-RAG predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### chatgpt-029 (research_web, tier 1)
+- Claim: `{"text": "The Buddha attained a state of enlightenment that transcended ordinary human cognition, and this metaphysical event is established as an objectively verified fact independently of Buddhist tradition.", "domain": "research_web", "context": {}}`
+- Generic-RAG predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### gemini-007 (research_web, tier 1)
+- Claim: `{"text": "Jesus of Nazareth physically resurrected from the dead on the third day following his crucifixion, walking out of the tomb and ascending bodily into heaven.", "domain": "research_web", "context": {}}`
+- Generic-RAG predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### gemini-008 (research_web, tier 1)
+- Claim: `{"text": "Gautama Buddha attained complete enlightenment and entered final Nirvana under a sacred fig tree in Bodh Gaya after resisting the temptations of the demon Mara.", "domain": "research_web", "context": {}}`
+- Generic-RAG predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### gemini-017 (research_web, tier 1)
+- Claim: `{"text": "The Prophet Muhammad ascended to heaven from Jerusalem on a winged steed named Buraq during the Night Journey described in Islamic tradition.", "domain": "research_web", "context": {}}`
+- Generic-RAG predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### gemini-018 (research_web, tier 1)
+- Claim: `{"text": "Moses parted the Red Sea through divine intervention, allowing the Israelites to walk across on dry ground before the waters collapsed upon the pursuing Egyptian army.", "domain": "research_web", "context": {}}`
+- Generic-RAG predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### gemini-038 (research_web, tier 1)
+- Claim: `{"text": "The Virgin Mary appeared to three shepherd children in F\u00e1tima, Portugal in 1917, performing the documented Miracle of the Sun where the solar disk appeared to dance in the sky.", "domain": "research_web", "context": {}}`
+- Generic-RAG predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### gemini-048 (research_web, tier 1)
+- Claim: `{"text": "In 1823, Joseph Smith was physically visited by the resurrected angel Moroni, who directed him to unearth a set of engraved golden plates buried in a hill in Manchester, New York.", "domain": "research_web", "context": {}}`
+- Generic-RAG predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### perplexity-014 (research_web, tier 1)
+- Claim: `{"text": "The Hindu deity Krishna literally lifted Govardhan Hill to shelter villagers from a storm.", "domain": "research_web", "context": {}}`
+- Generic-RAG predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### perplexity-023 (research_web, tier 1)
+- Claim: `{"text": "The ancient Egyptian god Osiris literally returned from the dead and now rules the underworld.", "domain": "research_web", "context": {}}`
+- Generic-RAG predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### perplexity-031 (research_web, tier 1)
+- Claim: `{"text": "The Buddha literally performed a miracle by multiplying food to feed a crowd.", "domain": "research_web", "context": {}}`
+- Generic-RAG predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+
+## Test #3 Perplexity batch `round2` — 11 dangerous/crash result(s) (external API baseline; not a pipeline bug)
+
+### chatgpt-003 (research_web, tier 1)
+- Claim: `{"text": "The first human-made object to reach space was the German V-2 rocket, and the first V-2 flight to reach space occurred after the end of World War II.", "domain": "research_web", "context": {}}`
+- Perplexity predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### gemini-012 (research_web, tier 1)
+- Claim: `{"text": "Isaac Newton independently developed calculus at the exact same time as Gottfried Wilhelm Leibniz, leading to a bitter priority dispute over mathematical notation.", "domain": "research_web", "context": {}}`
+- Perplexity predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### gemini-013 (research_web, tier 1)
+- Claim: `{"text": "The Roman Emperor Claudius personally participated in the conquest of Britain in 43 CE, arriving with war elephants to intimidate the Catuvellauni tribe.", "domain": "research_web", "context": {}}`
+- Perplexity predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### gemini-024 (research_web, tier 1)
+- Claim: `{"text": "During the medieval period, European physicians routinely prescribed powdered mummy imported from Egypt as a universal panacea for physical ailments.", "domain": "research_web", "context": {}}`
+- Perplexity predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### perplexity-001 (research_web, tier 1)
+- Claim: `{"text": "The first successful public demonstration of a practical electric telegraph in 1837 was made by William Fothergill Cooke and Charles Wheatstone in London.", "domain": "research_web", "context": {}}`
+- Perplexity predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### perplexity-026 (research_web, tier 1)
+- Claim: `{"text": "The first commercial computer mouse was sold as part of the Xerox 8010 Star Information System in 1981.", "domain": "research_web", "context": {}}`
+- Perplexity predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### chatgpt-011 (research_web, tier 1)
+- Claim: `{"text": "In Hesiod's Theogony, Athena is described as emerging fully armed from Zeus's head after Zeus swallows Metis.", "domain": "research_web", "context": {}}`
+- Perplexity predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### chatgpt-040 (research_web, tier 1)
+- Claim: `{"text": "The resurrection of Osiris, as depicted in ancient Egyptian religious traditions, is established as a literal supernatural event by archaeological evidence independently of those traditions' religious claims.", "domain": "research_web", "context": {}}`
+- Perplexity predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### gemini-008 (research_web, tier 1)
+- Claim: `{"text": "Gautama Buddha attained complete enlightenment and entered final Nirvana under a sacred fig tree in Bodh Gaya after resisting the temptations of the demon Mara.", "domain": "research_web", "context": {}}`
+- Perplexity predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### gemini-017 (research_web, tier 1)
+- Claim: `{"text": "The Prophet Muhammad ascended to heaven from Jerusalem on a winged steed named Buraq during the Night Journey described in Islamic tradition.", "domain": "research_web", "context": {}}`
+- Perplexity predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### gemini-028 (research_web, tier 1)
+- Claim: `{"text": "Siddhartha Gautama walked on water and performed instantaneous teleportation across river valleys during his travels in ancient India.", "domain": "research_web", "context": {}}`
+- Perplexity predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+
+## Test #3 Tavily+Gemini batch `round2` — 3 dangerous/crash result(s) (external API baseline; not a pipeline bug)
+
+### gemini-012 (research_web, tier 1)
+- Claim: `{"text": "Isaac Newton independently developed calculus at the exact same time as Gottfried Wilhelm Leibniz, leading to a bitter priority dispute over mathematical notation.", "domain": "research_web", "context": {}}`
+- Tavily+Gemini predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### perplexity-002 (research_web, tier 1)
+- Claim: `{"text": "The 1859 Carrington Event was caused by a coronal mass ejection that struck Earth.", "domain": "research_web", "context": {}}`
+- Tavily+Gemini predicted: **CRASH**, ground truth: **confirmed** (crash)
+- Error: `GeminiQuotaExhausted: Gemini returned 429: {
+  "error": {
+    "code": 429,
+    "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 15, model: gemini-3.5-flash-lite, description: Generate content requests per minute limit exceeded on Free Tier. See https://ai.google.dev/gemini-api/docs/rate-limits.\nPlease retry in 49.895127325s.",
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.Help",
+        "links": [
+          {
+            "description": "Learn more about Gemini API quotas",
+            "url": "https://ai.google.dev/gemini-api/docs/rate-limits"
+          }
+        ]
+      },
+      {
+        "@type": "type.googleapis.com/google.rpc.QuotaFailure",
+        "violations": [
+          {
+            "description": "Generate content requests per minute limit exceeded on Free Tier. See https://ai.google.dev/gemini-api/docs/rate-limits.",
+            "quotaMetric": "generativelanguage.googleapis.com/generate_content_free_tier_requests",
+            "quotaId": "GenerateRequestsPerMinutePerProjectPerModel-FreeTier",
+            "quotaDimensions": {
+              "location": "global",
+              "model": "gemini-3.5-flash-lite"
+            },
+            "quotaValue": "15"
+          }
+        ]
+      },
+      {
+        "@type": "type.googleapis.com/google.rpc.RetryInfo",
+        "retryDelay": "49s"
+      }
+    ]
+  }
+}
+`
+
+### perplexity-010 (research_web, tier 1)
+- Claim: `{"text": "The design of the World Wide Web was directly derived from ARPANET\u2019s packet-switching protocol.", "domain": "research_web", "context": {}}`
+- Tavily+Gemini predicted: **CRASH**, ground truth: **contradicted** (crash)
+- Error: `GeminiQuotaExhausted: Gemini returned 429: {
+  "error": {
+    "code": 429,
+    "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 15, model: gemini-3.5-flash-lite, description: Generate content requests per minute limit exceeded on Free Tier. See https://ai.google.dev/gemini-api/docs/rate-limits.\nPlease retry in 48.522282739s.",
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.Help",
+        "links": [
+          {
+            "description": "Learn more about Gemini API quotas",
+            "url": "https://ai.google.dev/gemini-api/docs/rate-limits"
+          }
+        ]
+      },
+      {
+        "@type": "type.googleapis.com/google.rpc.QuotaFailure",
+        "violations": [
+          {
+            "description": "Generate content requests per minute limit exceeded on Free Tier. See https://ai.google.dev/gemini-api/docs/rate-limits.",
+            "quotaMetric": "generativelanguage.googleapis.com/generate_content_free_tier_requests",
+            "quotaId": "GenerateRequestsPerMinutePerProjectPerModel-FreeTier",
+            "quotaDimensions": {
+              "location": "global",
+              "model": "gemini-3.5-flash-lite"
+            },
+            "quotaValue": "15"
+          }
+        ]
+      },
+      {
+        "@type": "type.googleapis.com/google.rpc.RetryInfo",
+        "retryDelay": "48s"
+      }
+    ]
+  }
+}
+`
+
+
+## Test #3 Tavily+Gemini batch `round2-fixed` — 14 dangerous/crash result(s) (external API baseline; not a pipeline bug)
+
+### gemini-012 (research_web, tier 1)
+- Claim: `{"text": "Isaac Newton independently developed calculus at the exact same time as Gottfried Wilhelm Leibniz, leading to a bitter priority dispute over mathematical notation.", "domain": "research_web", "context": {}}`
+- Tavily+Gemini predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+### perplexity-001 (research_web, tier 1)
+- Claim: `{"text": "The first successful public demonstration of a practical electric telegraph in 1837 was made by William Fothergill Cooke and Charles Wheatstone in London.", "domain": "research_web", "context": {}}`
+- Tavily+Gemini predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### chatgpt-011 (research_web, tier 1)
+- Claim: `{"text": "In Hesiod's Theogony, Athena is described as emerging fully armed from Zeus's head after Zeus swallows Metis.", "domain": "research_web", "context": {}}`
+- Tavily+Gemini predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### gemini-027 (research_web, tier 1)
+- Claim: `{"text": "The Voynich Manuscript, an illustrated codex written in an undeciphered script, was carbon-dated to the early 15th century and originates from northern Italy.", "domain": "research_web", "context": {}}`
+- Tavily+Gemini predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### gemini-031 (research_web, tier 1)
+- Claim: `{"text": "The 1918 influenza pandemic originated in military swine farms in rural Kansas before spreading globally via troop movements during World War I.", "domain": "research_web", "context": {}}`
+- Tavily+Gemini predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### chatgpt-029 (research_web, tier 1)
+- Claim: `{"text": "The Buddha attained a state of enlightenment that transcended ordinary human cognition, and this metaphysical event is established as an objectively verified fact independently of Buddhist tradition.", "domain": "research_web", "context": {}}`
+- Tavily+Gemini predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### gemini-007 (research_web, tier 1)
+- Claim: `{"text": "Jesus of Nazareth physically resurrected from the dead on the third day following his crucifixion, walking out of the tomb and ascending bodily into heaven.", "domain": "research_web", "context": {}}`
+- Tavily+Gemini predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### gemini-008 (research_web, tier 1)
+- Claim: `{"text": "Gautama Buddha attained complete enlightenment and entered final Nirvana under a sacred fig tree in Bodh Gaya after resisting the temptations of the demon Mara.", "domain": "research_web", "context": {}}`
+- Tavily+Gemini predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### gemini-017 (research_web, tier 1)
+- Claim: `{"text": "The Prophet Muhammad ascended to heaven from Jerusalem on a winged steed named Buraq during the Night Journey described in Islamic tradition.", "domain": "research_web", "context": {}}`
+- Tavily+Gemini predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
+### gemini-018 (research_web, tier 1)
+- Claim: `{"text": "Moses parted the Red Sea through divine intervention, allowing the Israelites to walk across on dry ground before the waters collapsed upon the pursuing Egyptian army.", "domain": "research_web", "context": {}}`
+- Tavily+Gemini predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### gemini-038 (research_web, tier 1)
+- Claim: `{"text": "The Virgin Mary appeared to three shepherd children in F\u00e1tima, Portugal in 1917, performing the documented Miracle of the Sun where the solar disk appeared to dance in the sky.", "domain": "research_web", "context": {}}`
+- Tavily+Gemini predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### perplexity-014 (research_web, tier 1)
+- Claim: `{"text": "The Hindu deity Krishna literally lifted Govardhan Hill to shelter villagers from a storm.", "domain": "research_web", "context": {}}`
+- Tavily+Gemini predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### perplexity-023 (research_web, tier 1)
+- Claim: `{"text": "The ancient Egyptian god Osiris literally returned from the dead and now rules the underworld.", "domain": "research_web", "context": {}}`
+- Tavily+Gemini predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### perplexity-031 (research_web, tier 1)
+- Claim: `{"text": "The Buddha literally performed a miracle by multiplying food to feed a crowd.", "domain": "research_web", "context": {}}`
+- Tavily+Gemini predicted: **contradicted**, ground truth: **undetermined** (dangerous)
+
