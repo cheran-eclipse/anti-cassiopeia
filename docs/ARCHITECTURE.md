@@ -46,6 +46,18 @@ rather than silently rounding it up to a guess.
 concretely, what evidence would resolve the claim, the same way a domain
 adapter should (see each adapter's `describe_gap()`).
 
+**Display-only rename (v3):** the frontend shows `UNDETERMINED` as
+**CLOUDED** instead — purely cosmetic, so the three displayed states all
+start with C, matching this project's own name. The real
+`VerdictState.UNDETERMINED` enum value and the API's wire value
+(`"state": "undetermined"`) are UNCHANGED — this is a stable contract
+already live on the public demo, and breaking it just for branding would
+be exactly the kind of unstated, surprising change this project's own
+conventions exist to prevent. `docs/index.html`'s `displayStateLabel()`
+is the one place this translation happens; every other reference to
+`"undetermined"` in this codebase (the enum, every domain adapter, every
+test, CSS class names) is deliberately untouched.
+
 ## Current status (bone framework)
 
 | Piece | Status |
@@ -1000,6 +1012,54 @@ offline tests, all against a fake decompose client and fixed-evidence
 fake domain adapters — no live Nebius call needed, including one that
 proves the cap-before-verify ordering directly (a capturing adapter
 asserting zero calls when decomposition blows past the cap).
+
+## Post-v3: opt-in per-verdict summary + the "three C's" display rename
+
+Two small additions requested directly by the project owner after the
+v3 round above shipped, each resolved as a deliberate scope/identity
+decision (both confirmed with the project owner before implementation,
+not assumed):
+
+**Display-only rename, not a wire-format change.** The project owner
+asked why the third state doesn't also start with C (to match
+CONFIRMED/CONTRADICTED and this project's own name). Confirmed scope:
+the actual `VerdictState.UNDETERMINED` enum value and the API's wire
+value stay exactly `"undetermined"` — a stable public contract already
+live on the Cloud Run demo, never broken just for branding (the full
+breaking-rename alternative was offered and declined). `docs/index.html`
+gained one function, `displayStateLabel()`, that maps `"undetermined"` →
+`"clouded"` for display text ONLY — CSS classes (`.state-badge.undetermined`,
+`.verdict-card.undetermined`) stay keyed on the real state string, so
+styling needed zero changes. Confirmed via a real `jsdom` dry run of the
+shipped file: the badge's CSS class is still `undetermined`, its visible
+text is `clouded`.
+
+**Opt-in per-verdict summary (`context.include_summary=true`).** The
+project owner asked for a small generated insight/summary after a
+verify call. The real trade-off, surfaced and confirmed before writing
+any code: an always-on summary would add a brand-new, additional live
+LLM call to `ml_data`/`fpga_embedded`, which today make ZERO live calls
+— a real, new budget line this project's own $20-cap discipline has
+tracked carefully throughout. Confirmed scope: opt-in via a context
+flag, off by default everywhere, applying uniformly across all four
+domains when a caller does opt in (the caller is explicitly accepting
+that one call's cost, so no domain-specific carve-out is needed once
+asked for). Implementation: a new `_summary_client` (same safe,
+import-time-but-never-crashing construction as `_compound_client`
+above) and `_generate_summary()`, called in `/verify`'s handler AFTER
+the real verdict is already fully computed — a summary failure (client
+unavailable, a dead live call) is caught and reported as a separate,
+named `summary_error` field, and NEVER affects the real verdict already
+being returned regardless. The system prompt explicitly instructs the
+model that it is commentary on an already-made decision, not a new
+source of evidence: it must never introduce a fact/number/claim absent
+from the real evidence/reasoning it's given, and never soften or
+contradict the given state. 5 new offline tests (a fake summary client,
+monkeypatched in) covering: absent by default, present when opted in,
+a generation failure never failing the real verdict, an unavailable
+client producing a named error rather than a crash, and the specific
+point of the design — `ml_data` (otherwise LLM-free) successfully
+getting a summary when asked.
 
 ## Open design decisions (not yet made)
 

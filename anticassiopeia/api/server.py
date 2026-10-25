@@ -54,6 +54,7 @@ unauthenticated monitoring/discovery is a normal, intentional tradeoff.
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import secrets
 import shutil
@@ -62,6 +63,7 @@ import threading
 import time
 from pathlib import Path
 
+import httpx
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, File, Header, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -159,6 +161,49 @@ try:
 except NebiusClientError as exc:
     _compound_client = None
     _compound_client_error = str(exc)
+
+# v3 "per-verdict summary" (opt-in, context.include_summary=true):
+# /verify's OWN LLM client, same safe-construction pattern as
+# _compound_client above -- a plain-English gloss of a verdict that has
+# ALREADY been computed is a different task from either decomposition or
+# any domain adapter's own evidence-gathering, so this gets its own
+# client rather than reusing either.
+_summary_client: NebiusTokenFactoryClient | None
+try:
+    _summary_client = NebiusTokenFactoryClient()
+    _summary_client_error: str | None = None
+except NebiusClientError as exc:
+    _summary_client = None
+    _summary_client_error = str(exc)
+
+#: Deliberately OFF by default, everywhere, for every domain -- including
+#: ml_data/fpga_embedded, which today make ZERO live LLM calls. This is a
+#: real, new, additional LLM call on top of whatever a claim's own domain
+#: already costs, so it only ever runs when a caller explicitly opts in
+#: via context.include_summary=true, accepting that cost for that one
+#: call -- never silently added to any caller's existing bill.
+_SUMMARY_SYSTEM_PROMPT = """You write a SHORT (at most 2 sentences) plain-English gloss of a \
+verification result that has ALREADY been computed by an independent evidence-checking \
+pipeline. You are commentary on a decision that is already made, not a new source of \
+evidence: NEVER introduce a fact, number, or claim that is not already present in the given \
+evidence/reasoning text, and NEVER soften, hedge, or contradict the given state. Just help a \
+reader quickly understand what was found and why, in your own words."""
+
+
+async def _generate_summary(client: NebiusTokenFactoryClient, verdict_dict: dict) -> str:
+    """Best-effort only -- callers of this function catch its exceptions
+    and fall back to an honest `summary_error`, never let a summary
+    failure take down the real verdict that /verify already computed and
+    is about to return regardless."""
+    prompt = (
+        f"State: {verdict_dict['state']}\n"
+        f"Confidence: {verdict_dict.get('confidence')}\n"
+        f"Evidence: {json.dumps(verdict_dict.get('evidence', []))}\n"
+        f"Reasoning: {json.dumps(verdict_dict.get('reasoning', []))}\n"
+        f"Missing: {json.dumps(verdict_dict.get('missing', []))}\n"
+    )
+    result = await client.complete(prompt, system=_SUMMARY_SYSTEM_PROMPT, temperature=0.2)
+    return result.strip()
 
 #: v2 master build prompt §3.1: generous enough for a real datasheet/
 #: report/CSV/PDF, far below anything that risks memory exhaustion --
@@ -487,6 +532,13 @@ async def domains() -> dict:
 
 @app.post("/verify")
 async def verify(req: VerifyRequest, api_key: str = Depends(_require_api_key)) -> dict:
+    """context.include_summary=true (opt-in, off by default) adds a short
+    best-effort "summary"/"summary_error" field generated from the
+    ALREADY-COMPUTED verdict below -- see _generate_summary's own
+    docstring for why this is commentary, never a new source of evidence,
+    and why it's a real additional LLM call that only ever runs when
+    explicitly asked for, regardless of domain (including ml_data/
+    fpga_embedded, which otherwise make zero live LLM calls)."""
     _enforce_rate_limit(api_key)
     context, scratch_path = _resolve_document_context(req.context, req.domain, _owner_key_hash(api_key))
     claim = Claim(text=req.text, domain=req.domain, context=context)
@@ -504,7 +556,25 @@ async def verify(req: VerifyRequest, api_key: str = Depends(_require_api_key)) -
         # identical content, derived from the same stored document).
         if scratch_path is not None:
             scratch_path.unlink(missing_ok=True)
-    return verdict.to_dict()
+
+    result = verdict.to_dict()
+
+    # Opt-in only (see _generate_summary's own comment) -- checked AFTER
+    # the real verdict is fully computed, so a summary failure below can
+    # never affect, delay unnecessarily, or take down the actual verdict
+    # this endpoint exists to produce. "summary"/"summary_error" are only
+    # ever present in the response when include_summary was actually set
+    # -- never silent extra fields nobody asked for.
+    if context.get("include_summary"):
+        if _summary_client is None:
+            result["summary_error"] = f"Summary generation's LLM client is not available: {_summary_client_error}"
+        else:
+            try:
+                result["summary"] = await _generate_summary(_summary_client, result)
+            except (NebiusClientError, httpx.HTTPError) as exc:
+                result["summary_error"] = f"Summary generation failed: {exc}"
+
+    return result
 
 
 def _resolve_document_context(context: dict, domain: str, owner_key_hash: str) -> tuple[dict, Path | None]:

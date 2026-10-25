@@ -709,7 +709,7 @@
     <div class="brand">
       <div class="mark">AC</div>
       <h1>Anti-Cassiopeia<span class="brand-tag">Verify</span></h1>
-      <span class="subtitle">Fact-verification engine — confirmed / contradicted / undetermined</span>
+      <span class="subtitle">Fact-verification engine — confirmed / contradicted / clouded</span>
     </div>
     <div class="topbar-right">
       <div class="status-pill" id="statusPill">
@@ -891,6 +891,17 @@
     if (n < 1024) return n + " B";
     if (n < 1024 * 1024) return (n / 1024).toFixed(1) + " KB";
     return (n / (1024 * 1024)).toFixed(1) + " MB";
+  }
+
+  // DISPLAY-LABEL-ONLY rename: the API's actual wire value for the third
+  // state stays "undetermined" (a stable contract already live on the
+  // public demo -- never broken just for branding). Only what a human
+  // reads here changes, to "clouded" -- the three displayed states all
+  // start with C, matching this project's own name. CSS classes (e.g.
+  // .state-badge.undetermined) stay keyed on the REAL state string,
+  // never this display label, so styling is untouched.
+  function displayStateLabel(state) {
+    return state === "undetermined" ? "clouded" : state;
   }
 
   // ---------- API key + base URL persistence ----------
@@ -1325,7 +1336,7 @@
 
     var stateBadge = document.createElement("span");
     stateBadge.className = "state-badge " + state;
-    stateBadge.textContent = state;
+    stateBadge.textContent = displayStateLabel(state);
     verdictCard.appendChild(stateBadge);
 
     var meta = document.createElement("div");
@@ -1503,7 +1514,7 @@
     var span = document.createElement("span");
     span.className = "state-badge " + (state || "undetermined");
     span.style.cssText += "font-size:0.68rem;padding:3px 9px;";
-    span.textContent = state || "undetermined";
+    span.textContent = displayStateLabel(state || "undetermined");
     return span;
   }
 

@@ -2,7 +2,13 @@
 
 A verification engine. Give it a claim, it gives you back one of exactly
 three things: **confirmed**, **contradicted**, or **undetermined** — never
-a confident-sounding guess standing in for the third one.
+a confident-sounding guess standing in for the third one. Displayed in
+the frontend as the three C's — **Confirmed / Contradicted / Clouded**
+(evidence is clouded, not absent) — matching this project's own name;
+the API's actual wire value for the third state stays `"undetermined"`,
+a stable contract already live on the public demo and never broken just
+for branding. See `docs/index.html`'s `displayStateLabel()` for exactly
+where that cosmetic rename happens and nowhere else.
 
 Built for the Nebius x NVIDIA Global AI Hackathon, Apps and Agents track:
 an app or agent you'd actually use, not a single demo script. Run it as
@@ -313,6 +319,29 @@ breaks this design.
 ```bash
 gcloud run deploy anti-cassiopeia --max-instances=1 ...
 ```
+
+**Opt-in per-verdict summary.** Set `context.include_summary = true` on
+any `/verify` call to get a short, best-effort, plain-English gloss of
+the verdict that was *already computed* — commentary, not a new source
+of evidence (the model generating it is explicitly told never to
+introduce a fact not already present in the real evidence/reasoning).
+OFF by default, every domain, including `ml_data`/`fpga_embedded` (which
+otherwise make zero live LLM calls) — this is a real, additional LLM
+call that only ever runs, and only ever costs anything, when a caller
+explicitly asks for it:
+
+```bash
+curl -X POST localhost:8000/verify -H "X-API-Key: $ANTICASSIOPEIA_API_KEY" \
+  -H 'content-type: application/json' \
+  -d '{"text": "Bar30 survives 500m depth", "domain": "robotics", "context": {"include_summary": true}}'
+# -> {..., "summary": "The Bar30's rated depth falls short of the 500m claimed, so this is contradicted."}
+```
+
+A summary failure (client unavailable, a dead live call) never fails the
+real verdict — it's reported as a separate, named `summary_error` field
+alongside the (unaffected) `state`/`confidence`/`evidence`, the same
+"never let a secondary concern take down the primary result" discipline
+`/verify`'s own scratch-file cleanup already follows.
 
 ## Frontend
 
