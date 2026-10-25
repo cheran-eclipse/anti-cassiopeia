@@ -93,7 +93,7 @@ not four coincidences that happen to agree:
 | Stage | Model | Why (one line; full evidence linked) |
 |---|---|---|
 | `substrate`'s evidence extraction (`propose()`) | **Nemotron Ultra** | Only tier with a perfect, zero-dangerous-miss record across 3 independent runs — [full pivot](stress_test/results/NEMOTRON_PIVOT_REPORT.md) |
-| `searchlight`'s evidence extraction (`propose()`) | **`gpt-oss-120b`** | No Nemotron tier beat it at an adequate sample size — same report, Decision 2, **flagged for re-measurement now that Tavily is confirmed active** (see [`stress_test/results/MODEL_SELECTION_FINDINGS.md`](stress_test/results/MODEL_SELECTION_FINDINGS.md) for the current status) |
+| `searchlight`'s evidence extraction (`propose()`) | **`gpt-oss-120b`** | No Nemotron tier beat it at an adequate sample size. Re-checked directly against Nemotron Ultra once Tavily was confirmed active (a small, 4-claim live re-check, not a full re-run): both models 4/4 correct, identical verdicts — decision holds, now on marginally better evidence, at ~7x lower cost for zero measured gain. [Full note](stress_test/results/DECISION2_REMEASUREMENT_NOTE.md) |
 | `searchlight`'s hardest stance judgments (`judge_stance()`) | **Nemotron Ultra** | A separate, later, narrower decision — `gpt-oss-120b` correct only 2/6 on a reproduced hard causal-relationship case; Ultra correct 5/5, tied with it on every easier case tested — [the fix + the evidence](docs/ARCHITECTURE.md#causal-claim-stance-fix--judge_stance-model-routing-found-live-2026-10-25) |
 | Live web search | **Tavily** (primary; DDG+Wikipedia fallback) | Not a mention — a real, functional, runtime call this project nearly measured as useless by its own mistake, then found genuinely decisive once that mistake was fixed. See ["Tavily actually matters here"](#tavily-actually-matters-here-not-just-present) below. |
 | Hybrid retrieval's semantic leg | **`Qwen/Qwen3-Embedding-8B`** | The one embedding model confirmed live on this account's own `GET /v1/models` — not assumed from a sibling project's choice. See ["Hybrid retrieval"](#hybrid-retrieval-bm25--vector) below. |
@@ -236,7 +236,21 @@ real and fixable, name what isn't. Round 1 found and fixed a real,
 dangerous calibration bug (a flat claim about religious revelation
 confidently confirmed on a source that itself only said "according to
 tradition") — and, in the same round, found the Tavily measurement bug
-above. Full protocol: [`claude/ANTI_CASSIOPEIA_COMPETITIVE_BENCHMARK_PROTOCOL.md`](claude/ANTI_CASSIOPEIA_COMPETITIVE_BENCHMARK_PROTOCOL.md).
+above. The re-run that confirmed the Tavily fix then surfaced a DEEPER
+version of the same calibration problem: a confidently-worded source
+with no hedge at all still got a supernatural claim (a literal
+resurrection) wrongly confirmed. Fixed properly, not patched around —
+`judge_stance()` now recognizes when the CLAIM ITSELF asserts a
+supernatural/metaphysical event as objective fact (blocking any
+"supports," however the source is worded) while still letting ordinary
+contesting evidence through as "contradicts," and still confirming
+category-3/category-5-style claims (what a text says, real archaeology)
+exactly as before. A separate claim from the same round (a specific
+viral video's authenticity) stayed honestly unresolved — the one source
+that would settle it is bot-blocked, and every other real source
+describes the underlying event but not the video's authenticity
+specifically, a media-forensics task this project doesn't attempt via
+text search, named plainly rather than forced. Full protocol: [`claude/ANTI_CASSIOPEIA_COMPETITIVE_BENCHMARK_PROTOCOL.md`](claude/ANTI_CASSIOPEIA_COMPETITIVE_BENCHMARK_PROTOCOL.md).
 Full round 1 results, including the erratum and the open findings not
 yet fixed: [`stress_test/results/BENCHMARK_ROUND1_REPORT.md`](stress_test/results/BENCHMARK_ROUND1_REPORT.md).
 
