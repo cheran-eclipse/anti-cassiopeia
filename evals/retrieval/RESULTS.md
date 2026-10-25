@@ -4,7 +4,7 @@ Run 2026-10-25, `PYTHONPATH=. python3 evals/retrieval/evaluate.py`,
 against `Qwen/Qwen3-Embedding-8B` via Nebius (live, real call — not a
 stand-in). 13 hand-labelled questions (6 "keyword-overlap", 7
 "paraphrase" — see `questions.json`) across 6 real documents (the
-robotics seeded corpus + the ODrive/NASA JPL BYOE fixtures), 46 chunks
+substrate seeded corpus + the ODrive/NASA JPL BYOE fixtures), 46 chunks
 total. Full method: `evaluate.py`'s own docstring.
 
 **Run twice** (output below is the second run) — numbers moved slightly
@@ -31,7 +31,7 @@ not a new gap this build introduced).
 1.9–4.4s across the two runs. Per-query added latency for a mode that
 embeds the query (`vector`/`hybrid`) was 1.1–2.1s/query across the two
 runs — real, not negligible, and worth the production pipeline's own
-callers (robotics.py, research_web.py) being aware this is ~1-2 extra
+callers (substrate.py, searchlight.py) being aware this is ~1-2 extra
 seconds per claim beyond what BM25-only cost before this build, on top
 of whatever propose()/judge_stance() calls already add.
 

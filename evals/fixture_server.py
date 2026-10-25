@@ -1,13 +1,13 @@
 """
-Local HTTP server for research_web evals and the demo.
+Local HTTP server for searchlight evals and the demo.
 
-research_web fetches a URL for real (httpx, real sockets); pointing it at a
+searchlight fetches a URL for real (httpx, real sockets); pointing it at a
 page we control means the verdict tests the adapter, not whatever a
 third-party site happens to say this month. Pages live in evals/fixtures/web/.
 
 STATUS: real, offline, tested (exercised by evals/run_evals.py and
-scripts/demo.py). The one live-internet research_web case is kept separate
-(evals/cases/research_web/live_example_com_drift.json) and says so.
+scripts/demo.py). The one live-internet searchlight case is kept separate
+(evals/cases/searchlight/live_example_com_drift.json) and says so.
 
 Case JSON and demo claims write URLs as "{FIXTURE_BASE_URL}/<page>"; use
 `resolve()` to substitute the real base URL (the port is OS-assigned).

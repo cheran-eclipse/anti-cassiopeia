@@ -5,5 +5,5 @@
     "context": {"url": "https://example.com", "quote": "illustrative examples in documents"}
   },
   "acceptable_states": ["confirmed", "contradicted", "undetermined"],
-  "note": "LIVE-NETWORK case against a third-party page, kept separate on purpose: it tests that the system notices drift, NOT that the quote is stable. This quote was on example.com once and no longer is. 'confirmed' = page still carries it; 'contradicted' = page fetched fine but the text drifted (correct, honest verdict); 'undetermined' = fetch blocked/failed (e.g. restricted sandbox). All three are legal; what this case guards is that the live path never crashes and always returns a real verdict. The stable, assertive research_web cases are the local_fixture_* ones."
+  "note": "LIVE-NETWORK case against a third-party page, kept separate on purpose: it tests that the system notices drift, NOT that the quote is stable. This quote was on example.com once and no longer is. 'confirmed' = page still carries it; 'contradicted' = page fetched fine but the text drifted (correct, honest verdict); 'undetermined' = fetch blocked/failed (e.g. restricted sandbox). All three are legal; what this case guards is that the live path never crashes and always returns a real verdict. The stable, assertive searchlight cases are the local_fixture_* ones."
 }

@@ -1,7 +1,7 @@
 """
 Retrieval evaluation harness: BM25 vs vector vs hybrid, on a REAL,
 hand-labelled question set against Anti-Cassiopeia's OWN real corpus and
-BYOE fixture documents (robotics' seeded datasheets + the ODrive/NASA JPL
+BYOE fixture documents (substrate' seeded datasheets + the ODrive/NASA JPL
 BYOE fixtures used in the v2 stress test) -- NOT Constellation's
 synthetic datasheets. Same Recall@k / Hit@k / MRR metric shape as
 Constellation's own retrieval/evaluate.py (reimplemented here against
@@ -51,7 +51,7 @@ KS = (1, 3, 5)
 _WS_RE = re.compile(r"\s+")
 
 QA_PATH = Path(__file__).parent / "questions.json"
-#: Real documents this eval draws from -- the robotics seeded corpus
+#: Real documents this eval draws from -- the substrate seeded corpus
 #: (short, real, provenance-documented excerpts) plus the two real BYOE
 #: fixtures used in the v2 stress test. Deliberately NOT Constellation's
 #: own synthetic datasheets (per the build spec's own §0 instruction).

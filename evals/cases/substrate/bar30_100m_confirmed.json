@@ -1,5 +1,5 @@
 {
   "claim": {"text": "Bar30 survives 100 m depth", "domain": "substrate", "context": {}},
   "expected_state": "confirmed",
-  "note": "A claim the sourced 0-30 bar operating range (~298 m depth-equivalent) genuinely supports. First real confirmed robotics case; exists because the adapter now reads the claim's depth instead of assuming 500 m."
+  "note": "A claim the sourced 0-30 bar operating range (~298 m depth-equivalent) genuinely supports. First real confirmed substrate case; exists because the adapter now reads the claim's depth instead of assuming 500 m."
 }
