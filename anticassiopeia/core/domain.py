@@ -17,7 +17,7 @@ from anticassiopeia.core.verdict import Claim, Evidence
 
 
 class DomainAdapter(ABC):
-    """Base class every domain (robotics, FPGA/embedded, web/research, ML/data) implements."""
+    """Base class every domain (substrate, silicon, searchlight, quant) implements."""
 
     #: Must match Claim.domain for claims this adapter accepts.
     domain_name: str
@@ -65,6 +65,6 @@ class DomainAdapter(ABC):
 
         Default: no adapter knows its own expected-source count, so this
         says nothing by default — override only if the adapter actually
-        tracks which sources it expected to consult (see `robotics.py`).
+        tracks which sources it expected to consult (see `substrate.py`).
         """
         return []

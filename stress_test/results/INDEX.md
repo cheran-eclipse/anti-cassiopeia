@@ -9,6 +9,33 @@ correction history. This index does not replace, restructure, or absorb
 any existing file — `BUGS_FOUND.md` stays append-only, every report
 below stays exactly as it was written.
 
+## Added 2026-10-25: the product's domain names were renamed; stress_test/ was not
+
+`anticassiopeia`'s four domains were renamed (a full, breaking rename,
+including `Claim.domain`'s real wire value): `robotics`->`substrate`,
+`research_web`->`searchlight`, `ml_data`->`quant`,
+`fpga_embedded`->`silicon`. Every file below, every raw result, and
+every one of `stress_test/`'s own `.py` scripts was deliberately left
+untouched — this directory is historical record, not live product code,
+and rewriting a 3,383-claim manifest's domain field (or any report's own
+numbers) to use names that didn't exist when they were written would be
+revisionist, not a correction.
+
+**Practical consequence for anyone running `stress_test/` scripts going
+forward**: 4 TEMPORARY backward-compatibility shim modules exist at the
+OLD import paths (`anticassiopeia/domains/{robotics,research_web,ml_data,fpga_embedded}.py`)
+so these scripts still IMPORT successfully — but
+`run_test3_nebius_agent.py`'s own monkeypatch trick (disabling
+`verify_proposal` to build its "no independent verify" baseline) now
+silently no-ops, since it patches the shim's module namespace, not the
+real one (`substrate.py`/`searchlight.py`) the renamed adapters actually
+use. Any script comparing against that baseline is, until a future
+migration pass updates `stress_test/` itself, actually comparing against
+the SAME fully-verified pipeline on both sides. `tests/test_heldout_adversarial.py`'s
+`ml_data`/`fpga_embedded` adversarial-case tests (and their live-gated
+siblings) are now skipped, dated, for the identical structural reason —
+see that file's own skip message.
+
 ## Read this first: one finding changes how every number below should be read
 
 **Every `stress_test/*.py` script was missing a `load_dotenv()` call.**

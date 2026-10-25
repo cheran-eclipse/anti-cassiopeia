@@ -47,10 +47,10 @@ as before this module existed.
 HONEST NEW LIMITATION this module itself introduces, stated plainly
 (see retrieval/__init__.py's own docstring for where this is surfaced
 project-wide): there is still no persistent embedding cache anywhere in
-this codebase. robotics.py's BYOE/pooled paths and research_web.py's
+this codebase. substrate.py's BYOE/pooled paths and searchlight.py's
 multi-candidate path all re-chunk AND re-embed their source text on
 EVERY call, same as they already re-chunk and re-BM25-index on every
-call today (see domains/robotics.py's own `_gather_byoe`/
+call today (see domains/substrate.py's own `_gather_byoe`/
 `_gather_byoe_pool` -- there was no chunk/BM25 cache before this module
 either). Querying the SAME uploaded document twice re-embeds it twice,
 at real added cost and latency -- see this module's own cost/latency

@@ -16,9 +16,9 @@ a CLI, call it as an HTTP API, through the hosted web frontend (see
 ["Frontend"](#frontend) below), or wire it into another agent's tool-use
 loop as the claim-checking step before that agent commits to an answer —
 all four hit the same `VerificationEngine`. Runs on Nebius Token Factory
-(see `anticassiopeia/llm/nebius_client.py`). The `robotics` domain's live
+(see `anticassiopeia/llm/nebius_client.py`). The `substrate` domain's live
 calls run on **NVIDIA Nemotron Ultra** — a real, live model in the
-request path, not a mention — and `research_web` runs on `gpt-oss-120b`;
+request path, not a mention — and `searchlight` runs on `gpt-oss-120b`;
 both choices are the outcome of a real before/after comparison, not a
 default. See ["How the model choice was made"](#how-the-model-choice-was-made)
 below.
@@ -60,10 +60,10 @@ FEVER, FActScore, SAFE, RARR, and FacTool.
 
 | Domain | POV | Evidence traces back to | Status |
 |---|---|---|---|
-| `robotics` | physical/datasheet | real parts/datasheet facts, retrieved+verified against manufacturer sources (BlueROV2, Bar30, Bar100XT), via live NVIDIA Nemotron Ultra | 3/4 researched parts sourced; the 4th (QuSpin QZFM Gen-3) has a confirmed real source stating NO rating exists — [extraction provenance](docs/extracted/constellation-robotics-seed.md) |
-| `ml_data` | ML | an actual re-computed statistic over a real CSV file | real, offline, no external dependency |
-| `fpga_embedded` | quantum | a real parsed timing/synthesis report, or a real CMSIS-SVD register-map file | real, offline — timing parser verified against a real Vivado report; register-map parser verified against real ARM/Espressif SVD files, see module docstring |
-| `research_web` | existence/verification | an actually-fetched URL, verbatim-quote-checked | real, network-dependent — Tavily primary search backend, DDG+Wikipedia fallback |
+| `substrate` | physical/datasheet | real parts/datasheet facts, retrieved+verified against manufacturer sources (BlueROV2, Bar30, Bar100XT), via live NVIDIA Nemotron Ultra | 3/4 researched parts sourced; the 4th (QuSpin QZFM Gen-3) has a confirmed real source stating NO rating exists — [extraction provenance](docs/extracted/constellation-robotics-seed.md) |
+| `quant` | ML | an actual re-computed statistic over a real CSV file | real, offline, no external dependency |
+| `silicon` | quantum | a real parsed timing/synthesis report, or a real CMSIS-SVD register-map file | real, offline — timing parser verified against a real Vivado report; register-map parser verified against real ARM/Espressif SVD files, see module docstring |
+| `searchlight` | existence/verification | an actually-fetched URL, verbatim-quote-checked | real, network-dependent — Tavily primary search backend, DDG+Wikipedia fallback |
 
 Every domain either returns real evidence with a real locator, or an
 honest, specific, named reason it can't yet — never a guess. See
@@ -89,15 +89,15 @@ extracted text is held in memory for 24h under an opaque `document_id`,
 capped and evicted the same way the API's own rate-limit state is.
 
 **Single claim against your document** — pass that `document_id` in
-`context`. For `robotics`, the real chunk → BM25 retrieve → LLM propose →
+`context`. For `substrate`, the real chunk → BM25 retrieve → LLM propose →
 independently re-verify → judge stance pipeline runs against your
-document's real text instead of the fixed corpus. For `ml_data` /
-`fpga_embedded` (v3), plain `/verify` resolves the same way
+document's real text instead of the fixed corpus. For `quant` /
+`silicon` (v3), plain `/verify` resolves the same way
 `/verify/project` always has for those two domains — the document's real
 extracted text is written to a server-owned scratch file and pointed at
 by the existing `dataset_path`/`report_path` context field, so you still
 supply every structured field those adapters need (column/stat, or
-peripheral/metric/comparator) — nothing is fabricated. `research_web`'s
+peripheral/metric/comparator) — nothing is fabricated. `searchlight`'s
 two modes (URL-fetch or live search) don't consume an uploaded document
 at all, so a `document_id` there is a clean, named `400`, not a silent
 no-op:
@@ -105,12 +105,12 @@ no-op:
 ```bash
 curl -X POST localhost:8000/verify -H "X-API-Key: $ANTICASSIOPEIA_API_KEY" \
   -H 'content-type: application/json' \
-  -d '{"text": "the X9 sensor is rated for 450m depth", "domain": "robotics", "context": {"document_id": "..."}}'
+  -d '{"text": "the X9 sensor is rated for 450m depth", "domain": "substrate", "context": {"document_id": "..."}}'
 ```
 
 **Search across all your documents (v3 pooled search)** — don't know
 which of your uploads has the fact? Set `document_pool: true` instead of
-`document_id` (robotics-only; mutually exclusive with `document_id`).
+`document_id` (substrate-only; mutually exclusive with `document_id`).
 `GET /documents` lists your own currently-valid uploads first if you want
 to check what's poolable:
 
@@ -120,7 +120,7 @@ curl localhost:8000/documents -H "X-API-Key: $ANTICASSIOPEIA_API_KEY"
 
 curl -X POST localhost:8000/verify -H "X-API-Key: $ANTICASSIOPEIA_API_KEY" \
   -H 'content-type: application/json' \
-  -d '{"text": "the X9 sensor is rated for 450m depth", "domain": "robotics", "context": {"document_pool": true}}'
+  -d '{"text": "the X9 sensor is rated for 450m depth", "domain": "substrate", "context": {"document_pool": true}}'
 ```
 
 One combined BM25 index is built across every one of your pooled
@@ -139,8 +139,8 @@ uploads, pooled together" — expected for a shared sandbox, not real
 per-caller isolation. A caller using their own `ANTICASSIOPEIA_API_KEY`
 gets genuine isolation.
 
-**A bundle of claims, each tied to a different document** — `ml_data` and
-`fpga_embedded` need their own structured fields too (column/stat, or
+**A bundle of claims, each tied to a different document** — `quant` and
+`silicon` need their own structured fields too (column/stat, or
 peripheral/metric/comparator), same as always; `POST /verify/project`
 only auto-fills *which real file* a `document_id` refers to, by
 deterministically sniffing the upload's format (extension first, cross-
@@ -179,8 +179,8 @@ curl -X POST localhost:8000/verify/compound -H "X-API-Key: $ANTICASSIOPEIA_API_K
   -d '{"text": "The ODrive is open-source and BlueROV2 uses a Bar30 sensor rated for 300m"}'
 ```
 
-Decomposition only ever classifies a sub-claim into `robotics`/
-`research_web` — that restriction is deliberately **not** loosened just
+Decomposition only ever classifies a sub-claim into `substrate`/
+`searchlight` — that restriction is deliberately **not** loosened just
 because `/verify/project`/pooled search can now resolve a real uploaded
 document elsewhere; an LLM splitting free text never sees which
 document, or document pool, a sub-claim would even need. `context` on
@@ -201,7 +201,7 @@ answer, the exact failure this project exists to prevent, as distinct
 from an honest "undetermined."
 
 The honest version of what happened, in order:
-1. **First look (n=15):** robotics seemed tier-insensitive — Super and
+1. **First look (n=15):** substrate seemed tier-insensitive — Super and
    Ultra both matched baseline exactly. Wrong conclusion, too early:
    one dangerous event at n=15 is statistically compatible with a true
    rate anywhere from ~1% to ~30%.
@@ -217,14 +217,14 @@ The honest version of what happened, in order:
    not just Nemotron.
 4. **Re-testing everything that had shown a problem**, baseline rerun
    fresh each time too (so a post-fix change could be attributed
-   correctly): the fixes flipped Ultra to a real win on `research_web`
-   and fully resolved Nano's robotics weakness — but did nothing for
+   correctly): the fixes flipped Ultra to a real win on `searchlight`
+   and fully resolved Nano's substrate weakness — but did nothing for
    Super on either domain, evidence that Super's underperformance is a
    real model property, not a pipeline artifact.
 
-**Result:** `robotics` now runs on **Nemotron Ultra** — the only tier
+**Result:** `substrate` now runs on **Nemotron Ultra** — the only tier
 with a clean, zero-dangerous-miss record across all three of its
-independent robotics runs. `research_web` stays on `gpt-oss-120b` —
+independent substrate runs. `searchlight` stays on `gpt-oss-120b` —
 no tested Nemotron tier beat it there at an adequately-sized sample,
 and Ultra's one post-fix win is narrow and single-sample against
 baseline's ten-run, crash-free record across this entire investigation.
@@ -243,13 +243,13 @@ PYTHONPATH=. python scripts/demo.py
 ```
 
 Runs 6 real claims across all 4 domains through the actual engine — no
-mocked output. Example excerpt (robotics, on real sourced facts, from an
+mocked output. Example excerpt (substrate, on real sourced facts, from an
 actual run on 2026-10-24 — regenerated here after an external review
 caught the previous excerpt showing a stale confidence 1.00 the engine's
 single-source cap, added earlier this project, no longer produces):
 
 ```
-[✗] (robotics) Bar30 survives 500 m depth
+[✗] (substrate) Bar30 survives 500 m depth
     verdict: contradicted (confidence 0.90)
     evidence [contradicts, trust=0.85]: Operating Pressure Range: 0 to 30 bar
       [checked against the manufacturer's RATED limit (not an observed
@@ -265,7 +265,7 @@ PYTHONPATH=. python evals/run_evals.py
 ```
 
 31 real cases across all 4 domains, all passing as of this commit (13
-need a live `NEBIUS_API_KEY` — robotics' calls and research_web's
+need a live `NEBIUS_API_KEY` — substrate' calls and searchlight's
 multi-candidate mode both do — and skip cleanly, not falsely, without one;
 see `docs/ARCHITECTURE.md` for how that's decided).
 
@@ -297,7 +297,7 @@ uvicorn anticassiopeia.api.server:app --reload
 curl -X POST localhost:8000/verify \
   -H 'content-type: application/json' \
   -H "X-API-Key: $ANTICASSIOPEIA_API_KEY" \
-  -d '{"text": "Bar30 survives 500m depth", "domain": "robotics"}'
+  -d '{"text": "Bar30 survives 500m depth", "domain": "substrate"}'
 ```
 
 **Deploying to Cloud Run (or any multi-instance platform): pin `--max-instances=1`.**
@@ -325,7 +325,7 @@ any `/verify` call to get a short, best-effort, plain-English gloss of
 the verdict that was *already computed* — commentary, not a new source
 of evidence (the model generating it is explicitly told never to
 introduce a fact not already present in the real evidence/reasoning).
-OFF by default, every domain, including `ml_data`/`fpga_embedded` (which
+OFF by default, every domain, including `quant`/`silicon` (which
 otherwise make zero live LLM calls) — this is a real, additional LLM
 call that only ever runs, and only ever costs anything, when a caller
 explicitly asks for it:
@@ -333,7 +333,7 @@ explicitly asks for it:
 ```bash
 curl -X POST localhost:8000/verify -H "X-API-Key: $ANTICASSIOPEIA_API_KEY" \
   -H 'content-type: application/json' \
-  -d '{"text": "Bar30 survives 500m depth", "domain": "robotics", "context": {"include_summary": true}}'
+  -d '{"text": "Bar30 survives 500m depth", "domain": "substrate", "context": {"include_summary": true}}'
 # -> {..., "summary": "The Bar30's rated depth falls short of the 500m claimed, so this is contradicted."}
 ```
 
@@ -391,7 +391,7 @@ not skip them).
 anticassiopeia/
   core/        verdict types, DomainAdapter interface, VerificationEngine,
                compound.py (LLM claim decomposition + AND-rollup)
-  domains/     robotics, ml_data, fpga_embedded, research_web — all real
+  domains/     substrate, quant, silicon, searchlight — all real
   retrieval/   shared chunk/BM25/propose/verify/stance pipeline +
                document_ingest.py (.txt/.md/.csv/.rpt/.svd/.xml/.pdf/.docx)
   llm/         Nebius Token Factory client (live-verified, see docstring)
@@ -415,7 +415,7 @@ Commercial licensing available on request.
 code in this repository only — `anticassiopeia/`, `evals/`, `scripts/`,
 `stress_test/`'s own scripts, and the docs. It does NOT cover third-party
 data files or vendor reports bundled or referenced alongside the code
-(e.g. the UCI datasets `ml_data` claims are checked against, fetched
+(e.g. the UCI datasets `quant` claims are checked against, fetched
 manufacturer datasheet excerpts, sample EDA/synthesis reports) — those
 keep whatever license their original source states, which varies by
 source and in some cases isn't stated by the source at all. See

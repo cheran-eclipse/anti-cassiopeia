@@ -8,29 +8,29 @@ visible and arguable rather than buried in code.
 
 The engine only needs `list[Evidence]` back. What produces that list is
 genuinely different per domain, and pretending otherwise is how a
-"domain-agnostic" engine quietly becomes a robotics-shaped engine with
+"domain-agnostic" engine quietly becomes a substrate-shaped engine with
 three unused stubs attached.
 
 | Domain | Retrieval shape | Primary source type |
 |---|---|---|
-| `robotics` | lookup against a structured parts/datasheet index | per-part spec sheets, keyed by manufacturer+model |
-| `fpga_embedded` | parse tool-generated reports | synthesis/timing/simulation output files, register maps |
-| `research_web` | live fetch + extraction | web search + paper indices (must be a real fetch, not recall) |
-| `ml_data` | re-execution | run the actual metric/stat test against the actual dataset |
+| `substrate` | lookup against a structured parts/datasheet index | per-part spec sheets, keyed by manufacturer+model |
+| `silicon` | parse tool-generated reports | synthesis/timing/simulation output files, register maps |
+| `searchlight` | live fetch + extraction | web search + paper indices (must be a real fetch, not recall) |
+| `quant` | re-execution | run the actual metric/stat test against the actual dataset |
 
-Only `robotics` and `research_web` plausibly share retrieval machinery
-(both are "look it up against an external source" problems). `fpga_embedded`
-and `ml_data` are both "parse/execute local artifacts" problems. Don't
+Only `substrate` and `searchlight` plausibly share retrieval machinery
+(both are "look it up against an external source" problems). `silicon`
+and `quant` are both "parse/execute local artifacts" problems. Don't
 force a single retrieval abstraction across all four prematurely — let two
 real implementations (one of each shape) exist before extracting a shared
 helper, not before.
 
 **Decision needed, not yet made:** which domain gets wired first decides
-which retrieval shape gets built first. Robotics has a head start — real,
+which retrieval shape gets built first. Substrate has a head start — real,
 already-verified parts/datasheet facts exist from Constellation's research
 (BlueROV2 / Bar30 / Bar100XT / QuSpin QZFM Gen-3). See the extraction
 prompt in the repo root conversation — those facts, with their datasheet
-provenance intact, are the natural seed for `robotics`' evidence source.
+provenance intact, are the natural seed for `substrate`' evidence source.
 
 ## 2. Claim decomposition — option (b) now built as a library, NOT yet wired to HTTP
 
@@ -58,8 +58,8 @@ orchestrating both through the REAL, unmodified engine/adapters. The
 real failure surface this section worried about — "a bad decomposition
 silently changes what's actually being checked" — is addressed directly:
 decomposition is restricted to classifying each sub-claim into
-`robotics`/`research_web` only (the two domains that accept a bare
-free-text claim); a part needing `ml_data`/`fpga_embedded`'s structured
+`substrate`/`searchlight` only (the two domains that accept a bare
+free-text claim); a part needing `quant`/`silicon`'s structured
 file-path context is left an explicit, visible gap rather than having
 the LLM invent a plausible-looking path or number. See
 `docs/ARCHITECTURE.md`'s own "Item 20" section for exactly what's tested
@@ -87,16 +87,16 @@ hidden:
   decay a piece of evidence's trust by real age, with a floor
   (`MIN_DECAY_FACTOR`) calibrated so it can never flip an existing
   single-source verdict purely from age. Wired into exactly ONE domain so
-  far — `fpga_embedded.py`'s Vivado-report path, which is the only one
+  far — `silicon.py`'s Vivado-report path, which is the only one
   with a real, reliably-extractable date (the report's own
-  `| Date : ...` header line). NOT wired into `fpga_embedded.py`'s SVD
-  register path (no comparable real date field), nor into `ml_data.py`
+  `| Date : ...` header line). NOT wired into `silicon.py`'s SVD
+  register path (no comparable real date field), nor into `quant.py`
   (a re-computed statistic is always fresh at verify time, never stale),
-  `robotics.py`, or `research_web.py` (no real, trustworthy per-evidence
+  `substrate.py`, or `searchlight.py` (no real, trustworthy per-evidence
   date source identified yet for either) — stated as open for those,
   not faked with a formula fed a guessed date.
 
-None of this gets fixed speculatively. It gets revisited once `robotics`
+None of this gets fixed speculatively. It gets revisited once `substrate`
 (or whichever domain goes first) is producing real `Evidence` lists to
 test the scoring rule against actual cases, per `docs/ARCHITECTURE.md`'s
 own instruction not to claim more finished than is true.
@@ -118,22 +118,22 @@ Concretely, that means beyond the current `POST /verify`:
   adding early since it directly supports the "don't trust more than is
   earned" ethos at the API level, not just inside one verdict.
 
-## 5. Confirmed: `ml_data`/`fpga_embedded` stay outside `retrieval/` — read the actual code first, then decided
+## 5. Confirmed: `quant`/`silicon` stay outside `retrieval/` — read the actual code first, then decided
 
 Section 1 above already called this, before either adapter existed to check
-it against. Having now read both adapters' real code (`ml_data.py`'s
-`_read_column()`, `fpga_embedded.py`'s `_parse_report()`), the reasoning
+it against. Having now read both adapters' real code (`quant.py`'s
+`_read_column()`, `silicon.py`'s `_parse_report()`), the reasoning
 holds, and here's the concrete argument for why, not just a restatement:
 
 `retrieval/`'s whole job (`chunking.py` + `bm25.py` + `extract.py`) is
 finding the right PASSAGE in unstructured prose when you don't know in
 advance where in the document a fact is phrased — that's a real, hard
 problem, and BM25 + an LLM propose step earns its keep solving it (see
-`robotics.py`'s and `research_web.py`'s actual live-verified use of it).
+`substrate.py`'s and `searchlight.py`'s actual live-verified use of it).
 
-Neither `ml_data.py` nor `fpga_embedded.py` has that problem:
+Neither `quant.py` nor `silicon.py` has that problem:
 
-- `ml_data.py`'s "answer" isn't a sentence hiding somewhere in a CSV — it's
+- `quant.py`'s "answer" isn't a sentence hiding somewhere in a CSV — it's
   a statistic computed over EVERY row of a named column
   (`statistics.mean(values)` in `_read_column()`'s caller). There is no
   "right chunk" to retrieve: chunking the CSV into 800-char text blocks
@@ -144,7 +144,7 @@ Neither `ml_data.py` nor `fpga_embedded.py` has that problem:
   exact, free, and instant. Routing this through retrieval/ wouldn't make
   it more real, it would make it less real: swapping an exact computation
   for an LLM's approximation of one.
-- `fpga_embedded.py`'s "answer" is looked up by an EXACT key
+- `silicon.py`'s "answer" is looked up by an EXACT key
   (`report[metric]` after `_parse_report()`'s regex match on `key: value`
   lines) — the report's own structure already says exactly where the
   value lives; there's no ambiguity to search over. A real EDA tool
@@ -208,7 +208,7 @@ how it genuinely differs, not just "we also check facts."
   number — SAFE scores agreement with human annotators on open-ended
   generated text against live web search, not fixed source documents, so
   the two numbers answer different questions. SAFE's atomic-fact-then-
-  search-agent loop is architecturally close to `research_web.py`'s mode
+  search-agent loop is architecturally close to `searchlight.py`'s mode
   2 (multi-candidate live search, each candidate independently checked);
   the difference is this project keeps each claim resolving to one of
   three states with a locator, never a blended score across many facts.

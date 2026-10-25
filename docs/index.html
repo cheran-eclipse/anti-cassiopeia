@@ -260,10 +260,10 @@
     border: 1px solid var(--border);
     color: var(--text-muted);
   }
-  .tag.domain-robotics { color: var(--cyan); border-color: rgba(34,211,238,0.3); }
-  .tag.domain-ml_data { color: var(--lime-dim); border-color: rgba(195,245,58,0.3); }
-  .tag.domain-fpga_embedded { color: var(--amber-soft); border-color: rgba(232,184,74,0.3); }
-  .tag.domain-research_web { color: #c9a8f5; border-color: rgba(201,168,245,0.3); }
+  .tag.domain-substrate { color: var(--cyan); border-color: rgba(34,211,238,0.3); }
+  .tag.domain-quant { color: var(--lime-dim); border-color: rgba(195,245,58,0.3); }
+  .tag.domain-silicon { color: var(--amber-soft); border-color: rgba(232,184,74,0.3); }
+  .tag.domain-searchlight { color: #c9a8f5; border-color: rgba(201,168,245,0.3); }
 
   .stat-row {
     display: grid;
@@ -770,7 +770,7 @@
           <select id="domainSelect"><option value="">Loading domains…</option></select>
         </div>
         <div class="field" style="margin-bottom:0;">
-          <label for="docSelect">Document (optional — v3: works for robotics/ml_data/fpga_embedded; pooled search is robotics only)</label>
+          <label for="docSelect">Document (optional — v3: works for substrate/quant/silicon; pooled search is substrate only)</label>
           <select id="docSelect"><option value="">None — use fixed demo corpus / free text</option></select>
         </div>
       </div>
@@ -819,16 +819,16 @@
   var STORAGE_BASE_NAME = "ac_api_base";
 
   var PRESETS = [
-    { label: "Bar30 survives 500m depth", text: "The Bar30 pressure sensor survives at 500m depth.", domain: "robotics" },
-    { label: "BlueROV2 Heavy housing", text: "The BlueROV2 Heavy shares the same housing options as the base BlueROV2.", domain: "robotics" },
-    { label: "Rust origin", text: "Rust is a systems programming language originally developed at Mozilla.", domain: "research_web" },
-    { label: "Z-Wave frequency", text: "The Z-Wave protocol operates in the 2.4GHz ISM band.", domain: "research_web" },
-    { label: "Dataset mean, no context", text: "The dataset's average column value is 5.0.", domain: "ml_data" },
-    { label: "clk_main meets 100 MHz", text: "design's clk_main meets 100 MHz timing", domain: "fpga_embedded",
+    { label: "Bar30 survives 500m depth", text: "The Bar30 pressure sensor survives at 500m depth.", domain: "substrate" },
+    { label: "BlueROV2 Heavy housing", text: "The BlueROV2 Heavy shares the same housing options as the base BlueROV2.", domain: "substrate" },
+    { label: "Rust origin", text: "Rust is a systems programming language originally developed at Mozilla.", domain: "searchlight" },
+    { label: "Z-Wave frequency", text: "The Z-Wave protocol operates in the 2.4GHz ISM band.", domain: "searchlight" },
+    { label: "Dataset mean, no context", text: "The dataset's average column value is 5.0.", domain: "quant" },
+    { label: "clk_main meets 100 MHz", text: "design's clk_main meets 100 MHz timing", domain: "silicon",
       context: { report_path: "evals/fixtures/vivado_timing_report_single_corner.rpt", metric: "frequency_mhz", clock: "clk_main", comparator: ">=", expected_value: 100 } }
   ];
 
-  var EXT_DOMAIN_HINT = { ".csv": "ml_data", ".svd": "fpga_embedded", ".rpt": "fpga_embedded (likely)", ".xml": "fpga_embedded (if SVD)" };
+  var EXT_DOMAIN_HINT = { ".csv": "quant", ".svd": "silicon", ".rpt": "silicon (likely)", ".xml": "silicon (if SVD)" };
 
   var statusDot = document.getElementById("statusDot");
   var statusText = document.getElementById("statusText");
@@ -861,7 +861,7 @@
   // v3 pooled search: a sentinel docSelect value distinct from any real
   // document_id (which are secrets.token_urlsafe(32), never this short) --
   // means "search across ALL of this caller's uploaded documents" instead
-  // of one pre-selected document_id (robotics-only; see server.py's
+  // of one pre-selected document_id (substrate-only; see server.py's
   // context.document_pool).
   var POOL_SENTINEL = "__search_all__";
 
@@ -1084,12 +1084,12 @@
     docSelect.appendChild(noneOpt);
 
     // v3: a 3rd choice alongside "none" / "one specific document" --
-    // robotics-only server-side, but offered regardless of domain here
+    // substrate-only server-side, but offered regardless of domain here
     // (same as the single-document option above it); the backend gives a
     // clear named 400 if the selected domain doesn't support it.
     var poolOpt = document.createElement("option");
     poolOpt.value = POOL_SENTINEL;
-    poolOpt.textContent = "🔍 Search all uploaded documents (robotics only)";
+    poolOpt.textContent = "🔍 Search all uploaded documents (substrate only)";
     docSelect.appendChild(poolOpt);
 
     if (uploadedDocs.length === 0) {
@@ -1454,7 +1454,7 @@
       docSel.appendChild(noneOpt);
       var poolOpt = document.createElement("option");
       poolOpt.value = POOL_SENTINEL;
-      poolOpt.textContent = "🔍 Search all uploaded documents (robotics only)";
+      poolOpt.textContent = "🔍 Search all uploaded documents (substrate only)";
       if (row.documentId === POOL_SENTINEL) poolOpt.selected = true;
       docSel.appendChild(poolOpt);
       uploadedDocs.forEach(function (doc) {

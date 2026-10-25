@@ -56,18 +56,18 @@ propose()->verify_proposal() pipeline without a network call or a live
 key. A `NebiusClientError` or network failure from the live client is
 caught per-document and surfaced as a named gap via `describe_gap()` —
 never a crash, and never silently treated as "no evidence" without
-saying why — same pattern as domains/research_web.py's fetch-failure
+saying why — same pattern as domains/searchlight.py's fetch-failure
 handling.
 
 Corpus: anticassiopeia/corpus/doc{1,2,3}_*.txt — partial excerpts
 containing only the lines Constellation's own research directly quoted
-and sourced (see docs/extracted/constellation-substrate-seed.md for full
+and sourced (see docs/extracted/constellation-robotics-seed.md for full
 provenance). The Bar30 excerpt deliberately omits Constellation's
 canary-altered overpressure line entirely, not just avoids citing it.
 
 Bar100XT: now sourced (this session) from Blue Robotics' real, live BarXT
 product page — see doc4_bar100xt_excerpt.txt and
-docs/extracted/constellation-substrate-seed.md §3 for the fetch. QuSpin
+docs/extracted/constellation-robotics-seed.md §3 for the fetch. QuSpin
 QZFM Gen-3 still has no numeric rating to source: QuSpin's own official
 product page (fetched live this session, see §4) states no pressure/
 depth/submersion rating anywhere at all, confirmed by reading the whole
@@ -101,7 +101,7 @@ parser above are not consulted at all, even if depth_m/polarity are also
 present. An uploaded document can be about anything, not just a rated
 depth — see `_gather_byoe()` for the general free-text retrieve->propose->
 verify->judge_stance pipeline this runs instead (the same shape
-research_web.py's multi-candidate mode uses, minus the "search the live
+searchlight.py's multi-candidate mode uses, minus the "search the live
 web" step, since the caller already named the one document to check).
 When document_text is absent, behavior is byte-for-byte the pre-v2 fixed-
 corpus path below — no regression for existing callers.
@@ -134,7 +134,7 @@ from anticassiopeia.retrieval import BM25Index, HybridIndex, Proposal, ScoredChu
 from anticassiopeia.retrieval.extract import propose
 
 _CORPUS_DIR = Path(__file__).parent.parent / "corpus"
-_SEED_DOC = "docs/extracted/constellation-substrate-seed.md"
+_SEED_DOC = "docs/extracted/constellation-robotics-seed.md"
 
 # FOUND BUG (external review, verified against the real code): these were
 # `self._last_propose_errors`/`self._last_partial_gaps` instance attributes
@@ -175,7 +175,7 @@ _CONVERSION_MARGIN = 0.05
 #: is one unstructured document rather than a hand-curated excerpt, so the
 #: fact might be phrased further from the claim's own wording.
 _BYOE_TOP_K = 5
-#: Trust for BYOE evidence: same tier as research_web.py's live-fetched-page
+#: Trust for BYOE evidence: same tier as searchlight.py's live-fetched-page
 #: evidence (0.75) -- a caller-supplied document is "a real source, mechanically
 #: verified", the same epistemic status as a live-fetched web page, not the
 #: higher 0.8/0.85 given to this project's own hand-curated, provenance-checked
@@ -307,7 +307,7 @@ async def _propose_with_retry(
 # correctly, just about whichever material it picked that time): that
 # ambiguity, not absence, was the DOMINANT cause of the dangerous
 # conflict-zone verdicts the stress test found. DOC1 is documented
-# (docs/extracted/constellation-substrate-seed.md §1.1: "best-case figure...
+# (docs/extracted/constellation-robotics-seed.md §1.1: "best-case figure...
 # aluminum tube, 300 m, DOC1 only") as this project's own source for the
 # ALUMINUM rating specifically — the query now says so, dropping "acrylic"
 # entirely, and was re-verified 20/20 live after the fix (see
@@ -524,11 +524,11 @@ class SubstrateAdapter(DomainAdapter):
         return evidence
 
     # v2 "bring your own evidence": a one-off BM25 index over the uploaded
-    # document's text, same shape as research_web.py's _gather_multi_candidate
+    # document's text, same shape as searchlight.py's _gather_multi_candidate
     # (chunk -> BM25 search -> propose -> verify -> judge_stance) but with the
     # "search the live web for candidate pages" step removed entirely -- there
     # IS no candidate selection here, the caller already told us exactly which
-    # document to check against by uploading it. Unlike research_web's
+    # document to check against by uploading it. Unlike searchlight's
     # multi-source loop, there is only ever ONE source for this call, so this
     # makes exactly one propose() call (retried on genuine absence, same
     # _propose_with_retry used by the fixed-corpus path above -- the "model
@@ -566,7 +566,7 @@ class SubstrateAdapter(DomainAdapter):
             _partial_gaps_var.set(partial_gaps)
             return []
 
-        # Phrased exactly like research_web.py's model_question (same reasoning:
+        # Phrased exactly like searchlight.py's model_question (same reasoning:
         # a real document doesn't restate the claim being checked, it states
         # facts -- asking for "the actual relevant fact, even if it conflicts"
         # surfaces a genuine contradiction instead of a false "not found").
@@ -607,8 +607,8 @@ class SubstrateAdapter(DomainAdapter):
         # then correctly, safely, but WRONGLY-for-this-case returns "unrelated"
         # for a claim that is actually true. Confirmed live (3/3) that naming
         # the real source filename resolves it. Scoped to ONLY this BYOE call
-        # site, not retrieval/stance.py itself or research_web.py's own call --
-        # that shared function's contract and research_web's already-live-
+        # site, not retrieval/stance.py itself or searchlight.py's own call --
+        # that shared function's contract and searchlight's already-live-
         # tested behavior are left unchanged; this is additional, real,
         # already-known context (the uploaded file's own name) specific to
         # what THIS call site already has in hand, not a prompt change.

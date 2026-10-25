@@ -65,7 +65,7 @@ EVIDENCE_HALF_LIFE_DAYS = 365.0 * 2
 #: Decay never pushes a piece of evidence's trust below this FRACTION of
 #: its original value — old real evidence is weaker, never worthless.
 #: Set specifically so it can NEVER flip an existing single-source verdict
-#: (the only shape fpga_embedded.py's Vivado path currently produces,
+#: (the only shape silicon.py's Vivado path currently produces,
 #: trust=0.9) from CONFIRMED/CONTRADICTED to UNDETERMINED purely from age:
 #: 0.9 * MIN_DECAY_FACTOR must stay >= DECISION_THRESHOLD=0.5, i.e. this
 #: floor must stay above 0.5/0.9 ≈ 0.556 — checked by
@@ -81,7 +81,7 @@ def _decayed_trust(evidence: Evidence, *, now: datetime | None = None) -> tuple[
     decay only ever fires on evidence a domain adapter has attached a REAL
     date to from the underlying document itself, never guessed or back-filled
     (see Evidence.timestamp's own docstring for which domains do this today:
-    only fpga_embedded.py's Vivado-report path, as of this round).
+    only silicon.py's Vivado-report path, as of this round).
     """
     if evidence.timestamp is None:
         return evidence.trust, None
@@ -123,7 +123,7 @@ def _redundancy_collapsed_weight(evidence: list[Evidence], stance: str, effectiv
     weight, but two genuinely different sources still corroborate
     normally. Basic, not a full implementation: it only collapses exact
     `source` string matches, not near-duplicate content from differently-
-    named sources (research_web.py's own Jaccard-similarity filter still
+    named sources (searchlight.py's own Jaccard-similarity filter still
     handles that narrower case on top of this one).
 
     Uses each piece's time-decayed trust (`effective_trust`, computed once
@@ -165,7 +165,7 @@ class VerificationEngine:
         # checking all of them -- `report_path: 123` (an int, not a str)
         # crashes `Path(123)` with a TypeError; `metric: []` crashes
         # `ctx["metric"].lower()` with an AttributeError; `url: 123`
-        # crashes research_web.py's urlparse() the same way. Each of
+        # crashes searchlight.py's urlparse() the same way. Each of
         # these escaped as an unhandled 500, not a clean 4xx/UNDETERMINED
         # -- centralized here, the ONE place every claim already flows
         # through regardless of domain, rather than hand-auditing every

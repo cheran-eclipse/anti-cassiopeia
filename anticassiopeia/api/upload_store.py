@@ -4,9 +4,9 @@ In-memory store for uploaded documents, keyed by an opaque document_id.
 Deliberately NOT a raw filesystem path a caller ever sees or supplies —
 the whole point of routing uploads through `POST /upload` first (see the
 v2 master build prompt, `claude/ANTI_CASSIOPEIA_V2_MASTER_BUILD_PROMPT.md`
-in the project docs) is that `robotics.py`'s `document_id` context field
-never has to trust a caller-supplied path the way `ml_data.py`'s
-`dataset_path`/`fpga_embedded.py`'s `report_path` historically had to be
+in the project docs) is that `substrate.py`'s `document_id` context field
+never has to trust a caller-supplied path the way `quant.py`'s
+`dataset_path`/`silicon.py`'s `report_path` historically had to be
 hardened against (see `_path_safety.py`) — an opaque token that only
 resolves through this store's own dict has no traversal surface at all.
 
@@ -118,7 +118,7 @@ class UploadStore:
 
         Deliberately UNCHANGED by v3 §2.1's ownership addition: a direct
         document_id lookup never checks owner_key_hash -- every existing
-        single-document flow (robotics BYOE document_id, /verify/project's
+        single-document flow (substrate BYOE document_id, /verify/project's
         per-claim document_id) keeps working exactly as before, regardless
         of who uploaded it. Ownership only gates the NEW list_for_owner()
         below, never this."""

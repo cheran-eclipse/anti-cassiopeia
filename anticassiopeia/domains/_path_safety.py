@@ -1,6 +1,6 @@
 """
 Shared path-containment check for domain adapters that read a caller-
-supplied file path (ml_data.py's `dataset_path`, fpga_embedded.py's
+supplied file path (quant.py's `dataset_path`, silicon.py's
 `report_path`).
 
 FOUND BUG (external security review, verified against the real code):

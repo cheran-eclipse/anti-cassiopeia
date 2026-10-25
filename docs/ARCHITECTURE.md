@@ -11,7 +11,7 @@ scoring rule in `VerificationEngine` decide the `Verdict` — `CONFIRMED`,
 Claim ──▶ VerificationEngine.verify()
               │
               ▼
-        DomainAdapter.gather_evidence(claim)   (robotics | fpga_embedded | research_web | ml_data)
+        DomainAdapter.gather_evidence(claim)   (substrate | silicon | searchlight | quant)
               │
               ▼
         list[Evidence]  (source, snippet, stance, trust, locator)
@@ -24,7 +24,7 @@ Claim ──▶ VerificationEngine.verify()
 
 Four domains, one contract. Each domain's adapter is the only place that
 knows what "evidence" even means for that domain — a datasheet locator for
-robotics, a timing report for FPGA/embedded, a fetched source for
+substrate, a timing report for FPGA/embedded, a fetched source for
 web/research, a re-run computation for ML/data. None of that
 domain-specific knowledge leaks into the engine. The engine only ever sees
 `Evidence` objects with a `stance` and a `trust` weight already assigned —
@@ -65,10 +65,10 @@ test, CSS class names) is deliberately untouched.
 | `core/verdict.py` | done |
 | `core/domain.py` | done |
 | `core/engine.py` | done — simple scoring, now redundancy-aware and confidence-capped |
-| `domains/robotics.py` | real, live-verified · 3/4 parts sourced, 4th confirmed-unratable · runs on Nemotron Ultra |
-| `domains/ml_data.py` | real, offline, tested · known gaps disclosed below |
-| `domains/fpga_embedded.py` | real, offline, tested · timing-summary + real SVD register-map |
-| `domains/research_web.py` | real, two modes · Tavily primary search, DDG+Wikipedia fallback |
+| `domains/substrate.py` | real, live-verified · 3/4 parts sourced, 4th confirmed-unratable · runs on Nemotron Ultra |
+| `domains/quant.py` | real, offline, tested · known gaps disclosed below |
+| `domains/silicon.py` | real, offline, tested · timing-summary + real SVD register-map |
+| `domains/searchlight.py` | real, two modes · Tavily primary search, DDG+Wikipedia fallback |
 | `llm/nebius_client.py` | live-verified Nebius Token Factory client |
 | `api/server.py` | done — auth + rate-limited |
 | `scripts/demo.py` | real end-to-end demo, 6 claims, all 4 domains |
@@ -100,7 +100,7 @@ distinct sources. (3) a source that returned an unusable (not
 `None`) answer used to vanish with no trace once another source alone
 was enough for a confident verdict — `DomainAdapter.describe_partial_gaps()`
 is now called unconditionally and appended to `Verdict.reasoning`
-regardless of final confidence (see `domains/robotics.py` for the first
+regardless of final confidence (see `domains/substrate.py` for the first
 real override).
 
 **Item 19, time-decay (external review) — PARTIALLY implemented, not
@@ -112,22 +112,22 @@ existing single-source verdict from CONFIRMED/CONTRADICTED to
 UNDETERMINED purely from age (every current adapter's single-source
 trust is 0.9; `0.9 * 0.7 = 0.63 >= DECISION_THRESHOLD = 0.5`) — checked
 directly by `tests/test_engine.py::test_min_decay_factor_can_never_flip_an_existing_single_source_verdict`,
-and separately by re-running all 385 `fpga_embedded` claims in the full
+and separately by re-running all 385 `silicon` claims in the full
 3,383-claim stress-test manifest against their recorded ground truth
 with decay now live: zero verdict flips. Wired into exactly ONE domain:
-`fpga_embedded.py`'s Vivado-report path, via a real, reliably-extractable
+`silicon.py`'s Vivado-report path, via a real, reliably-extractable
 `| Date : ...` header line present in all 9 real committed Vivado
 reports (absent from the two pre-existing synthetic fixtures, which
 correctly never decay; a third, newly-added synthetic fixture,
 `evals/fixtures/vivado_timing_report_dated_2016.rpt`, deliberately adds
 a date line specifically to exercise this mechanism in tests). NOT wired
 into: the SVD register path (CMSIS-SVD has no comparable real date
-field), `ml_data.py` (a re-computed statistic is always fresh at verify
-time — there is nothing to decay), or `robotics.py`/`research_web.py`
+field), `quant.py` (a re-computed statistic is always fresh at verify
+time — there is nothing to decay), or `substrate.py`/`searchlight.py`
 (no real, trustworthy per-evidence date source identified for either in
 this round) — left open and stated as such, not guessed at.
 
-### `domains/robotics.py` detail
+### `domains/substrate.py` detail
 
 **Real retrieve + propose + verify, end to end, LIVE ROUND TRIP
 CONFIRMED** — chunking, BM25, a real `extract.propose()` call against
@@ -137,7 +137,7 @@ stands in for the model's answer anymore. Verified two ways: offline
 against a scripted fake client (17 tests) that reproduces the real
 `propose()`→`verify_proposal()` code path without a network call, AND
 against the genuine live API — both `test_live_*` tests in
-`tests/test_domains_robotics.py` PASS for real (confirmed evidence
+`tests/test_domains_substrate.py` PASS for real (confirmed evidence
 accepted for a corpus fact; honest "not found" for a fact genuinely
 absent from the shown passages, not a hallucination).
 
@@ -240,7 +240,7 @@ saying a datasheet still needs pulling. No corpus file was added for
 QuSpin: there's no numeric fact for the retrieve→propose→verify pipeline
 to route. See `docs/extracted/constellation-robotics-seed.md` §4.
 
-### `domains/ml_data.py` detail
+### `domains/quant.py` detail
 
 **Real, offline, tested, grown** — re-computes the claimed statistic
 from actual CSV(s) via stdlib `csv`+`statistics` only (no new dependency:
@@ -282,7 +282,7 @@ wrong-CSV bug). Fixed: every path is resolved (defeats both `..`
 traversal AND symlink escapes — checked on the real resolved path, not
 the literal string) and must land inside `allowed_base_dirs` (default:
 `evals/fixtures/`, `stress_test/data/`; constructor-injectable, same DI
-pattern as `RoboticsAdapter(client=...)`). **Follow-up review fixes:**
+pattern as `SubstrateAdapter(client=...)`). **Follow-up review fixes:**
 (1) a null byte in a path made `Path.resolve()` raise `ValueError`, not
 `OSError` — only the latter was caught, so this 500'd instead of a clean
 rejection; both are now caught in `_path_safety.py`. (2) a `dataset_path`
@@ -298,7 +298,7 @@ convention, stated explicitly.** `p25`/`p75` use
 `statistics.quantiles(..., method="exclusive")` (the default), which
 genuinely disagrees with numpy/pandas/Excel's own default (a
 linear-interpolation method) — a real product-trust risk affecting 300
-of 2,504 `ml_data` manifest claims, never stated anywhere a user would
+of 2,504 `quant` manifest claims, never stated anywhere a user would
 see it before. Now documented in this module's own docstring and in the
 manifest's own p25/p75 claim text. **Also found (same review): a
 display-precision bug in `stress_test/claims/generate_manifest.py`** —
@@ -306,7 +306,7 @@ claim text rounded `expected_value` to a fixed 6 significant figures
 while the structured value kept full precision; for 41 of 2,185
 single-stat claims (30 labeled "confirmed") with very tight tolerances —
 not 2,504, a wording error caught on a second manual review (2026-10-21):
-the other ~320 ml_data claims (compound multi-check claims, two-shard
+the other ~320 quant claims (compound multi-check claims, two-shard
 combined-mean claims) use different text-generation code paths this
 specific bug never touched — the rounding error exceeded the tolerance,
 so the human-readable claim literally stated a different number than
@@ -325,7 +325,7 @@ reading. Fixed in both (kept independent on purpose — the oracle
 duplicates the lookup table rather than importing it, since sharing code
 with the thing it's checking would defeat the point of an independent
 oracle) via a per-FILENAME sentinel lookup populated only from a real,
-cited source (`_DATASET_SENTINELS` in `ml_data.py`) — deliberately NOT a
+cited source (`_DATASET_SENTINELS` in `quant.py`) — deliberately NOT a
 blanket "-200 is always missing" rule, confirmed by its own test
 (`test_minus_200_in_a_differently_named_file_is_not_treated_as_a_sentinel`):
 a `-200` in a file never documented to use that convention is still
@@ -341,7 +341,7 @@ show new mismatches on those specific claims that are the GROUND TRUTH
 being stale, not this adapter being wrong; see `stress_test/BUGS_FOUND.md`
 for the original finding this fixes.
 
-### `domains/fpga_embedded.py` detail
+### `domains/silicon.py` detail
 
 **Real, offline, tested, now against a REAL EDA tool format** — parses
 Xilinx/AMD Vivado's actual `report_timing_summary` output (Design Timing
@@ -369,7 +369,7 @@ picked over a Xilinx/Vivado-specific export because no real Xilinx
 register-map sample was ever actually found/fetched (checked this
 session: searched for Xilinx IP-XACT `component.xml` examples, found
 only tooling docs and MathWorks material, nothing real and fetchable —
-see `fpga_embedded.py`'s module docstring), and SVD is the honestly
+see `silicon.py`'s module docstring), and SVD is the honestly
 generic choice for a domain meant to cover arbitrary submissions, not
 one vendor's toolchain. **Verified against two independently-sourced
 real files, not invented:** ARM's own CMSIS_5 `ARMCM4.svd` example
@@ -394,11 +394,11 @@ could honestly claim to know). Routed through entirely separate
 Vivado timing logic (register claims have no "corner" concept at all);
 the SAME path-containment check (`is_path_within_allowed_dirs`) guards
 both. 15 new offline tests, all passing; see
-`evals/cases/fpga_embedded/svd_register_offset_confirmed.json` for a
+`evals/cases/silicon/svd_register_offset_confirmed.json` for a
 real end-to-end case.
 
 **Second manual review (2026-10-21): the same `:.6g` display-precision
-bug fixed in `ml_data.py`'s section above was never actually fixed here.**
+bug fixed in `quant.py`'s section above was never actually fixed here.**
 `stress_test/claims/generate_manifest.py`'s `_fpga_single()` displayed
 `expected_value` at a flat 6 significant figures, so its two
 boundary-adversarial claims per metric per file (`== real+1e-6`,
@@ -412,12 +412,12 @@ harmless cosmetic sci-notation change).
 
 **Security fix (external review, 2026-10-19, two review passes): path
 traversal / arbitrary file read.** Same vulnerability and same fix as
-`ml_data.py`'s `dataset_path` above, including the follow-up null-byte
+`quant.py`'s `dataset_path` above, including the follow-up null-byte
 and absolute-path-leak fixes — `report_path` now requires the resolved
 real path to land inside `allowed_base_dirs`, defeating `..` traversal
 and symlink escapes, with its own dedicated tests.
 
-### `domains/research_web.py` detail
+### `domains/searchlight.py` detail
 
 **TWO modes, both real.** Mode 1 (unchanged): a pre-selected URL, fetched
 live, verbatim quote check. Evals/demo use a local fixture server
@@ -432,11 +432,11 @@ best-effort) finds candidate pages, which are fetched, chunked
 grouped by source page so up to 3 distinct real sources are each
 independently checked — not just the single best-ranked chunk), run
 through the same live `extract.propose()` (`openai/gpt-oss-120b`)
-robotics.py uses, and independently `verify_proposal()`-checked. A real
+substrate.py uses, and independently `verify_proposal()`-checked. A real
 CONFIRMED, a real CONTRADICTED, and two differently-shaped real
 UNDETERMINED outcomes (no candidates found at all vs. candidates found
 but the fact genuinely absent) were each confirmed live, repeatedly, not
-assumed — see `evals/cases/research_web/live_multi_candidate_*.json`.
+assumed — see `evals/cases/searchlight/live_multi_candidate_*.json`.
 The stance (supports/contradicts) for mode 2 is a bounded LLM judgment on
 an ALREADY-mechanically-verified quote, not a new source of fabrication
 risk — two purely mechanical approaches (strict substring, token-overlap
@@ -524,7 +524,7 @@ UNDETERMINED (no candidates at all — DDG blocked, no Wikipedia runtime
 figure) and now resolves CONTRADICTED, because Tavily surfaces a real
 Blue Robotics distributor page (sepcotech.com) stating a real run-time
 figure (~2-4 hours) that genuinely contradicts the claim — see
-`evals/cases/research_web/live_multi_candidate_contradicted_via_tavily_distributor_page.json`.
+`evals/cases/searchlight/live_multi_candidate_contradicted_via_tavily_distributor_page.json`.
 A second case moved from "zero candidates" to "candidates found, fact
 absent" for the same reason (Tavily simply finds more than DDG+Wikipedia
 did) — both eval cases' notes were rewritten honestly rather than left
@@ -557,15 +557,15 @@ loaded the key; (2) the first fix used `load_dotenv()`'s default
 after `.env` was edited with a freshly rotated key — switched to
 `override=True`; (3) `retrieval/extract.py`'s prompt named
 `"kind": "rated" or "tested" or null` with no explanation of what those
-values mean — see `domains/robotics.py`'s section for what that caused
-and how it was found. Now used for real by `domains/robotics.py`.
+values mean — see `domains/substrate.py`'s section for what that caused
+and how it was found. Now used for real by `domains/substrate.py`.
 
 **Nemotron swap DONE** (Apps and Agents track requirement — at least one
 NVIDIA open model called in the real request path, not just mentioned):
-`domains/robotics.py` now explicitly requests `nvidia/Nemotron-3-Ultra-550b-a55b`
-(`ROBOTICS_MODEL`, overriding `NEBIUS_MODEL`/.env) for every live
+`domains/substrate.py` now explicitly requests `nvidia/Nemotron-3-Ultra-550b-a55b`
+(`SUBSTRATE_MODEL`, overriding `NEBIUS_MODEL`/.env) for every live
 `propose()` call — a real, live model in the request path, not a comment.
-`research_web.py` is unchanged, still `openai/gpt-oss-120b`. This wasn't a
+`searchlight.py` is unchanged, still `openai/gpt-oss-120b`. This wasn't a
 blanket swap: it's the outcome of an honest before/after comparison
 across all three Nemotron tiers (Ultra/Super/Nano) plus a one-pilot look
 at a fourth (3.5 Lightning), on both domains, at two sample sizes, that
@@ -573,7 +573,7 @@ found and fixed three real pipeline bugs along the way (no `max_tokens`
 cap, no quote-length guidance, no entity-matching check in the stance
 prompt) before trusting the comparison that produced them. Full
 methodology, every pilot's real numbers, the bugs found, and why
-`research_web` deliberately stayed on the current default:
+`searchlight` deliberately stayed on the current default:
 [`stress_test/results/NEMOTRON_PIVOT_REPORT.md`](../stress_test/results/NEMOTRON_PIVOT_REPORT.md) —
 summarized in the README's own "How the model choice was made" section.
 
@@ -630,7 +630,7 @@ paragraph for where this is stated to a reader first.
 no mocked output. `Dockerfile`: **build-tested for real, just now, with
 the current code** — `docker build --no-cache` succeeds, the resulting
 container's `/health`, `/domains`, and a real `POST /verify` round trip
-(ml_data, a genuine `confirmed` verdict with real evidence) all verified
+(quant, a genuine `confirmed` verdict with real evidence) all verified
 against a running container, right before this line was written, not
 inherited from an earlier session's claim.
 
@@ -638,8 +638,8 @@ inherited from an earlier session's claim.
 the in-build `evals/run_evals.py` step had NO way to pass
 `NEBIUS_API_KEY`/`TAVILY_API_KEY` into the build (`.env` is deliberately
 not copied into the image — secrets don't belong baked into a layer),
-so every robotics case (always needs a live LLM call, no offline path
-exists) and every research_web mode-2 case (`live_multi_candidate_*`)
+so every substrate case (always needs a live LLM call, no offline path
+exists) and every searchlight mode-2 case (`live_multi_candidate_*`)
 was silently resolving to the wrong verdict and FAILING the build, not
 skipping it — 9 failures, confirmed by actually running it. This
 pre-dated this session's Nemotron/Tavily work; it just took that work
@@ -656,17 +656,17 @@ local commands already verified to work (`pip install -e .` +
 `python evals/run_evals.py`) — CI run itself not observed. `evals/`: 31
 cases across all 4 domains, all passing with a real key present
 (`PYTHONPATH=. python evals/run_evals.py`), live LLM/network calls
-included — robotics' live round trip confirmed stable after the
-`retrieval/extract.py` prompt fix; ml_data (+3: multi-file, compound
-confirmed, compound one-part-false contradicted) and fpga_embedded (+4:
+included — substrate' live round trip confirmed stable after the
+`retrieval/extract.py` prompt fix; quant (+3: multi-file, compound
+confirmed, compound one-part-false contradicted) and silicon (+4:
 real-format confirmed/contradicted, two real multi-corner cases, one
 register-map honest gap) grew an earlier pass, both fully offline and
-deterministic; a later session added +1 robotics (Bar100XT confirmed +
+deterministic; a later session added +1 substrate (Bar100XT confirmed +
 contradicted, replacing the old undetermined case — net +1 since one
-case was repurposed), +1 fpga_embedded (a real SVD register-map
+case was repurposed), +1 silicon (a real SVD register-map
 confirmed case, alongside the pre-existing honest-gap case), +1
-research_web net (one case moved
-shape, one new contradicted-via-Tavily case added), and +1 robotics
+searchlight net (one case moved
+shape, one new contradicted-via-Tavily case added), and +1 substrate
 (QuSpin QZFM Gen-3's confirmed-no-rating finding, previously described
 only in `docs/extracted/constellation-robotics-seed.md` §4 and not
 locked in by a test) — see each adapter's own detail section above for
@@ -676,8 +676,8 @@ what changed and why.
 
 **Built, real, tested:** `anticassiopeia/core/compound.py` —
 `decompose_claim()` (one LLM call splitting "A and B" into independent
-parts, each classified `robotics`/`research_web`/`unsupported`;
-`unsupported` covers anything needing `ml_data`/`fpga_embedded`'s real
+parts, each classified `substrate`/`searchlight`/`unsupported`;
+`unsupported` covers anything needing `quant`/`silicon`'s real
 file-path context, which decomposition explicitly refuses to fabricate),
 `rollup()` (pure AND-semantics: all-`CONFIRMED` parts → `CONFIRMED` at
 the MINIMUM confidence among them — the AND is only as sure as its
@@ -691,7 +691,7 @@ code-fenced, malformed, missing/empty fields), `rollup()`'s math against
 every state combination including the empty/all-unsupported edge cases,
 and `verify_compound()` end-to-end against a fake LLM client + a real
 `VerificationEngine` — confirms-all, contradicts-on-one-part, the
-`ml_data`-sub-claim-never-fabricated case, a non-compound single-part
+`quant`-sub-claim-never-fabricated case, a non-compound single-part
 claim, and a dead decomposition call resolving `UNDETERMINED` rather
 than crashing.
 
@@ -710,14 +710,14 @@ that), and its own endpoint-level tests — was left for a later round
 rather than wired in half-finished. `docs/DESIGN.md` §2 has the original
 design reasoning this followed.
 
-## v2: "bring your own evidence" — upload, robotics BYOE, project verify, frontend
+## v2: "bring your own evidence" — upload, substrate BYOE, project verify, frontend
 
 Built in three phases (2026-10-25), each committed and CI-green before
 the next started; full detail, including every test file and both
 deliberate live-call confirmations, is in each phase's own commit
 message (`git log --grep "v2 Phase"`).
 
-**Phase 1 — `POST /upload` + `robotics.py`'s free-text BYOE path.**
+**Phase 1 — `POST /upload` + `substrate.py`'s free-text BYOE path.**
 `anticassiopeia/retrieval/document_ingest.py` (`extract_text()`,
 format-dispatched: `.txt/.md/.csv/.rpt/.svd/.xml` as UTF-8, `.pdf` via
 `pypdf`, `.docx` via `python-docx`; a `DocumentIngestError` — never a
@@ -733,16 +733,16 @@ versions actually installed and tested (`python-docx`/`python-multipart`
 were missing from the environment entirely; the multipart one meant
 `/upload`'s own form-parsing would have failed at runtime).
 `anticassiopeia/retrieval/stance.py` was extracted out of
-`research_web.py` (pure refactor, zero behavior change, proven by the
-existing research_web suite staying green) so `robotics.py`'s new BYOE
-path and `research_web.py`'s multi-candidate mode share one stance-
+`searchlight.py` (pure refactor, zero behavior change, proven by the
+existing searchlight suite staying green) so `substrate.py`'s new BYOE
+path and `searchlight.py`'s multi-candidate mode share one stance-
 judgment implementation instead of two that could drift.
-`robotics.py`'s `gather_evidence()`: when `Claim.context["document_text"]`
+`substrate.py`'s `gather_evidence()`: when `Claim.context["document_text"]`
 is present (resolved from a caller's `document_id` by `server.py`'s
-`/verify` handler — `robotics.py` itself never imports the upload store,
+`/verify` handler — `substrate.py` itself never imports the upload store,
 keeping the domain/api layering clean), it takes over ENTIRELY — real
 chunk → BM25 → propose → independently-reverify → judge-stance, the
-SAME shape `research_web.py`'s multi-candidate mode already uses, minus
+SAME shape `searchlight.py`'s multi-candidate mode already uses, minus
 the web-search step. Deliberately does NOT route through the depth-
 specific regex/bar-conversion parser even when `depth_m`/`polarity` are
 also present in context — an uploaded document can be about anything,
@@ -761,11 +761,11 @@ CONFIRMED; a false one → CONTRADICTED).
 tied to a prior upload's `document_id`, deterministically routed to the
 right domain (`server.py`'s `_sniff_domain_for_document()`: extension
 first, `.xml`/`.rpt` cross-checked against real content markers already
-defined in `fpga_embedded.py` — `_SVD_DEVICE_TAG_RE`,
+defined in `silicon.py` — `_SVD_DEVICE_TAG_RE`,
 `_DESIGN_TIMING_SUMMARY_HEADER_RE`, imported and reused, never
 reimplemented — so the one genuinely ambiguous extension isn't trusted
 blind; never an LLM guess about a format code can already determine).
-`ml_data.py`/`fpga_embedded.py` themselves are UNCHANGED — rather than
+`quant.py`/`silicon.py` themselves are UNCHANGED — rather than
 teach their already-hardened, heavily-tested file-reading/line-locator
 code a second, raw-text code path, `server.py` writes a resolved
 document's real extracted text to a real file under a new, fixed,
@@ -777,7 +777,7 @@ Scoped to one request via a per-call `tempfile.mkdtemp()` subdirectory,
 deleted in a `finally` block right after — proven empirically (not just
 assumed) by a dedicated test asserting the scratch directory is empty
 again after the call. The endpoint fabricates nothing: the caller still
-supplies every structured field `ml_data`/`fpga_embedded` actually need
+supplies every structured field `quant`/`silicon` actually need
 (column/stat/expected_value, or peripheral/metric/comparator/
 expected_value) — this only ever auto-fills which real file a
 `document_id` corresponds to. One claim's own failure (bad/expired
@@ -789,12 +789,12 @@ above for why `DECOMPOSABLE_DOMAINS` is deliberately NOT loosened just
 because this endpoint exists). Its own rate-limit bucket (stricter than
 `/verify`'s — a project call can fan out into several live LLM calls)
 and a hard cap of 20 claims/call. 18 new offline tests (real CSV/SVD/
-Vivado-report fixture content through real `ml_data.py`/`fpga_embedded.py`
+Vivado-report fixture content through real `quant.py`/`silicon.py`
 computation against real scratch files; sniffing correctness including
 caller override; per-claim-vs-batch error isolation; scratch cleanup)
 plus one deliberate live end-to-end confirmation through the real app
 and the real Nebius API: a real CSV mean recomputation + a real Nemotron
-Ultra robotics BYOE verification, rolled up to a real `CONFIRMED`.
+Ultra substrate BYOE verification, rolled up to a real `CONFIRMED`.
 
 **Phase 3 — frontend rebuild.** `docs/index.html`'s visual theme was
 fully rewritten (clean Inter sans-serif chrome, monospace reserved for
@@ -837,20 +837,20 @@ most expensive in live-LLM-call terms, and the one that benefited most
 from everything above being stable first), but nothing was actually
 dropped from this round's scope.
 
-**§1.1 — plain `/verify` no longer silently no-ops on `ml_data`/
-`fpga_embedded` uploads.** Before this fix, `_resolve_document_context()`
+**§1.1 — plain `/verify` no longer silently no-ops on `quant`/
+`silicon` uploads.** Before this fix, `_resolve_document_context()`
 only ever injected `document_text`/`document_filename` — fields neither
-`ml_data.py` nor `fpga_embedded.py` ever reads — so uploading a CSV and
-then calling plain `/verify` with `domain=ml_data` and that `document_id`
+`quant.py` nor `silicon.py` ever reads — so uploading a CSV and
+then calling plain `/verify` with `domain=quant` and that `document_id`
 silently ignored the upload (an honest `UNDETERMINED` gap, never a wrong
 confident answer, but a real usability gap: the document picker did
 nothing for 2 of the 4 domains). Fixed by generalizing the same real-
 scratch-file translation `/verify/project` already did: the function
-gained a `domain` parameter and now branches three ways (`robotics` →
-inject text directly; `ml_data`/`fpga_embedded` → write a real scratch
+gained a `domain` parameter and now branches three ways (`substrate` →
+inject text directly; `quant`/`silicon` → write a real scratch
 file under the SAME `_PROJECT_SCRATCH_DIR` `/verify/project` already
 uses, now shared rather than duplicated; anything else, most notably
-`research_web` → a clean named 400, not a silent no-op). Lifecycle is
+`searchlight` → a clean named 400, not a silent no-op). Lifecycle is
 different from the batch endpoint's per-request subdirectory: a single
 `/verify` call writes and deletes its own one file in a `finally` block
 right around `engine.verify()`. 6 new offline tests, including one
@@ -868,7 +868,7 @@ depth even though this never leaves process memory); `put()` takes it as
 a new required param; a new `list_for_owner()` returns one owner's own
 currently-valid uploads, most-recent first. `get()` by `document_id` is
 DELIBERATELY UNCHANGED in signature and behavior — every existing
-single-document flow (`robotics` BYOE, `/verify/project`'s per-claim
+single-document flow (`substrate` BYOE, `/verify/project`'s per-claim
 `document_id`) keeps working exactly as before, regardless of who
 uploaded the document a valid id happens to reference. Honest limitation
 stated in the module docstring: under the shared public demo key
@@ -894,16 +894,16 @@ trips the same budget `/verify` uses).
 
 **§2.3 — multi-document pooled search, the core new feature.** New
 `context.document_pool = true` (mutually exclusive with `document_id`;
-robotics-only — `ml_data`/`fpga_embedded` need one exact structured file
+substrate-only — `quant`/`silicon` need one exact structured file
 per claim, "which of several CSVs has this column" is a different,
-harder, out-of-scope feature; `research_web` has no document-consuming
+harder, out-of-scope feature; `searchlight` has no document-consuming
 mode at all). `server.py` resolves the pool via
 `upload_store.list_for_owner()`, caps it at `_MAX_POOL_DOCUMENTS` (10,
-most recent), and hands `robotics.py` the already-resolved `(filename,
+most recent), and hands `substrate.py` the already-resolved `(filename,
 text)` pairs plus the real total-available count via two context
-fields — `robotics.py` itself still never imports `UploadStore` (same
+fields — `substrate.py` itself still never imports `UploadStore` (same
 clean domain/api layering `document_text` already established).
-`robotics.py`'s new `_gather_byoe_pool()` builds ONE combined BM25 index
+`substrate.py`'s new `_gather_byoe_pool()` builds ONE combined BM25 index
 across every pooled document's chunks, namespaced by POOL INDEX
 (`doc0`, `doc1`, ...) rather than filename — two of a caller's uploads
 can share a filename (e.g. two different uploads both named
@@ -918,7 +918,7 @@ corpus grows, never the live-call count. When a caller has more uploads
 than fit under the cap, that truncation is named in the verdict's own
 `reasoning` UNCONDITIONALLY — even on an otherwise-confirmed claim — via
 the same `describe_partial_gaps()`/`reasoning` mechanism the rest of
-`robotics.py` already uses for "a source was expected but something
+`substrate.py` already uses for "a source was expected but something
 about it didn't pan out." 11 new offline adapter tests (including the
 filename-disambiguation case, the truncation-is-always-named case, and
 the same ODrive-heading entity-ambiguity fix from the v2 stress test,
@@ -939,11 +939,11 @@ level and claim-level are the same thing there, but a batch's own
 established principle ("one bad claim must not abort every other claim
 in the same batch," stated in `_run_one_project_claim`'s own docstring
 since v2) takes precedence for a multi-claim call. An omitted `domain`
-on a pool claim defaults directly to `"robotics"` (no document to sniff
-a domain FROM, and pooled search is robotics-only anyway, so that
+on a pool claim defaults directly to `"substrate"` (no document to sniff
+a domain FROM, and pooled search is substrate-only anyway, so that
 default is never wrong). 6 new tests, including the actual point of this
-section: one project call mixing a `document_id`-pinned `ml_data` claim
-with a `document_pool` robotics claim in the same batch, both resolving
+section: one project call mixing a `document_id`-pinned `quant` claim
+with a `document_pool` substrate claim in the same batch, both resolving
 correctly.
 
 **§1.3 — multi-instance deployment caveat (docs only, no code).** The
@@ -962,7 +962,7 @@ v2's original one (a falsely-expired `document_id`).
 
 **§2.5 — frontend: 3-way document choice.** Both the single-claim
 panel's document dropdown and each project-verify claim row's document
-dropdown gained a 3rd option, "🔍 Search all uploaded documents (robotics
+dropdown gained a 3rd option, "🔍 Search all uploaded documents (substrate
 only)", alongside the existing "none" / "one specific document" choices.
 Selecting it sends `context.document_pool = true` instead of
 `document_id` — a sentinel `<select>` value (`__search_all__`, distinct
@@ -1006,7 +1006,7 @@ every 20s, burst of 2) given the larger potential fan-out. Its own LLM
 client (`_compound_client`), constructed eagerly but safely at import
 time — `NebiusTokenFactoryClient()` only reads env vars, no network
 call, same "error surfaces per-call, not at construction time" pattern
-`robotics.py`'s own `__init__` already established, giving a clean `503`
+`substrate.py`'s own `__init__` already established, giving a clean `503`
 rather than an import-time crash when `NEBIUS_API_KEY` isn't set. 11 new
 offline tests, all against a fake decompose client and fixed-evidence
 fake domain adapters — no live Nebius call needed, including one that
@@ -1038,7 +1038,7 @@ text is `clouded`.
 project owner asked for a small generated insight/summary after a
 verify call. The real trade-off, surfaced and confirmed before writing
 any code: an always-on summary would add a brand-new, additional live
-LLM call to `ml_data`/`fpga_embedded`, which today make ZERO live calls
+LLM call to `quant`/`silicon`, which today make ZERO live calls
 — a real, new budget line this project's own $20-cap discipline has
 tracked carefully throughout. Confirmed scope: opt-in via a context
 flag, off by default everywhere, applying uniformly across all four
@@ -1058,7 +1058,7 @@ contradict the given state. 5 new offline tests (a fake summary client,
 monkeypatched in) covering: absent by default, present when opted in,
 a generation failure never failing the real verdict, an unavailable
 client producing a named error rather than a crash, and the specific
-point of the design — `ml_data` (otherwise LLM-free) successfully
+point of the design — `quant` (otherwise LLM-free) successfully
 getting a summary when asked.
 
 ## Causal-claim stance fix + judge_stance() model routing (found live, 2026-10-25)
@@ -1096,7 +1096,7 @@ a fake client).
 own §0 text noted that asking Nemotron Ultra directly (outside this
 pipeline) got the Wiesner/BB84 distinction right. A live paired test
 (same fixed prompt, same real claim/passage pair) found gpt-oss-120b
-(research_web's own default) returned "supports" — still wrong — while
+(searchlight's own default) returned "supports" — still wrong — while
 Nemotron Ultra returned "unrelated", correctly. Per this project's own
 `NEMOTRON_PIVOT_REPORT.md` standard (n=1 is not a conclusion), this was
 escalated before any code changed:
@@ -1116,23 +1116,23 @@ escalated before any code changed:
   The gap is specific to genuinely borderline causal/relational
   judgments, not a general difference between the models (both tied on
   every easier pair).
-- **Decision: `research_web.py`'s `judge_stance()` calls now route to a
+- **Decision: `searchlight.py`'s `judge_stance()` calls now route to a
   separate, dedicated client on `RECOMMENDED_STANCE_MODEL`
   (`nvidia/Nemotron-3-Ultra-550b-a55b`, defined in `retrieval/stance.py`
   itself) — `propose()`/the live-search step stay on gpt-oss-120b**
   (`NEMOTRON_PIVOT_REPORT.md` already found it strictly better there at
   full-pipeline scale; nothing in this round's evidence says otherwise).
-  `ResearchWebAdapter.__init__` gained a `stance_client` param,
+  `SearchlightAdapter.__init__` gained a `stance_client` param,
   defaulting to the SAME object as `client` when a caller explicitly
   injects one — every existing test's single fake client keeps working
   unchanged; only `default_domains()`'s real, no-arg construction
-  actually gets two different real clients. `robotics.py`'s own
-  `ROBOTICS_MODEL` already happens to equal `RECOMMENDED_STANCE_MODEL`
+  actually gets two different real clients. `substrate.py`'s own
+  `SUBSTRATE_MODEL` already happens to equal `RECOMMENDED_STANCE_MODEL`
   (for its own, broader, pre-existing reasons) — not imported from
   there, to avoid coupling two adapters' otherwise-independent model
-  choices to one shared constant for what is, for `robotics.py`, a
+  choices to one shared constant for what is, for `substrate.py`, a
   coincidence. 6 new offline tests in
-  `tests/test_research_web_stance_routing.py` (two different real
+  `tests/test_searchlight_stance_routing.py` (two different real
   clients when nothing is injected; a single injected fake still
   handles both prompt shapes; two injected fakes are routed correctly;
   a broken stance client is a named per-source gap that doesn't block
@@ -1177,9 +1177,9 @@ against THIS account's own `GET /v1/models`, not assumed from
 Constellation's choice (a separate project, separate account).
 
 **Two integration points, deliberately different shapes** (per the
-build spec's own §2): `robotics.py`'s BYOE/pooled paths build a
+build spec's own §2): `substrate.py`'s BYOE/pooled paths build a
 `HybridIndex` over the uploaded document(s)' chunks (closer to a direct
-`HybridRetriever` port); `research_web.py`'s multi-candidate path embeds
+`HybridRetriever` port); `searchlight.py`'s multi-candidate path embeds
 the query plus that claim's freshly-fetched passages, RRF-fuses against
 the BM25 ranking already happening over them, then discards — no
 persistent index, since there's no persistent corpus to index.
@@ -1228,7 +1228,7 @@ not a universal "hybrid beats BM25" claim, which this sample is too
 small to support.
 
 **Live re-test of round 1's own failing claims** (§4.3 of the build
-spec), against the real `ResearchWebAdapter` with hybrid retrieval now
+spec), against the real `SearchlightAdapter` with hybrid retrieval now
 live: **3 of 4 are now fixed.** The ARPANET "LOGIN" claim now correctly
 `CONFIRMED` (1.0 confidence, 2 real sources). The moon-landing
 conspiracy claim now correctly `CONTRADICTED` (0.90) on a REAL
