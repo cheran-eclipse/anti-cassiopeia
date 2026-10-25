@@ -179,6 +179,7 @@ from dataclasses import replace
 import httpx
 
 from anticassiopeia.core.domain import DomainAdapter
+from anticassiopeia.core.engine import DECISION_THRESHOLD
 from anticassiopeia.core.verdict import Claim, Evidence
 from anticassiopeia.llm.nebius_client import NebiusClientError, NebiusTokenFactoryClient
 from anticassiopeia.retrieval import Chunk, HybridIndex, ScoredChunk, chunk_document, verify_proposal
@@ -206,6 +207,22 @@ _MAX_RESPONSE_BYTES = 5 * 1024 * 1024
 #: (the point of this mode) without multiplying live-call cost much past the
 #: original single-source design.
 _MAX_SOURCES_TO_CHECK = 3
+
+#: ADAPTIVE-DEPTH ESCALATION (found necessary live: round 1 of the
+#: competitive-benchmark protocol had claims -- the Darwin/Wallace causal
+#: claim, the moon-landing conspiracy claim -- that needed more sources
+#: than _MAX_SOURCES_TO_CHECK to land on a confident, correct verdict,
+#: while easy claims (ARPANET, Dead Sea Scrolls) didn't need anywhere
+#: near that many). Escalation ONLY fires in reaction to the REAL,
+#: OBSERVED outcome of the normal first pass (see
+#: _first_pass_is_ambiguous below) -- never a guess about the claim made
+#: before searching. This project already rejected pre-filtering claim
+#: TYPES with a classifier once (see retrieval/stance.py's causal-claim
+#: fix and its own docstring, commit 22d5677) -- this does not repeat
+#: that mistake. Total sources checked across BOTH the normal pass and
+#: an escalation pass never exceeds this cap.
+_ESCALATED_MAX_SOURCES_TO_CHECK = _MAX_SOURCES_TO_CHECK * 2
+
 _BLOCK_PAGE_MARKERS = (
     "access denied",
     "request blocked",
@@ -734,17 +751,24 @@ class ResearchWebAdapter(DomainAdapter):
 
     # --- mode 2: live multi-candidate search ---
 
-    async def _gather_multi_candidate(self, claim: Claim) -> list[Evidence]:
-        _web_gap_var.set(None)
-        question = claim.context.get("quote") or claim.text
-
-        candidate_urls = await self._search(question, 5)
+    async def _fetch_rank_sources(
+        self, question: str, exclude_urls: set[str]
+    ) -> tuple[dict[str, list[ScoredChunk]], dict[str, Chunk], list[str]]:
+        """Search -> fetch -> chunk -> hybrid (BM25+vector) rerank for
+        `question`, skipping any URL already in `exclude_urls`. Shared by
+        BOTH the normal first pass and the ADAPTIVE-DEPTH escalation pass
+        (a second, differently-phrased search) below, so escalation never
+        re-checks a source the first pass already covered. Returns
+        (hits_by_source, chunks_by_id, notes) -- `notes` records the
+        specific reason nothing came back (empty search, every fetch
+        failed, or nothing matched), same three distinct shapes this
+        function's logic has always produced, just now reusable."""
+        candidate_urls = [u for u in await self._search(question, 5) if u not in exclude_urls]
         if not candidate_urls:
-            _web_gap_var.set((
+            return {}, {}, [(
                 f"No live candidate pages found via search for {question!r} "
                 "(both the DuckDuckGo and Wikipedia search backends returned nothing)."
-            ))
-            return []
+            )]
 
         all_chunks: list[Chunk] = []
         chunks_by_id: dict[str, Chunk] = {}
@@ -773,11 +797,10 @@ class ResearchWebAdapter(DomainAdapter):
             chunks_by_id.update({c.chunk_id: c for c in chunks})
 
         if not all_chunks:
-            _web_gap_var.set((
+            return {}, {}, [(
                 f"Found {len(candidate_urls)} live candidate URL(s) but could not fetch any of them: "
                 + "; ".join(fetch_notes)
-            ))
-            return []
+            )]
 
         # Hybrid (BM25 + vector) rerank, per the hybrid-retrieval build --
         # unlike robotics.py's BYOE/pooled paths, there's no persistent
@@ -795,44 +818,45 @@ class ResearchWebAdapter(DomainAdapter):
         result = await index.search(question, top_k=10, client=self._client)
         hits = result.scored
         if not hits:
-            _web_gap_var.set((
+            return {}, {}, [(
                 f"Fetched {len(chunks_by_id)} chunk(s) across {len(candidate_urls)} live candidate page(s), "
                 f"but none matched this claim's search terms at all (methods tried: {result.methods})."
-            ))
-            return []
-
-        if self._client is None:
-            _web_gap_var.set(f"Live candidates and matching passages were found, but the LLM propose step can't run: {self._client_error}")
-            return []
+            )]
 
         # Grouped by SOURCE PAGE (not one pooled top-hit) — checking only the single
         # best-ranked chunk across all candidates would mean "multi-candidate search"
         # only ever actually asks about one source, defeating the point of finding
         # out whether ANY real source confirms a claim. Order preserved from the
-        # pooled BM25 ranking (best-matching source first); capped at
-        # _MAX_SOURCES_TO_CHECK so a claim that matches many candidates doesn't
-        # trigger an unbounded number of live LLM calls.
+        # pooled BM25 ranking (best-matching source first).
         hits_by_source: dict[str, list[ScoredChunk]] = {}
         for hit in hits:
             hits_by_source.setdefault(hit.chunk.doc_id, []).append(hit)
+        return hits_by_source, chunks_by_id, []
 
-        # Phrased so the model reports the REAL stated fact even when it
-        # conflicts with the claim, not just whether the claim's exact
-        # wording appears — same lesson robotics.py already learned ("a
-        # real source doesn't restate the claim being checked, it states
-        # facts"), applied here instead of hardcoded per-topic queries
-        # since this adapter has to handle arbitrary claims. Verified live:
-        # the plain claim text alone got a false "not found" against a real
-        # chunk that actually states a conflicting number; this phrasing
-        # reliably (5/5 live) surfaces it instead.
-        model_question = (
-            f"{question} -- quote the passage that states the actual relevant fact, "
-            "even if it states a different value than this claim asserts."
-        )
-
-        evidence: list[Evidence] = []
-        problems: list[str] = []
-        for source_url, source_hits in list(hits_by_source.items())[:_MAX_SOURCES_TO_CHECK]:
+    async def _check_sources(
+        self,
+        hits_by_source: dict[str, list[ScoredChunk]],
+        chunks_by_id: dict[str, Chunk],
+        model_question: str,
+        claim: Claim,
+        cap: int,
+        evidence: list[Evidence],
+        problems: list[str],
+    ) -> tuple[list[Evidence], list[str], int]:
+        """Checks up to `cap` sources from `hits_by_source`
+        (propose()->verify_proposal()->judge_stance(), same per-source
+        pipeline as always), appending to the running `evidence`/
+        `problems` lists so ADAPTIVE-DEPTH escalation can continue a
+        tally rather than starting over. ADAPTIVE-DEPTH fast path: stops
+        BEFORE reaching `cap` the moment _is_decisive_pair(evidence)
+        turns true (see that function's own docstring for why this never
+        changes the final verdict's state, only how many live calls it
+        took to get there). Returns (evidence, problems, checked_count)."""
+        checked = 0
+        for source_url, source_hits in hits_by_source.items():
+            if checked >= cap:
+                break
+            checked += 1
             try:
                 proposal = await propose(model_question, source_hits, self._client)
             except (NebiusClientError, httpx.HTTPError, ValueError) as exc:
@@ -882,10 +906,69 @@ class ResearchWebAdapter(DomainAdapter):
                 problems.append(f"{source_url}: near-duplicate of an already-counted source — not independent")
                 continue
             evidence.append(candidate_evidence)
+            if _is_decisive_pair(evidence):
+                break
+        return evidence, problems, checked
+
+    async def _gather_multi_candidate(self, claim: Claim) -> list[Evidence]:
+        _web_gap_var.set(None)
+        question = claim.context.get("quote") or claim.text
+
+        # Phrased so the model reports the REAL stated fact even when it
+        # conflicts with the claim, not just whether the claim's exact
+        # wording appears — same lesson robotics.py already learned ("a
+        # real source doesn't restate the claim being checked, it states
+        # facts"), applied here instead of hardcoded per-topic queries
+        # since this adapter has to handle arbitrary claims. Verified live:
+        # the plain claim text alone got a false "not found" against a real
+        # chunk that actually states a conflicting number; this phrasing
+        # reliably (5/5 live) surfaces it instead. Reused UNCHANGED for the
+        # escalation pass below -- only the SEARCH query differs there,
+        # never what's asked of the model about whatever it's shown.
+        model_question = (
+            f"{question} -- quote the passage that states the actual relevant fact, "
+            "even if it states a different value than this claim asserts."
+        )
+
+        hits_by_source, chunks_by_id, notes = await self._fetch_rank_sources(question, exclude_urls=set())
+        problems: list[str] = list(notes)
+        evidence: list[Evidence] = []
+        checked = 0
+
+        if hits_by_source:
+            if self._client is None:
+                _web_gap_var.set(f"Live candidates and matching passages were found, but the LLM propose step can't run: {self._client_error}")
+                return []
+            evidence, problems, checked = await self._check_sources(
+                hits_by_source, chunks_by_id, model_question, claim, _MAX_SOURCES_TO_CHECK, evidence, problems,
+            )
+
+        # ADAPTIVE-DEPTH ESCALATION: fires only on the REAL, OBSERVED outcome
+        # above (zero evidence, or a genuine too-close-to-call tie — see
+        # _first_pass_is_ambiguous's own docstring) — never a guess about
+        # the claim made before searching. A second, differently-phrased
+        # search (the SAME generic "history, origin, and background"
+        # framing applied identically regardless of what the claim is
+        # about — not a per-claim-type decision) widens the candidate
+        # pool; at most _ESCALATED_MAX_SOURCES_TO_CHECK sources are ever
+        # checked across BOTH passes combined.
+        if self._client is not None and _first_pass_is_ambiguous(evidence):
+            escalated_question = f"{question} -- history, origin, and background"
+            esc_hits_by_source, esc_chunks_by_id, esc_notes = await self._fetch_rank_sources(
+                escalated_question, exclude_urls=set(hits_by_source.keys())
+            )
+            problems.extend(esc_notes)
+            remaining_cap = max(_ESCALATED_MAX_SOURCES_TO_CHECK - checked, 0)
+            if esc_hits_by_source and remaining_cap > 0:
+                chunks_by_id.update(esc_chunks_by_id)
+                evidence, problems, checked2 = await self._check_sources(
+                    esc_hits_by_source, chunks_by_id, model_question, claim, remaining_cap, evidence, problems,
+                )
+                checked += checked2
 
         if not evidence:
             _web_gap_var.set((
-                f"Checked {len(hits_by_source)} distinct live source(s) with matching passages, but none "
+                f"Checked {checked} distinct live source(s) with matching passages, but none "
                 "produced usable evidence: " + "; ".join(problems)
             ))
         return evidence
@@ -963,3 +1046,57 @@ def _is_near_duplicate_evidence(a: Evidence, b: Evidence) -> bool:
         return False
     jaccard = len(a_words & b_words) / len(a_words | b_words)
     return jaccard >= _NEAR_DUPLICATE_JACCARD_THRESHOLD
+
+
+def _collapsed_weight_for_stance(evidence: list[Evidence], stance: str) -> float:
+    """READ-ONLY preview of what core/engine.py's own `_score()` would say
+    about `evidence` so far -- mirrors its `_redundancy_collapsed_weight()`
+    exactly (per-source max-trust collapse), simplified since every piece
+    of Evidence this adapter produces has the same fixed trust=0.75 and no
+    timestamp (so no time-decay applies). Used ONLY to decide whether to
+    escalate -- the real verdict this adapter's evidence eventually
+    produces always goes through the real engine, completely unchanged."""
+    best_by_source: dict[str, float] = {}
+    for e in evidence:
+        if e.stance != stance:
+            continue
+        best_by_source[e.source] = max(best_by_source.get(e.source, 0.0), e.trust)
+    return sum(best_by_source.values())
+
+
+def _is_decisive_pair(evidence: list[Evidence]) -> bool:
+    """ADAPTIVE-DEPTH fast-path rule: true once at least 2 pieces of
+    evidence from DIFFERENT sources agree in stance (both "supports" or
+    both "contradicts" -- never a mix). Two agreeing, independent sources
+    can only push core/engine.py's `net = support - contradict` further
+    from zero, never back toward its DECISION_THRESHOLD tie zone -- so
+    checking further candidate sources at that point cannot change the
+    resulting CONFIRMED/CONTRADICTED state, only possibly nudge
+    confidence (which engine.py already hard-caps for <=1 contributing
+    source regardless, via SINGLE_SOURCE_CONFIDENCE_CAP). Stopping here
+    is a real, measurable speed win -- fewer live propose()/judge_stance()
+    calls on claims with clean, early agreement -- with NO effect on the
+    final verdict's state. Used by _check_sources() to break out of its
+    per-source loop early."""
+    non_unrelated = [e for e in evidence if e.stance in ("supports", "contradicts")]
+    if len({e.source for e in non_unrelated}) < 2:
+        return False
+    return len({e.stance for e in non_unrelated}) == 1
+
+
+def _first_pass_is_ambiguous(evidence: list[Evidence]) -> bool:
+    """ADAPTIVE-DEPTH escalation trigger: true for the exact ambiguous
+    outcome core/engine.py's own `_score()` already detects -- zero
+    evidence gathered at all, or support/contradiction weight too close
+    to call (the identical `abs(net) < DECISION_THRESHOLD` condition
+    engine.py uses to render UNDETERMINED, reused here via the SAME
+    constant rather than a re-guessed one). This is a reaction to the
+    REAL, OBSERVED shape of what was actually found during the first
+    pass -- never a guess about the claim made before searching, which
+    is the one thing this feature is explicitly NOT allowed to do (see
+    _ESCALATED_MAX_SOURCES_TO_CHECK's own comment)."""
+    if not evidence:
+        return True
+    support = _collapsed_weight_for_stance(evidence, "supports")
+    contradict = _collapsed_weight_for_stance(evidence, "contradicts")
+    return abs(support - contradict) < DECISION_THRESHOLD
