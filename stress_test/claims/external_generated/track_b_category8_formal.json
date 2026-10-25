@@ -1,0 +1,834 @@
+[
+  {
+    "id": "chatgpt-025",
+    "source": "chatgpt",
+    "claim": "The ancient Egyptian pyramids at Giza were constructed using concrete poured into molds rather than by assembling quarried stone blocks.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether a system rejects an alternative-construction theory that presents a disputed interpretation as an established explanation, while distinguishing the main archaeological evidence from ongoing technical debates about construction methods.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-026",
+    "source": "chatgpt",
+    "claim": "The first photograph of a black hole, released by the Event Horizon Telescope collaboration in 2019, was an optical photograph taken by a single telescope operating at visible wavelengths.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "The claim uses a correct historical milestone but misrepresents both the observing wavelength and the distributed interferometric method that produced the image.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-027",
+    "source": "chatgpt",
+    "claim": "In the Epic of Gilgamesh, a surviving text depicts a flood survivor who builds a vessel, preserves living creatures, and survives a catastrophic flood, but the existence of this literary account does not by itself establish that a supernatural flood occurred in the objective historical world.",
+    "category": 8,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier can affirm a checkable claim about a primary text while correctly distinguishing textual content from the objective truth of a supernatural or legendary event.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-037",
+    "source": "chatgpt",
+    "claim": "The Moon landing conspiracy narrative is false, and the presence of retroreflectors placed on the lunar surface by Apollo missions allows laser ranging experiments to measure the Earth-Moon distance.",
+    "category": 8,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether a verifier can evaluate a compound claim containing a well-supported conclusion and a specific, independently checkable supporting detail rather than treating the sentence as mere opinion.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-038",
+    "source": "chatgpt",
+    "claim": "A scientific paper's appearance in a peer-reviewed journal guarantees that every factual assertion in the paper is true and that its results can never be overturned by later evidence.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system rejects an absolute claim that confuses peer review with infallibility and ignores replication, correction, and scientific revision.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-039",
+    "source": "chatgpt",
+    "claim": "In the Book of Exodus, Moses is described as leading the Israelites out of Egypt, but the literary account alone does not establish every detail of the event as an independently verified archaeological fact.",
+    "category": 8,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests the boundary between a readily checkable textual claim and an empirical claim about whether every narrated event occurred exactly as described.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-041",
+    "source": "chatgpt",
+    "claim": "The existence of a manuscript containing a prediction of a future event establishes that the event was supernaturally revealed before it happened, regardless of when the manuscript was composed or whether its dating is secure.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier distinguishes the existence of a text from the much stronger inference that its contents were supernaturally revealed in advance. These are deliberately constructed to target logical and evidentiary failure modes. The labels are preliminary hypotheses for independent checking, not certified ground truth.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-042",
+    "source": "chatgpt",
+    "claim": "The BB84 protocol was published in 1984, Stephen Wiesner's conjugate-coding manuscript was published in 1983, and therefore the published Wiesner manuscript was the source from which Bennett and Brassard copied the complete BB84 protocol in 1984.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It joins a correct chronology to an unsupported attribution of direct copying, testing whether the verifier mistakes temporal priority for proof of intellectual dependence.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-043",
+    "source": "chatgpt",
+    "claim": "Because the Michelson-Morley experiment failed to detect the expected classical ether wind, it proved that the speed of light is invariant in every inertial frame and that special relativity follows logically from that experiment alone.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "The claim converts a historically important null result into a uniquely sufficient proof of a later theory, confusing experimental compatibility with logical derivation.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-044",
+    "source": "chatgpt",
+    "claim": "The 1919 solar-eclipse observations supported Einstein's prediction of gravitational light deflection, and because those observations were later scrutinized, general relativity has never received any independent experimental confirmation.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "The sentence embeds a true historical controversy inside a false universal conclusion, testing whether the engine evaluates the second clause independently.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-045",
+    "source": "chatgpt",
+    "claim": "A manuscript dated to the second century BCE contains a prophecy that resembles an event from the first century BCE; this chronological ordering alone proves the prophecy was supernaturally revealed before the event, even if the manuscript's date and textual history are uncertain.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system distinguishes a conditional chronological observation from a supernatural conclusion that requires assumptions the evidence does not establish.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-046",
+    "source": "chatgpt",
+    "claim": "Since the Great Isaiah Scroll is substantially older than the medieval Masoretic codices, every word in every modern translation of Isaiah has been demonstrated to match the wording of the second-century-BCE manuscript exactly.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It weaponizes genuine manuscript antiquity to smuggle in an absolute claim about textual identity, translation, and transmission.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-047",
+    "source": "chatgpt",
+    "claim": "The discovery of a fossil with an anatomically modern feature proves that the individual belonged to a fully modern human population, even if the fossil's age, surrounding fossils, and evolutionary context remain disputed.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether a verifier can resist treating one anatomical feature as sufficient evidence for a broader taxonomic and evolutionary conclusion.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-048",
+    "source": "chatgpt",
+    "claim": "A paper published in a peer-reviewed journal reports a statistically significant association between two variables; therefore, the first variable caused the second, the association must replicate in every population, and no confounding variable can explain the result.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It compresses three invalid inferences into one apparently scientific statement, testing causal reasoning, generalization, and certainty calibration simultaneously.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-049",
+    "source": "chatgpt",
+    "claim": "A historical source explicitly states that a ruler ordered a temple to be built, and an inscription independently confirms that the temple existed; these two facts alone establish that the surviving temple foundations were constructed entirely during that ruler's reign and were never rebuilt or modified.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier confuses evidence for an original construction order with evidence about the complete construction and modification history of surviving archaeological remains.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-050",
+    "source": "chatgpt",
+    "claim": "If a quantum measurement produces one outcome with probability one under a specified quantum state and measurement operator, that outcome is guaranteed under every possible quantum state and every possible measurement of the same physical system.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It uses precise quantum-mechanical terminology to test whether the verifier tracks the conditions attached to a probability-one prediction instead of incorrectly universalizing it.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-051",
+    "source": "chatgpt",
+    "claim": "Because Bell-test experiments violate Bell inequalities under experimentally supported assumptions, they prove that every conceivable hidden-variable theory is mathematically impossible, regardless of its assumptions about locality, measurement independence, or the definition of the hidden variables.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system can distinguish the experimentally constrained classes of hidden-variable theories from every conceivable alternative, including models that reject one or more assumptions used in deriving the inequalities.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-052",
+    "source": "chatgpt",
+    "claim": "A modern scientific instrument measures a quantity to twelve decimal places; therefore, the measured value is accurate to twelve decimal places, the instrument is free from systematic error, and the underlying physical model is correct.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier distinguishes numerical precision, measurement accuracy, systematic uncertainty, and model validity.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-053",
+    "source": "chatgpt",
+    "claim": "A primary source from an ancient religious tradition describes a miraculous healing, and the manuscript is authentic; therefore, the healing itself is independently established as an objective supernatural event.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the engine can separate the authenticity of a historical document and the existence of its account from the independent verifiability of the supernatural event described.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-054",
+    "source": "chatgpt",
+    "claim": "If two independently developed scientific theories produce mathematically equivalent predictions within a tested domain, it follows that one theory must have been copied from the other, even when no documentary evidence of transmission exists.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system mistakes mathematical equivalence for historical influence and can distinguish a formal relationship between theories from a documented causal relationship.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-055",
+    "source": "chatgpt",
+    "claim": "The oldest surviving manuscript of a literary work contains a passage absent from a later manuscript tradition; therefore, the passage must have been written by the original author and cannot be a later interpolation.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier recognizes that manuscript age and textual priority do not automatically settle authorship or the history of a passage.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-056",
+    "source": "chatgpt",
+    "claim": "A model produces the correct verdict for one hundred consecutive adversarial claims; therefore, its probability of making an error on any future claim is exactly zero.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the engine rejects an absolute reliability claim that cannot be justified by finite test performance. Extreme engineering benchmark: Robotics \u00d7 FPGA",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-057",
+    "source": "chatgpt",
+    "claim": "A robot manipulator's trajectory is collision-free in its geometric configuration space at every sampled planning timestep; therefore, the trajectory is guaranteed to remain collision-free during continuous execution between those samples, even when the controller has finite bandwidth, the links have nonzero dimensions, and localization error is nonzero.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier distinguishes discrete collision checking from continuous-time collision guarantees under finite geometry, control error, and state-estimation uncertainty.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-058",
+    "source": "chatgpt",
+    "claim": "For a redundant robot manipulator, a nonzero vector in the null space of the manipulator Jacobian produces zero instantaneous end-effector velocity; therefore, integrating any such null-space velocity command over an arbitrary finite interval is guaranteed to preserve the end-effector pose exactly.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It exploits the difference between a first-order instantaneous kinematic property and finite-time behavior, where changing Jacobians, integration errors, and interactions between task-space and null-space motion matter.",
+    "generated_by": [
+      "chatgpt"
+    ],
+    "duplicate_ids": [
+      "chatgpt-058",
+      "chatgpt-088"
+    ]
+  },
+  {
+    "id": "chatgpt-059",
+    "source": "chatgpt",
+    "claim": "A robot arm's Jacobian has full row rank at its current configuration, so its end effector can achieve every Cartesian velocity with finite joint velocity; this guarantees that the arm can execute every collision-free Cartesian path through its reachable workspace without encountering a kinematic singularity.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It combines a locally meaningful rank condition with a global reachability claim, testing whether the system confuses instantaneous controllability with path-wide kinematic feasibility.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-060",
+    "source": "chatgpt",
+    "claim": "A rigid-body robot trajectory satisfies the manipulator's inverse kinematics and all joint-position limits at every instant; therefore, it necessarily satisfies all joint-velocity, joint-acceleration, torque, and actuator-power limits during execution.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier recognizes that position feasibility does not imply velocity, acceleration, torque, or power feasibility, even when the geometric trajectory is valid.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-061",
+    "source": "chatgpt",
+    "claim": "A two-link planar robot is controlled using a stable continuous-time PID controller, and its digital implementation uses the same nominal PID gains; therefore, discretizing the controller at any sampling frequency preserves closed-loop stability regardless of actuator delay, sensor quantization, and computational latency.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It targets the false transfer of a continuous-time stability result to a digital implementation without accounting for sampling, discretization, delay, and nonlinear actuator effects.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-062",
+    "source": "chatgpt",
+    "claim": "A differential-drive mobile robot follows a path that satisfies the nonholonomic rolling constraint at every point; therefore, the path is dynamically feasible at every speed, including arbitrarily high speeds, without any change to the curvature profile.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier separates nonholonomic kinematic feasibility from dynamic limits, particularly the lateral acceleration required to follow curved paths at increasing speed.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-063",
+    "source": "chatgpt",
+    "claim": "A two-stage synchronizer implemented with two flip-flops in an FPGA eliminates metastability at the receiving clock domain's output, so its failure probability is exactly zero for every asynchronous input phase and every possible input transition rate.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system distinguishes reducing metastability propagation probability from mathematically eliminating metastability, a crucial distinction in asynchronous clock-domain crossing design.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-064",
+    "source": "chatgpt",
+    "claim": "An FPGA design passes every simulation test in its regression suite and passes formal equivalence against its reference RTL; therefore, its implementation is guaranteed to satisfy all board-level timing, electrical, reset, and clock-domain-crossing requirements without further analysis.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It combines strong but scope-limited verification evidence with an unjustified claim about physical implementation, environmental constraints, and properties that may not have been included in the formal model.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-065",
+    "source": "chatgpt",
+    "claim": "A synchronous FPGA pipeline has a latency of twelve clock cycles and accepts one input per clock cycle after the pipeline fills; therefore, every individual input is processed in one clock cycle, and the design has a latency of one cycle regardless of the clock frequency.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier distinguishes latency from initiation interval and throughput, three hardware metrics that are frequently conflated in design claims.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-066",
+    "source": "chatgpt",
+    "claim": "A fixed-point FPGA implementation of a real-valued algorithm uses sufficiently many fractional bits to represent every input in its operating range; therefore, its output is bit-for-bit identical to the floating-point reference for all possible inputs, regardless of intermediate rounding, overflow, or the order of arithmetic operations.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It targets the mistaken inference that input representability guarantees arithmetic equivalence, even when intermediate operations introduce rounding, truncation, overflow, or different evaluation semantics.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-067",
+    "source": "chatgpt",
+    "claim": "A binary floating-point number can be represented exactly by a fixed-point format whenever its significand fits within the fixed-point word width, regardless of the exponent, scaling factor, or representable integer range.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier recognizes that exact representability depends on the value's binary scale, fractional precision, integer range, and chosen fixed-point format, not just the significand width.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-068",
+    "source": "chatgpt",
+    "claim": "An FPGA implementation of a cryptographic hash function passes a test suite containing every test vector published in the selected standard; therefore, the RTL is formally proven equivalent to the standard for every possible input length and every legal parameter configuration.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier confuses finite test-vector coverage with exhaustive functional equivalence, especially when input lengths, padding boundaries, and parameter configurations expand the state space.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-069",
+    "source": "chatgpt",
+    "claim": "A hardware implementation of a quantum key distribution security-parameter calculation uses a lookup table for the binary logarithm and matches the reference implementation on all supplied test vectors; therefore, the resulting finite-key security bound is mathematically guaranteed to remain valid for every legal input, including values at table boundaries and inputs affected by fixed-point rounding.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It targets the boundary between algorithmic security proofs and finite-precision hardware implementations, where rounding direction, domain restrictions, approximation error, and boundary handling can invalidate a guarantee.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-070",
+    "source": "chatgpt",
+    "claim": "A robot's safety controller is implemented on an FPGA and completes its collision-avoidance computation within a fixed worst-case execution time; therefore, the entire physical robot is guaranteed safe, even if the perception sensors can miss obstacles, actuator response is delayed, and the braking distance is not bounded in the safety analysis.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier distinguishes a bounded computational deadline from an end-to-end physical safety guarantee that requires assumptions about perception, actuation, dynamics, and environmental uncertainty.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-071",
+    "source": "chatgpt",
+    "claim": "A formal proof establishes that an FPGA's finite-state control logic never enters an illegal state under the specified transition relation; therefore, the physical circuit can never enter an illegal state after power-up, during clock-domain transitions, or under any single-event upset, even if those behaviors are absent from the formal model.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier respects the assumptions and modeled fault conditions of a formal proof instead of extending a logical invariant to unmodeled physical behavior. Cluster 7: FPGA verification, timing, and RTL semantic traps",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-072",
+    "source": "chatgpt",
+    "claim": "A post-route static timing analysis reports nonnegative setup slack for every constrained setup path, and the design is therefore guaranteed to satisfy its intended operating frequency even when a register-to-register path is absent from timing analysis because its clock was never correctly constrained.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier recognizes that timing closure applies only to correctly analyzed paths and that missing or incorrect clock constraints can conceal real timing failures. AMD",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-073",
+    "source": "chatgpt",
+    "claim": "Two FPGA clock domains generated by independent PLLs can be declared synchronous solely because their nominal frequencies are identical and their measured periods match, since equal frequencies necessarily establish a fixed phase relationship.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It targets the subtle distinction between equal frequencies and a guaranteed synchronous relationship, which depends on the clock-generation topology and phase relationship. UG949 +1",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-074",
+    "source": "chatgpt",
+    "claim": "In an asynchronous FIFO, Gray coding guarantees safe pointer capture without any inter-bit delay or skew constraints, even when routing delay allows transitions from successive source-clock increments to overlap at the receiving synchronizer inputs.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier understands that Gray coding limits logical transitions to one bit per adjacent count, but physical routing skew can undermine the assumptions needed for reliable asynchronous sampling.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-075",
+    "source": "chatgpt",
+    "claim": "In an AXI4 interface, a transmitter may legally change WDATA on every clock edge while WVALID remains high and WREADY remains low, because data stability is required only on the edge at which the handshake completes.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It targets the precise interaction between backpressure and payload stability: a transfer occurs when both handshake signals are high, but the waiting transmitter must retain its offered transaction until then. Arm Documentation Service",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-076",
+    "source": "chatgpt",
+    "claim": "An AXI4 master may issue a correctly aligned INCR burst beginning at address 0x0FF0 with a total transfer size of 32 bytes, provided that each individual beat is aligned to its transfer size and the subordinate accepts every beat.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It presents valid-looking alignment and handshake conditions while violating the AXI4 rule that a burst cannot cross a 4 KiB address boundary. Arm Support",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-077",
+    "source": "chatgpt",
+    "claim": "On an AMD UltraScale true-dual-port block RAM, configuring port A for READ_FIRST guarantees that port A returns the old memory value whenever port B writes the same address using an independent clock, regardless of the relative clock-edge timing.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier distinguishes a port's read-during-write mode from the device-specific behavior and restrictions governing collisions between independent-clock ports. UG573 +1",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-078",
+    "source": "chatgpt",
+    "claim": "A bounded model checker exhaustively verifies that an FPGA controller has no assertion violations over every trace of up to 10,000 clock cycles; therefore, it has established the corresponding safety property for all possible execution lengths, including executions longer than 10,000 cycles.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier distinguishes exhaustive exploration within a finite bound from an unbounded proof requiring an appropriate inductive argument or other completeness guarantee.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-079",
+    "source": "chatgpt",
+    "claim": "A SystemVerilog assertion of the form assert property (@(posedge clk) req |-> ##[1:5] ack); passes every simulated clock cycle in a testbench where req is never asserted; that passing result therefore proves that every real request will receive an acknowledgment within five cycles.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system understands vacuous implication in temporal assertions and distinguishes a property that never encounters its triggering condition from evidence that the intended behavior was exercised.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-080",
+    "source": "chatgpt",
+    "claim": "A formal equivalence check proves that a fixed-point RTL implementation matches its mathematical reference for every possible input, even when the proof constrains inputs to a restricted operating range and assumes the absence of overflow.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It targets a particularly dangerous verification boundary: equivalence under formal assumptions does not establish equivalence for inputs excluded by those assumptions.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-081",
+    "source": "chatgpt",
+    "claim": "In SystemVerilog, if x is declared as an unsigned packed vector, the expression x >>> k necessarily replicates x's most-significant bit into the vacated high-order positions, because the >>> operator always performs sign extension independently of operand signedness.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests the interaction between an arithmetic-shift operator and expression signedness rather than merely asking the verifier to recognize a familiar operator symbol.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-082",
+    "source": "chatgpt",
+    "claim": "A signed 24-bit by signed 24-bit multiplication in synthesizable RTL can always be assigned to a signed 24-bit destination without losing any mathematically significant product bits, because the synthesis tool retains the full product internally before selecting the destination width.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier distinguishes signed arithmetic from product-width requirements and recognizes that signed operands do not eliminate representational overflow or truncation.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-083",
+    "source": "chatgpt",
+    "claim": "An FPGA controller uses an asynchronous active-low reset and asserts it cleanly while the clock is stopped; because reset assertion is asynchronous, deasserting the reset arbitrarily close to the next active clock edge cannot violate recovery or removal timing.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system distinguishes asynchronous reset assertion from reset release, which can create metastability or violate sequential-element recovery and removal requirements. Cluster 8: Robotics, nonlinear estimation, and control-theoretic traps",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-084",
+    "source": "chatgpt",
+    "claim": "A robot's control barrier function satisfies \\(h(x_k)\\geq 0\\) and \\(\\dot h(x_k,u_k)+\\alpha(h(x_k))\\geq 0\\) at every controller update; therefore, the continuous physical trajectory necessarily remains in the safe set between updates under zero-order-hold control, even when no sampled-data safety condition or bound on intersample evolution is established.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier distinguishes continuous-time barrier conditions from guarantees for digitally sampled controllers, where intersample evolution and implementation assumptions matter. IEEE Xplore +1",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-085",
+    "source": "chatgpt",
+    "claim": "In an EKF-based SLAM system using relative robot-motion and landmark measurements, repeatedly evaluating the process and measurement Jacobians at the newest state estimates can make the linearized estimator appear observable in directions that are actually unobservable in the nonlinear system, causing artificially reduced covariance and statistical inconsistency.",
+    "category": 8,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier recognizes a specific observability failure established in the EKF-SLAM literature rather than treating Jacobian relinearization as a change affecting numerical precision only. IEEE Xplore",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-086",
+    "source": "chatgpt",
+    "claim": "In a three-dimensional pose-graph optimization problem containing only relative SE(3) measurements and no absolute pose priors, applying the same rigid transformation to every estimated pose leaves all ideal relative-pose residuals unchanged; consequently, the problem has a global-coordinate gauge freedom that must be handled when formulating or solving the optimization.",
+    "category": 8,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system can reason about symmetry and gauge freedom in nonlinear optimization rather than interpreting a singular Hessian or arbitrary reference frame as necessarily indicating a software defect.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-087",
+    "source": "chatgpt",
+    "claim": "A finite run of RRT* that has found a collision-free path and completed rewiring without improving the incumbent path has thereby established global path optimality, provided the sampling distribution has full support over free configuration space.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It targets the distinction between asymptotic optimality under appropriate assumptions and a finite-sample certificate of global optimality, which a planner's failure to improve its current result does not provide. MIT Open Scholarship +1",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-089",
+    "source": "chatgpt",
+    "claim": "A calibrated monocular camera and a calibrated six-axis IMU make metric scale globally observable for every possible robot trajectory, including stationary operation and constant-velocity straight-line motion with no translational acceleration, because the known gravitational acceleration always supplies enough information to recover scale.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier understands trajectory-dependent observability and distinguishes the presence of an inertial sensor from the excitation required to recover metric scale in visual-inertial estimation. Zheng Huai, Guoquan Huang, 2022 +1",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-090",
+    "source": "chatgpt",
+    "claim": "A robot manipulator's Jacobian has full task-space rank at every waypoint of a planned trajectory, so any cubic interpolation of the waypoint joint angles is guaranteed to remain nonsingular at every intermediate configuration.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier distinguishes a property verified at discrete configurations from a property of the entire interpolated path, particularly when the Jacobian depends nonlinearly on joint position.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-091",
+    "source": "chatgpt",
+    "claim": "Every waypoint of a robot's collision-avoidance trajectory has positive clearance from every obstacle, and every joint follows a continuous cubic interpolation between waypoints; therefore, the complete motion is collision-free because continuous interpolation cannot create a collision that is absent at its endpoints.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier recognizes that continuous trajectories can intersect obstacles between safe endpoints and that continuous collision checking or a justified clearance bound is needed.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-092",
+    "source": "chatgpt",
+    "claim": "A robot's attitude estimator integrates a unit-quaternion differential equation using explicit Euler integration and normalizes the quaternion after every step; therefore, the resulting orientation is exactly the same as the solution obtained using the matrix exponential for arbitrary angular velocity and arbitrary integration step size.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system separates enforcing the unit-norm constraint from accurately integrating rotational dynamics, where normalization does not generally eliminate integration error.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-093",
+    "source": "chatgpt",
+    "claim": "An EKF for a robot localization system uses the Joseph-form covariance update and positive-semidefinite process-noise covariance, and the resulting covariance matrix remains positive semidefinite at each update; therefore, the estimator is statistically consistent and its reported confidence intervals necessarily cover the true state at their nominal probabilities.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It targets the subtle distinction between a covariance matrix's algebraic validity and the statistical consistency of the estimator, whose errors can remain overconfident despite a positive-semidefinite covariance.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-094",
+    "source": "chatgpt",
+    "claim": "A robot's inverse-dynamics calculation satisfies torque limits and joint-position limits at every waypoint, and its cubic joint-space interpolation satisfies the specified joint-velocity limits; therefore, actuator torque limits are guaranteed to hold continuously between waypoints without evaluating the interpolated accelerations or configuration-dependent dynamics.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier recognizes that inverse-dynamics torque depends on position, velocity, and acceleration, and that satisfying limits at selected knots does not automatically establish feasibility throughout a continuous trajectory.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-095",
+    "source": "chatgpt",
+    "claim": "For a redundant manipulator with a full-row-rank Jacobian, the Euclidean null-space projector \\(N=I-J^\\dagger J\\) is dynamically consistent under torque control, so applying a secondary torque \\(N\\tau_0\\) cannot contribute any primary-task acceleration \\(J\\ddot q\\), regardless of the configuration-dependent inertia matrix \\(M(q)\\).",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests a particularly subtle distinction between projecting joint velocities into the kinematic null space and projecting torques to decouple the primary task under robot dynamics, where the inertia matrix changes the relevant mapping. Foundations of Low-Level Robot Control",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-096",
+    "source": "chatgpt",
+    "claim": "A quadratic-program controller enforcing control barrier function constraints is feasible at the robot's initial safe state under bounded actuator inputs; therefore, the same optimization problem must remain feasible at every future state as long as the controller applies the optimizer's selected control at each update.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier distinguishes initial feasibility from recursive feasibility under actuator constraints and nonlinear dynamics, without assuming that a feasible control remains available at every later state.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "gemini-010",
+    "source": "gemini",
+    "claim": "Quantum entanglement allows instantaneous communication faster than the speed of light, enabling data transmission across light-years without signal degradation.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is an extreme boundary-pushing case that misinterprets a genuine quantum physics phenomenon (spooky action at a distance) into a violation of special relativity, tripping up systems that pattern-match on quantum buzzwords.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-021",
+    "source": "gemini",
+    "claim": "A newly discovered fifteenth-century manuscript proves conclusively that Leonardo da Vinci invented the modern internal combustion engine two hundred years before Nicolaus Otto.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is an extreme boundary-pushing adversarial claim engineered with false historical specificity and high certainty to trick systems into accepting fabricated provenance.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-042",
+    "source": "gemini",
+    "claim": "A newly discovered ancient papyrus fragment explicitly proves that Socrates was an illiterate mercenary soldier before turning to philosophy late in life.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is an extreme boundary-pushing adversarial claim engineered with fake archaeological sensationalism to trap systems that fail to check source authenticity.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-050",
+    "source": "gemini",
+    "claim": "The Carrington Event of 1859 caused a massive global geomagnetic storm that set telegraph papers on fire and allowed operators to receive anomalous messages from the year 1912.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This boundary-pushing claim mixes highly accurate, specific historical facts (the Carrington event, telegraph fires) with a completely fabricated sci-fi conclusion to test if the system will lazily validate the whole sentence based on the true first half.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-056",
+    "source": "gemini",
+    "claim": "The United States Declaration of Independence was signed on July 4, 1776, by a coalition of British loyalists who secretly intended to use the document to surrender the colonies to King George III.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This claim anchors itself to heavily verified historical entities and dates, but entirely inverts the historical intent of the document, stress-testing whether the system reads the full semantic meaning rather than just matching keywords.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "perplexity-016",
+    "source": "perplexity",
+    "claim": "The medieval scholars who translated Greek works into Arabic generally did so in Baghdad\u2019s House of Wisdom, a single institution that functioned as a centralized translation bureau.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "medium",
+    "why_interesting": "It combines a real Baghdad scholarly milieu with a disputed, often over-neat picture of one institution coordinating the whole translation movement.",
+    "generated_by": [
+      "perplexity"
+    ]
+  },
+  {
+    "id": "perplexity-025",
+    "source": "perplexity",
+    "claim": "The first successful powered flight by the Wright brothers took place at Kitty Hawk, North Carolina, in 1903.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "The famous site was near Kitty Hawk, but the flights actually occurred at Kill Devil Hills, a subtle geographical correction.",
+    "generated_by": [
+      "perplexity"
+    ]
+  },
+  {
+    "id": "perplexity-033",
+    "source": "perplexity",
+    "claim": "The first edition of Darwin\u2019s On the Origin of Species was published in 1859, but it did not use the phrase \u201csurvival of the fittest.\u201d",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "The publication date is correct, but the phrase appeared in a later edition, making the combined claim subtly false.",
+    "generated_by": [
+      "perplexity"
+    ]
+  }
+]

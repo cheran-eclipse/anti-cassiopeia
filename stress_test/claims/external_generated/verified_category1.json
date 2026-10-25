@@ -1,0 +1,162 @@
+[
+  {
+    "id": "chatgpt-001",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Schrödinger's wave mechanics (1926) was an independent, complementary formulation to Heisenberg's matrix mechanics (1925); Schrödinger himself (and later Dirac) proved the two formulations mathematically equivalent. 'Solely caused by Heisenberg, no substantive role for Schrödinger' is false.",
+    "sources": []
+  },
+  {
+    "id": "chatgpt-002",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "ARPANET (1969) was not the first computer network (e.g. the UK's NPL network and France's Cyclades were contemporaneous/independent efforts), and not every later network architecturally descends from it (X.25, Minitel, Ethernet-based LANs etc. have separate lineages).",
+    "sources": []
+  },
+  {
+    "id": "chatgpt-003",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "V-2 test MW 18014 reached ~174-176 km apogee on 20 June 1944 -- during WWII, not after it. The claim's chronological qualifier is false even though the V-2/first-spaceflight association itself is correct.",
+    "sources": ["https://en.wikipedia.org/wiki/MW_18014"]
+  },
+  {
+    "id": "chatgpt-004",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Einstein's photoelectric-effect paper was published 1905. Millikan's definitive experimental confirmation of Einstein's linear energy-frequency relationship came in 1914-1916, nearly a decade later. The claim reverses the real chronology.",
+    "sources": []
+  },
+  {
+    "id": "chatgpt-030",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "medium",
+    "matches_suggestion": true,
+    "notes": "Literature is genuinely split (Earman & Glymour 1980 alleged bias; Kennefick 2009 and Gilmore & Tausch-Pebody 2020 reanalyses largely vindicate Eddington's data treatment), which is exactly what the claim's own hedged wording describes ('important early test... subject to later historical and scientific reassessment'). The claim's hedging matches the real, contested historiography well.",
+    "sources": ["https://arxiv.org/pdf/2010.13744", "https://physicstoday.aip.org/features/testing-relativity-from-the-1919-eclipse-a-question-of-bias"]
+  },
+  {
+    "id": "chatgpt-031",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "The Standard Model does not include gravity and does not explain dark matter -- both are well-known open problems/gaps in the SM, not things the Higgs discovery 'confirmed'. Definitively false as stated.",
+    "sources": []
+  },
+  {
+    "id": "gemini-001",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Standard, well-documented account of Fleming's 1928 discovery at St Mary's Hospital, London -- Penicillium contamination of a Staphylococcus culture plate. No contested details in this specific framing.",
+    "sources": []
+  },
+  {
+    "id": "gemini-002",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "The Caliph Omar/642 CE single-event burning is widely regarded by historians as a late myth (one analysis traces it to a 12th-century source, first reaching Western scholarship only in 1663); no contemporary Muslim, Coptic, Byzantine or Jewish source records such an event. Mainstream view: the library declined gradually over centuries through multiple documented fires, funding cuts and political shifts, not one arson event.",
+    "sources": ["https://www.nybooks.com/articles/1990/09/27/the-vanished-library-2/"]
+  },
+  {
+    "id": "gemini-011",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "medium",
+    "matches_suggestion": true,
+    "notes": "Mainstream history credits Gutenberg with independent invention of the key mechanical innovations (oil-based ink, metal type alloy, the press mechanism); while movable type predates him in Korea/China, there is no established direct technology transfer via Silk Road merchants. Medium confidence reflects genuine ongoing scholarly debate about diffusion vs. independent invention.",
+    "sources": []
+  },
+  {
+    "id": "gemini-012",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "medium",
+    "matches_suggestion": true,
+    "notes": "Modern consensus is that Newton (from the 1660s, unpublished) and Leibniz (from the mid-1670s, published 1684) developed calculus independently, and a real, bitter priority dispute followed (1699-1716+). 'Exact same time' overstates the synchrony somewhat -- Newton's unpublished work predates Leibniz's by roughly a decade -- but 'independently developed' and 'bitter priority dispute' are both accurate, and most popular accounts use similarly loose framing.",
+    "sources": ["https://en.wikipedia.org/wiki/Leibniz%E2%80%93Newton_calculus_controversy"]
+  },
+  {
+    "id": "gemini-022",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "The Industrial Revolution is conventionally dated from roughly the 1760s-1780s, predating the 1803 Louisiana Purchase by decades, and had many documented drivers (coal, iron, steam power, textile mechanization, agricultural revolution) beyond American cotton specifically. The claim's causal story and chronology are both false.",
+    "sources": []
+  },
+  {
+    "id": "gemini-023",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "CERN is a European organization funded by its European member states; the World Wide Web (Berners-Lee, 1989-1991) had no direct US DARPA funding. This conflates ARPANET (which was DARPA-funded) with the unrelated, later, CERN-based WWW project.",
+    "sources": []
+  },
+  {
+    "id": "gemini-032",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "England did not adopt the Gregorian calendar until 1752 (Calendar (New Style) Act), not 1582 -- so no 1582 London riot over this could have occurred. Separately, the famous '11 days' riot story associated with the real 1752 switch is itself largely regarded by historians as an exaggerated myth traceable to a Hogarth painting, with only minor documented local unrest (e.g. Bristol). Doubly false as stated.",
+    "sources": ["https://www.historic-uk.com/HistoryUK/HistoryofBritain/Give-us-our-eleven-days/"]
+  },
+  {
+    "id": "gemini-033",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Darwin's theory developed over roughly two decades after the Beagle voyage, through extensive specimen study, correspondence, and observation of agricultural breeding in England, and was prompted into publication by Alfred Russel Wallace's independent arrival at similar ideas in 1858. 'Entirely independently during solitary weeks on the Galápagos' significantly misrepresents this.",
+    "sources": []
+  },
+  {
+    "id": "gemini-043",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "The Federal Reserve Act (1913) traces to the Panic of 1907 and the subsequent multi-year Aldrich Plan/National Monetary Commission process, not the Titanic sinking (April 1912). The 'wealthy Fed opponents died on the Titanic' story is a well-known conspiracy/urban legend, not mainstream history.",
+    "sources": []
+  },
+  {
+    "id": "gemini-051",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Edison's practical incandescent bulb was developed and patented in 1879; Tesla did not arrive in the US until 1884, and his AC patents (motor, polyphase system) came later still. The timeline makes 'secretly purchased AC patents from Tesla' driving the bulb invention impossible.",
+    "sources": []
+  },
+  {
+    "id": "perplexity-002",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "The 1859 Carrington Event is the well-documented historical geomagnetic storm caused by a coronal mass ejection striking Earth's magnetosphere -- standard, uncontested account in space-weather history.",
+    "sources": []
+  },
+  {
+    "id": "perplexity-010",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "medium",
+    "matches_suggestion": true,
+    "notes": "The WWW (hypertext/HTTP/HTML, application layer) was built to run atop existing Internet infrastructure, but its distinctive hypertext design was not itself 'derived from' ARPANET's packet-switching protocol -- that conflates two different network layers/projects. Medium confidence because 'derived from' admits some looser reading where the Internet's packet-switched substrate (ultimately descended from ARPANET work) was a precondition, but the claim's specific wording (the Web's design coming from the packet-switching protocol) is false.",
+    "sources": []
+  },
+  {
+    "id": "perplexity-017",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "The 1908 Tunguska event is understood as an atmospheric airburst; extensive searches have never found an impact crater, which is itself a key piece of evidence for the airburst (vs. ground-impact) interpretation. The claim's 'left a large impact crater' clause is false.",
+    "sources": []
+  },
+  {
+    "id": "perplexity-018",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "The 1815 Tambora eruption (the largest in recorded history) is the well-established primary driver of the global cooling behind 1816's 'Year Without a Summer' -- standard, uncontested account in climate/volcanology history.",
+    "sources": []
+  }
+]

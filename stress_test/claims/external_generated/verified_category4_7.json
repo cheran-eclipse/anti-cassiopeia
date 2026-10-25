@@ -1,0 +1,186 @@
+[
+  {
+    "id": "chatgpt-017",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Apollo 11 genuinely landed on the Moon; independently corroborated by retroreflectors still used for lunar laser ranging, Soviet independent tracking of the mission, and returned lunar samples with isotopic signatures no Earth lab could fabricate at the time.",
+    "sources": ["https://starwalk.space/en/news/was-the-moon-landing-fake", "https://www.nationalgeographic.com/science/article/apollo-11-hoax-photos--8-moon-landing-myths-busted"]
+  },
+  {
+    "id": "chatgpt-018",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Large epidemiological studies (Danish cohort of 650,000+ children, among others) found no association between vaccination and autism; the claim inverts the actual finding of these studies.",
+    "sources": ["https://www.factcheck.org/2017/11/debunking-false-vaccine-claim", "https://www.aap.com.au/factcheck/studies-blunt-repeated-shots-at-blaming-vaccines-for-autism/"]
+  },
+  {
+    "id": "chatgpt-019",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "5G uses non-ionizing radio-frequency radiation, which cannot carry a biological virus; this is a well-documented, thoroughly debunked claim from international radiation-protection bodies and major fact-checkers.",
+    "sources": ["https://science.feedback.org/review/viral-claim-falsely-asserts-that-covid-19-is-due-to-5g-technology-rollout-not-a-virus/", "https://africacheck.org/infofinder/explore-facts/covid-19-spread-through-5g-mobile-networks-and-radio-waves"]
+  },
+  {
+    "id": "chatgpt-020",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Earth's curvature has been measured by numerous independent methods (satellite geodesy, circumnavigation timing, ship-hull-over-horizon observations, gravity measurements) that are not explained by atmospheric refraction; this is a flat-earther argument structure, not a genuine open question.",
+    "sources": []
+  },
+  {
+    "id": "gemini-005",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "5G frequency bands are non-ionizing; they lack the photon energy to break chemical bonds or damage DNA, unlike ionizing radiation (X-rays, gamma rays).",
+    "sources": ["https://science.feedback.org/review/viral-claim-falsely-asserts-that-covid-19-is-due-to-5g-technology-rollout-not-a-virus/"]
+  },
+  {
+    "id": "gemini-015",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Same real event as chatgpt-017; no credible evidence supports Kubrick's involvement or any soundstage filming, and this specific claim has been directly refuted including by Kubrick's own family.",
+    "sources": ["https://newspaceeconomy.ca/2024/07/25/debunking-the-top-conspiracy-theories-about-the-apollo-moon-landings/"]
+  },
+  {
+    "id": "gemini-026",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Overwhelming scientific consensus (IPCC and virtually all national science academies) attributes recent warming primarily to human greenhouse gas emissions, not solar/cosmic-ray variation alone; solar output has not increased over the period of observed warming.",
+    "sources": []
+  },
+  {
+    "id": "gemini-036",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "No vaccine contains a microchip; this is a well-known, thoroughly debunked conspiracy claim with no supporting evidence from any independent analysis of vaccine contents.",
+    "sources": []
+  },
+  {
+    "id": "gemini-039",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "\"Water memory\" (the mechanism proposed for homeopathy) is considered pseudoscience incompatible with known physical chemistry; the 1988 Benveniste study that proposed it was never reliably replicated.",
+    "sources": ["https://livescience.com/61273-homeopathy-chemistry-water-memory.html", "https://chemistryworld.com/opinion/homeopathys-watered-down-memory/3005060.article"]
+  },
+  {
+    "id": "gemini-046",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Blood pH is tightly regulated by the kidneys and lungs at ~7.4 regardless of diet; alkaline water changes urine/saliva pH, not blood pH, and the 'cancer needs acidic environment' framing is misleading since normal cells also cannot survive extreme alkalinity.",
+    "sources": ["https://www.mcgill.ca/oss/article/food-quackery/alkaline-food-bunk", "https://sciencebasedmedicine.org/alkaline-water-surges-despite-lack-of-evidence/"]
+  },
+  {
+    "id": "perplexity-029",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "The flag's apparent motion is explained by its horizontal support rod and astronaut handling/inertia, not wind (there is no atmosphere on the Moon); this has been directly addressed by NASA and independent photographic analysis.",
+    "sources": ["https://www.moonhoaxdebunked.com/2017/07/53-why-is-flag-blowing-in-wind-on.html", "https://www.nationalgeographic.com/science/article/apollo-11-hoax-photos--8-moon-landing-myths-busted"]
+  },
+  {
+    "id": "chatgpt-021",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Multiple astronauts (including China's own Yang Liwei) have confirmed the Great Wall is not visible to the naked eye from the Moon; this myth traces to a 1932 Ripley's Believe It or Not cartoon, not any real observation.",
+    "sources": ["https://www.scientificamerican.com/article/is-chinas-great-wall-visible-from-space/", "https://dawn.com/news/353747"]
+  },
+  {
+    "id": "chatgpt-022",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Brain imaging shows nearly all brain regions are active across a day's normal activities, and even small areas of brain damage typically cause serious deficits -- inconsistent with 90% of the brain being inactive/spare capacity.",
+    "sources": ["https://en.wikipedia.org/wiki/Ten-percent-of-the-brain_myth", "https://www.brainfacts.org/Thinking-Sensing-and-Behaving/Thinking-and-Awareness/2019/Debunked-The-10-Percent-Brain-Myth-061719"]
+  },
+  {
+    "id": "chatgpt-023",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Multiple controlled studies (lever-press training, sound conditioning, a 2022 Ben-Gurion University tank-driving experiment) show goldfish retain learned associations for weeks to months, far beyond three seconds.",
+    "sources": ["https://www.scienceabc.com/nature/animals/do-goldfish-really-have-a-3-second-memory", "https://www.earth.com/news/goldfish-memory-much-better-than-previously-believed"]
+  },
+  {
+    "id": "chatgpt-024",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Einstein excelled in mathematics from an early age; the myth that he failed a math class (often cited as 4th grade) is not supported by his actual school records, and Einstein himself found the rumor amusing when it circulated during his lifetime.",
+    "sources": ["https://www.worldatlas.com/articles/did-einstein-really-fail-math-class.html", "https://www.todayifoundout.com/index.php/2011/12/albert-einstein-did-not-fail-at-mathematics-in-school/"]
+  },
+  {
+    "id": "gemini-019",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "No research supports UV-blocking polarized sunglasses causing eyelid skin cancer; UV-blocking eyewear is specifically recommended BY cancer-prevention organizations to protect the thin, cancer-prone eyelid skin, the opposite of what the claim asserts.",
+    "sources": ["https://drweil.com/?p=105871", "https://preventcancer.org"]
+  },
+  {
+    "id": "gemini-020",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Same myth as chatgpt-024, more strongly worded (\"struggled... throughout his entire academic career\"); directly contradicted by his documented strong math/physics performance, including on his Polytechnic entrance exam.",
+    "sources": ["https://www.worldatlas.com/articles/did-einstein-really-fail-math-class.html"]
+  },
+  {
+    "id": "gemini-029",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Controlled studies (dating to 1928 and replicated since, including in the Journal of Investigative Dermatology) find no change in hair growth rate, thickness, or color from shaving; the perceived effect comes from the blunt-cut tip of regrowing stubble.",
+    "sources": ["https://sciencealert.com/does-hair-really-grow-back-thicker-and-darker-after-shaving", "https://sites.utexas.edu/think-twice/does-shaving-make-hair-grow-back-thicker-and-darker/"]
+  },
+  {
+    "id": "gemini-040",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Same myth as chatgpt-022; neuroimaging consistently shows widespread brain activity during normal daily activity, not a static 10% utilization.",
+    "sources": ["https://en.wikipedia.org/wiki/Ten-percent-of-the-brain_myth"]
+  },
+  {
+    "id": "gemini-041",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "The Empire State Building is struck by lightning roughly 25 times per year, and tall structures generally are struck repeatedly over time -- direct empirical counterexample to the claim.",
+    "sources": ["https://sciencenotes.org/can-lightning-strike-the-same-place-twice/"]
+  },
+  {
+    "id": "gemini-049",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "The 5'2\" figure used French measurement units (pouces), which convert to roughly 5'6\"-5'7\" in modern units -- about average for a Frenchman of his era; the 'very short' image was partly British wartime propaganda exaggeration.",
+    "sources": ["https://www.todayifoundout.com/?p=149"]
+  },
+  {
+    "id": "gemini-055",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "MythBusters and independent physics analyses show a penny's terminal velocity (roughly 30-65 mph depending on orientation/tumbling) and low mass are insufficient to penetrate skin or fracture a skull; air drag caps the fall speed regardless of drop height.",
+    "sources": ["https://www.todayifoundout.com/?p=8096", "https://folklore.usc.edu/?p=10947"]
+  },
+  {
+    "id": "perplexity-024",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "medium",
+    "matches_suggestion": true,
+    "notes": "The 'easily visible... without magnification' framing is false per most astronaut accounts (Yang Liwei explicitly said he could not see it); it is at best faintly discernible from low orbit under ideal lighting/weather conditions, with some conflicting astronaut testimony (e.g. Gene Cernan) adding genuine but minor uncertainty to the 'easily' qualifier specifically.",
+    "sources": ["https://www.scientificamerican.com/article/is-chinas-great-wall-visible-from-space/", "https://dawn.com/news/353747"]
+  }
+]

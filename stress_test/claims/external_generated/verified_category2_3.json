@@ -1,0 +1,250 @@
+[
+  {
+    "id": "chatgpt-005",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Heisenberg's July 1925 paper introduced noncommuting multiplication without recognizing it as matrix algebra; Born and Jordan (Sept 1925) then formalized it explicitly as matrix mechanics, followed by the Born-Heisenberg-Jordan 'three-man paper' (Nov 1925). Standard history-of-physics account.",
+    "sources": ["general physics-history knowledge, corroborated by standard accounts of the Born-Heisenberg-Jordan sequence"]
+  },
+  {
+    "id": "chatgpt-006",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Chadwick's 1932 experiments showed the beryllium radiation (previously misattributed to gamma rays by the Joliot-Curies) was electrically neutral and matched a neutral particle of ~proton mass, i.e. the neutron.",
+    "sources": ["standard physics-history account of the 1932 neutron discovery"]
+  },
+  {
+    "id": "chatgpt-007",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Self-contradictory on its face: the neutron wasn't discovered until 1932, 21 years after Rutherford's 1911 nuclear model, so that model could not have 'already incorporated neutrons.'",
+    "sources": ["basic physics-history chronology"]
+  },
+  {
+    "id": "chatgpt-008",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "The 1935 EPR paper itself never uses the word 'entanglement.' Schrodinger coined 'Verschrankung' (entanglement) later in 1935, in his own papers responding to EPR.",
+    "sources": ["standard history of the EPR paradox and Schrodinger's response"]
+  },
+  {
+    "id": "chatgpt-009",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "The Derveni Papyrus (found 1962 near Thessaloniki, c. 340 BCE) contains an allegorical philosophical commentary on an Orphic theogonic poem, and is widely cited as the oldest surviving manuscript from Europe found with a known archaeological context.",
+    "sources": ["standard classical-archaeology reference knowledge on the Derveni Papyrus"]
+  },
+  {
+    "id": "chatgpt-032",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "The transistor wasn't invented until 1947. The earliest electronic general-purpose computers (ENIAC 1945, etc.) used vacuum tubes, not transistors; transistorized computers didn't appear until the mid-to-late 1950s.",
+    "sources": ["basic computing-history chronology"]
+  },
+  {
+    "id": "chatgpt-033",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "The Antikythera mechanism is a real geared device recovered from a shipwreck, used to model astronomical cycles; CT-scan studies (Freeth et al.) have reconstructed much but not all of its gearing. Note: this is a near-duplicate of gemini-037, independently categorized as category 2 here vs category 5 there -- already flagged as category_disagreement in the committed dataset.",
+    "sources": ["standard archaeology/history-of-science knowledge of the Antikythera mechanism"]
+  },
+  {
+    "id": "gemini-003",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "medium",
+    "matches_suggestion": true,
+    "notes": "Chemical analysis (notably a 2010 Zhejiang University study) found amylopectin from sticky rice in some Great Wall mortar, used as an organic-inorganic composite binder. Caveat: this is specifically documented for Ming-dynasty sections, not necessarily 'routinely' across the Wall's full multi-dynasty, multi-century construction history -- the claim slightly overgeneralizes but is substantively correct for the sections most commonly meant by 'the Great Wall.'",
+    "sources": ["general knowledge of the sticky-rice-mortar chemical analysis findings"]
+  },
+  {
+    "id": "gemini-013",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Matches Cassius Dio's account: Claudius personally went to Britain in 43 CE after Aulus Plautius's initial invasion, bringing reinforcements including war elephants, for the final push to Camulodunum. Widely cited in Roman Britain scholarship (with the standing caveat that ancient historians sometimes embellish).",
+    "sources": ["standard Roman-Britain historical knowledge, Cassius Dio's account"]
+  },
+  {
+    "id": "gemini-024",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "'Mumia' (powdered mummy) was a documented ingredient in European pharmacopeias from the medieval period into the 18th century, prescribed for various ailments.",
+    "sources": ["standard history-of-medicine knowledge"]
+  },
+  {
+    "id": "gemini-034",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "The 1814 London Beer Flood (Meux's Horse Shoe Brewery, St Giles) is a well-documented historical event; a vat rupture released a wave of porter that destroyed buildings and killed several people.",
+    "sources": ["well-documented historical event, standard references"]
+  },
+  {
+    "id": "gemini-044",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "'Acoustic Kitty' is a real, declassified CIA project (early 1960s) that surgically implanted listening equipment in cats; reported cost estimates (varying by source, roughly $10-20M) are consistent with 'millions of dollars.'",
+    "sources": ["declassified CIA project history, widely reported"]
+  },
+  {
+    "id": "gemini-052",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "The 1932 'Emu War' -- Royal Australian Artillery personnel deployed with Lewis guns to Western Australia against emu populations -- is a well-documented historical event.",
+    "sources": ["well-documented historical event, standard references"]
+  },
+  {
+    "id": "perplexity-001",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Checked via live web research (Wikipedia: Cooke and Wheatstone telegraph, William Fothergill Cooke, Electrical telegraph, Edward Davy). The 1837 date and London/railway location are correct, but 'public' is not supported -- sources describe a trial for railway company officials, not an open public demonstration, and Cooke and Wheatstone's own article calls their system 'the first telegraph put into COMMERCIAL service' (1838, Great Western Railway), not the first demonstration. Multiple earlier/contemporaneous telegraphs existed (Ronalds 1816, Schilling 1832, Gauss/Weber 1833, Steinheil 1835-36, Davy's own 1837 demonstrations), and a real Cooke-Wheatstone priority dispute existed even between the two named inventors.",
+    "sources": ["https://en.wikipedia.org/wiki/Cooke_and_Wheatstone_telegraph", "https://en.wikipedia.org/wiki/William_Fothergill_Cooke", "https://en.wikipedia.org/wiki/Electrical_telegraph", "https://en.wikipedia.org/wiki/Edward_Davy"]
+  },
+  {
+    "id": "perplexity-009",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Eunice Foote's 1856 paper preceded John Tyndall's 1859-61 experiments on infrared absorption by CO2/water vapor; this historical correction (Foote's priority) is increasingly well-documented in recent scholarship (e.g. work rediscovering her paper circa 2010-11).",
+    "sources": ["history-of-science scholarship on Eunice Foote's priority"]
+  },
+  {
+    "id": "perplexity-019",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Howard Carter discovered Tutankhamun's tomb in November 1922 after years of excavation funded by George Herbert, 5th Earl of Carnarvon. Well documented.",
+    "sources": ["standard Egyptology history"]
+  },
+  {
+    "id": "perplexity-026",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "medium",
+    "matches_suggestion": true,
+    "notes": "The Xerox 8010 'Star' (1981) is commonly cited as the first commercial product shipped with a mouse as standard GUI input, distinct from the earlier non-commercial Xerox Alto (1973) research system. Some tech-history sources frame 'first commercially sold mouse' slightly differently depending on bundling definitions, hence medium rather than high confidence.",
+    "sources": ["standard computing-history tech references"]
+  },
+  {
+    "id": "chatgpt-010",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Iliad Book 18 describes Hephaestus's golden handmaidens ('golden maidens, in appearance like living girls') who move and assist him -- a well-known depiction of artificial servants in the text.",
+    "sources": ["standard Homeric scholarship, Iliad Book 18"]
+  },
+  {
+    "id": "chatgpt-011",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "medium",
+    "matches_suggestion": false,
+    "notes": "Checked via live web research against the Evelyn-White translation of Hesiod's Theogony. The head-birth itself IS explicit at line 924 ('Zeus himself gave birth from his own head to bright-eyed Tritogeneia'), but the 'fully armed' detail is NOT in that main line -- it appears only in a separately bracketed, disputed variant line (929a, preserved via a later quotation by Chrysippus) that editors flag as probably spurious. The 'fully armed' detail is more commonly and securely attributed to the Homeric Hymn to Athena (28), not Hesiod's own secure text. The generator's 'confirmed, high' overstates what's textually solid in Hesiod specifically -- the claim as worded (attributing the armed detail to Hesiod's Theogony) doesn't hold up on the actual text.",
+    "sources": ["https://www.theoi.com/Text/HesiodTheogony.html (Evelyn-White translation)"]
+  },
+  {
+    "id": "chatgpt-012",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "In the real Epic of Gilgamesh (Tablet XI), it is Ea (Enki) who secretly warns Utnapishtim of the coming flood and instructs him to build a boat, not Enlil -- Enlil is actually the god who wants to destroy humanity with the flood in the first place. A planted factual-detail trap, correctly caught.",
+    "sources": ["standard Akkadian-literature knowledge of the Gilgamesh flood narrative, Tablet XI"]
+  },
+  {
+    "id": "chatgpt-034",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Odyssey Book 9: Odysseus and his men sharpen and heat an olive-wood stake and drive it into Polyphemus's single eye to blind him. Accurately depicted.",
+    "sources": ["standard Homeric scholarship, Odyssey Book 9"]
+  },
+  {
+    "id": "gemini-004",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Matthew's gospel never mentions a stable -- that detail is exclusive to Luke (via the manger reference). Matthew 2 has the Magi visiting a 'house' (oikia), and the visit's timing is implied to be well after the birth (consistent with Herod's subsequent order to kill children up to age 2), not on the night of birth. Multiple distinct errors.",
+    "sources": ["standard biblical text comparison, Matthew 2 vs Luke 2"]
+  },
+  {
+    "id": "gemini-014",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "This is the Vishwarupa Darshana (Chapter 11) of the Bhagavad Gita, occurring during the Krishna-Arjuna dialogue framed as taking place on the Kurukshetra battlefield before fighting begins.",
+    "sources": ["standard knowledge of the Bhagavad Gita's text and narrative frame"]
+  },
+  {
+    "id": "gemini-025",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Matches the Prose Edda's Gylfaginning account: Ymir slain by Odin, Vili, and Ve; earth made from his flesh (sea from blood, mountains from bones, etc.) -- standard Norse cosmogony.",
+    "sources": ["standard Norse mythology knowledge, Prose Edda Gylfaginning"]
+  },
+  {
+    "id": "gemini-035",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "medium",
+    "matches_suggestion": true,
+    "notes": "Revelation 6 describes the four horsemen; the text explicitly names the fourth as Death ('his rider's name was Death'), and the others are conventionally labeled Conquest/War/Famine based on their described attributes (bow and crown; sword; scales amid famine prices) -- 'Conquest' for the first horseman specifically is the traditional interpretive label rather than a literal name in the text, so there's a small but real textual-precision caveat behind an otherwise standard description.",
+    "sources": ["standard biblical-text knowledge, Revelation 6"]
+  },
+  {
+    "id": "gemini-045",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "The Trojan Horse story is NOT in the Iliad -- the Iliad ends with Hector's funeral, before the fall of Troy. The wooden horse appears in the Odyssey (brief mentions) and more fully in Virgil's Aeneid and other post-Homeric sources.",
+    "sources": ["standard classical-literature knowledge, well-known fact about the Iliad's actual scope"]
+  },
+  {
+    "id": "gemini-053",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Genesis never specifies the forbidden fruit as an apple -- it says only 'fruit' (peri). The apple identification is a later Western tradition, possibly from a Latin pun (malum = both 'apple' and 'evil').",
+    "sources": ["standard biblical-text knowledge, Genesis 3"]
+  },
+  {
+    "id": "perplexity-003",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Accurate general description of the Gilgamesh flood narrative (Tablet XI) -- the gods did collectively bring the flood, and Utnapishtim did build and survive in a boat. Correctly hedged/general compared to chatgpt-012's specific wrong-god detail.",
+    "sources": ["standard Akkadian-literature knowledge"]
+  },
+  {
+    "id": "perplexity-011",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Voluspa ('The Prophecy of the Seeress') is narrated by a volva describing the world's creation, the events leading to Ragnarok, and the subsequent renewal of the world. Accurate.",
+    "sources": ["standard Norse mythology/Poetic Edda knowledge"]
+  },
+  {
+    "id": "perplexity-020",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Job 38:1: 'Then the LORD answered Job out of the whirlwind.' Directly textual.",
+    "sources": ["standard biblical-text knowledge, Job 38"]
+  },
+  {
+    "id": "perplexity-028",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "The Popol Vuh narrates Hunahpu and Xbalanque (Hero Twins) undergoing trials in Xibalba and outwitting its lords through cunning and trickery, ultimately defeating them.",
+    "sources": ["standard Mesoamerican/Maya literature knowledge, Popol Vuh"]
+  }
+]

@@ -90,9 +90,49 @@ correctly/uselessly defaulting to "undetermined" on all of them. Worth
 running as its own distinct track, not folded into the categories 1-7
 web-verifiable set.
 
-## Not done yet
+## Independent verification — done, 2026-10-25
 
-No independent verification of any `suggested_ground_truth` against real
-primary sources. No claim here has been run through the real engine or any
-competitor. Per the generation prompt's own condition, nothing in this file
-should be treated as ground truth until that happens.
+Split into two tracks per the round-2 scoping decision:
+
+- **Track A** (`track_a_web_verifiable.json`, 102 claims, categories 1-7) —
+  web-searchable facts. Independently verified claim-by-claim via four
+  parallel research passes (one per category group: cat 1 / cat 2+3 /
+  cat 4+7 / cat 5), each checking real primary/secondary sources, plus
+  category 6 (14 calibration probes) set directly to `undetermined` by
+  project convention, no research needed since that's the correct verdict
+  regardless of which tradition the claim is about. Merged result:
+  **`claims_round2_verified.json`** — the file to actually use for testing.
+  Per-category raw verification output (sources checked, notes) kept in
+  `verified_category1.json`, `verified_category2_3.json`,
+  `verified_category4_7.json`, `verified_category5.json`,
+  `verified_category6.json`.
+
+- **Track B** (`track_b_category8_formal.json`, 69 claims, category 8) —
+  parked. These are closed-form control-theory/FPGA/math claims, not
+  web-verifiable facts; see the section above. Not yet verified or run.
+
+### Verification result: 100/102 of the generators' own suggestions held up
+
+Only **2 corrections** out of 102, both confirmed→contradicted:
+
+- `chatgpt-011` — Hesiod's *Theogony* claim that Athena emerges "fully
+  armed" from Zeus's head. The head-birth itself is real (Theogony line
+  924), but "fully armed" only appears in a line modern editors flag as
+  probably spurious — that specific detail belongs to the Homeric Hymn to
+  Athena, not the secure Theogony text.
+- `gemini-027` — the Voynich Manuscript claim bundles a solid, real 2009
+  Arizona radiocarbon result (1404-1438 CE) with a much weaker "northern
+  Italy" origin inference (one castle illustration) as if both rested on
+  the same evidence.
+
+One claim (`gemini-031`, the 1918 flu's Kansas origin) was independently
+confirmed as genuinely unresolved in the historical literature — the
+generator already said so; verification agrees undetermined is the honest
+answer, not a guess either way.
+
+Final verdict distribution across all 102: confirmed 34, contradicted 53,
+undetermined 15 (14 calibration probes + the one genuinely open historical
+question above).
+
+Not yet done: running any of this through the real engine or any
+competitor.

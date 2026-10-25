@@ -1,0 +1,114 @@
+[
+  {
+    "id": "chatgpt-013",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Dead Sea Scrolls biblical manuscripts date from ~3rd century BCE to 1st century CE, many centuries before the Masoretic codices (9th-11th century CE), and textual criticism scholarship documents real variant readings between DSS texts and the later Masoretic tradition.",
+    "sources": ["https://en.wikipedia.org/wiki/Leningrad_Codex"]
+  },
+  {
+    "id": "chatgpt-014",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "The DSS actually demonstrate textual plurality/diversity in the pre-standardization period, not uniform agreement with modern printed editions -- the opposite of what this claim asserts.",
+    "sources": []
+  },
+  {
+    "id": "chatgpt-015",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "The Great Isaiah Scroll (1QIsa^a) is a well-documented DSS manuscript of Isaiah, standardly dated to approximately the 2nd century BCE.",
+    "sources": []
+  },
+  {
+    "id": "chatgpt-035",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Göbekli Tepe's monumental structures were built by pre-literate hunter-gatherers roughly 11,500 years ago; writing was not invented until roughly 7,000 years later (~4,000 years ago). No evidence of a literate urban civilization at the site.",
+    "sources": ["https://www.pbs.org/video/gobekli-tepe-the-11500-year-old-mystery-that-rewrote-history-onqqe9"]
+  },
+  {
+    "id": "chatgpt-036",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "The Shroud's 1988 radiocarbon dating placed it in the medieval period (1260-1390 CE), not the first century CE -- directly contradicting this claim's dating and its claim of no scientific dispute.",
+    "sources": []
+  },
+  {
+    "id": "gemini-006",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "The Copper Scroll's actual text does describe numerous buried caches of gold and silver at specific locations in Judea -- this is an accurate description of the scroll's documented content (separate from whether any such treasure was ever found).",
+    "sources": []
+  },
+  {
+    "id": "gemini-016",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Piltdown Man, discovered 1912, was conclusively exposed as a fraud in 1953 -- a modern human cranium (of much younger age than claimed) combined with a filed/stained orangutan jaw.",
+    "sources": []
+  },
+  {
+    "id": "gemini-027",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "medium",
+    "matches_suggestion": false,
+    "notes": "CORRECTED from generator's 'confirmed, high'. The early-15th-century date (1404-1438) is genuinely established by the 2009 University of Arizona radiocarbon study. But 'originates from northern Italy' is NOT something the carbon dating established -- it's a separate, much weaker stylistic inference (one castle illustration resembling Italian architecture), and some researchers suggest the calfskin could be from anywhere in the Mediterranean. The claim bundles a confirmed fact with an overstated/unconfirmed detail as if both were established by the same dating method -- the classic 'true fact + subtly false/overreaching detail in one sentence' trap.",
+    "sources": ["https://en.wikipedia.org/wiki/Voynich_manuscript", "https://www.manufacturing.net/home/news/13135453/mysterious-voynich-manuscript-dates-back-to-early-15th-century-researchers-find"]
+  },
+  {
+    "id": "gemini-031",
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "medium",
+    "matches_suggestion": true,
+    "notes": "Genuinely contested among historians/epidemiologists -- competing hypotheses place the 1918 flu's origin in Haskell County Kansas, Camp Funston, Étaples France, or Shanxi China, with no settled scientific consensus and real evidence cutting against the popular Kansas story (2018 review of viral protein data).",
+    "sources": ["https://en.wikipedia.org/wiki/The_Great_Influenza", "https://www.nationalreview.com/2020/05/china-in-2020-is-not-kansas-in-1918/amp/"]
+  },
+  {
+    "id": "gemini-047",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Deliberately conflates two different discoveries as the generator suspected: Nag Hammadi was found in December 1945 (not 1947) near Nag Hammadi in Upper Egypt on the Nile (not 'near the Dead Sea' -- that's the separate Qumran/Dead Sea Scrolls discovery), by local Egyptian farmers of the al-Samman clan.",
+    "sources": ["https://tertullian.org/rpearse/manuscripts/nag_hammadi.htm", "https://www.newworldencyclopedia.org/entry/Nag_Hammadi_Library"]
+  },
+  {
+    "id": "gemini-054",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Three laboratories (Oxford, Zurich, Arizona/Tucson) independently radiocarbon-dated the Shroud in 1988, concluding a medieval origin in the 1260-1390 CE range -- this is the well-documented, widely cited result.",
+    "sources": []
+  },
+  {
+    "id": "perplexity-005",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "The Leningrad Codex's own colophon dates it to 1008 CE (possibly 1009); it is the oldest complete Hebrew Bible manuscript (the older Aleppo Codex is incomplete due to losses in 1947).",
+    "sources": ["https://en.wikipedia.org/wiki/Leningrad_Codex"]
+  },
+  {
+    "id": "perplexity-013",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "medium",
+    "matches_suggestion": true,
+    "notes": "The Essene-authorship hypothesis is the traditional leading theory but not unanimous, and in any case the DSS corpus includes copies of much older biblical texts the Qumran community did not author -- 'all written by the Essenes' overclaims a contested and incomplete picture.",
+    "sources": []
+  },
+  {
+    "id": "perplexity-030",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "medium",
+    "matches_suggestion": true,
+    "notes": "Codex Sinaiticus (~350 CE) is standardly described as the oldest surviving complete New Testament manuscript; sources vary in how cautiously they phrase 'earliest complete' (Codex Vaticanus is comparably early but not complete), which is why medium rather than high confidence.",
+    "sources": ["https://www.bartehrman.com/codex-sinaiticus/", "https://birmingham.ac.uk/schools/ptr/departments/theologyandreligion/research/projects/codex-sinaiticus"]
+  }
+]

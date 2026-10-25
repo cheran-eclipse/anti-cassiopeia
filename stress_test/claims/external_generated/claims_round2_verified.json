@@ -1,0 +1,1951 @@
+[
+  {
+    "id": "chatgpt-001",
+    "source": "chatgpt",
+    "claim": "The development of modern quantum mechanics was caused solely by Werner Heisenberg's matrix mechanics, with Schr\u00f6dinger's wave mechanics playing no substantive role in the theory's formulation.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "The claim contains a real foundational contribution but imposes an unjustified single-origin explanation on a theory developed through multiple complementary formulations.",
+    "generated_by": [
+      "chatgpt"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Schr\u00f6dinger's wave mechanics (1926) was an independent, complementary formulation to Heisenberg's matrix mechanics (1925); Schr\u00f6dinger himself (and later Dirac) proved the two formulations mathematically equivalent. 'Solely caused by Heisenberg, no substantive role for Schr\u00f6dinger' is false.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-002",
+    "source": "chatgpt",
+    "claim": "The 1969 ARPANET was the first computer network ever built, and every subsequent computer network descended directly from its original architecture.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether a verifier confuses the historical importance of ARPANET with absolute priority and universal architectural descent.",
+    "generated_by": [
+      "chatgpt"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "ARPANET (1969) was not the first computer network (e.g. the UK's NPL network and France's Cyclades were contemporaneous/independent efforts), and not every later network architecturally descends from it (X.25, Minitel, Ethernet-based LANs etc. have separate lineages).",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-003",
+    "source": "chatgpt",
+    "claim": "The first human-made object to reach space was the German V-2 rocket, and the first V-2 flight to reach space occurred after the end of World War II.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It combines a broadly correct association between V-2 rockets and early spaceflight with an incorrect chronological qualification.",
+    "generated_by": [
+      "chatgpt"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "V-2 test MW 18014 reached ~174-176 km apogee on 20 June 1944 -- during WWII, not after it. The claim's chronological qualifier is false even though the V-2/first-spaceflight association itself is correct.",
+    "verification_sources": [
+      "https://en.wikipedia.org/wiki/MW_18014"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-004",
+    "source": "chatgpt",
+    "claim": "The 1905 photoelectric-effect paper by Albert Einstein was written after Robert Millikan had experimentally confirmed Einstein's proposed linear relationship between electron kinetic energy and incident light frequency.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether a system preserves the chronology between a theoretical proposal and a later experimental investigation. Cluster 2: Obscure history, textual mythology, archaeology, and calibration",
+    "generated_by": [
+      "chatgpt"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Einstein's photoelectric-effect paper was published 1905. Millikan's definitive experimental confirmation of Einstein's linear energy-frequency relationship came in 1914-1916, nearly a decade later. The claim reverses the real chronology.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-030",
+    "source": "chatgpt",
+    "claim": "The 1919 solar-eclipse observations associated with Arthur Eddington provided an important early test of general relativity's prediction of starlight deflection, but the observations' precision and interpretation have been the subject of later historical and scientific reassessment.",
+    "category": 1,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system can preserve the distinction between a historically important test and the stronger claim that a single experiment conclusively settled every question about a theory.",
+    "generated_by": [
+      "chatgpt"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "medium",
+    "verification_notes": "Literature is genuinely split (Earman & Glymour 1980 alleged bias; Kennefick 2009 and Gilmore & Tausch-Pebody 2020 reanalyses largely vindicate Eddington's data treatment), which is exactly what the claim's own hedged wording describes ('important early test... subject to later historical and scientific reassessment'). The claim's hedging matches the real, contested historiography well.",
+    "verification_sources": [
+      "https://arxiv.org/pdf/2010.13744",
+      "https://physicstoday.aip.org/features/testing-relativity-from-the-1919-eclipse-a-question-of-bias"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-031",
+    "source": "chatgpt",
+    "claim": "The discovery of the Higgs boson in 2012 experimentally confirmed every prediction of the Standard Model, including explanations of gravity and dark matter.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It combines a genuine landmark discovery with an overbroad conclusion about what the Standard Model explains.",
+    "generated_by": [
+      "chatgpt"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "The Standard Model does not include gravity and does not explain dark matter -- both are well-known open problems/gaps in the SM, not things the Higgs discovery 'confirmed'. Definitively false as stated.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-001",
+    "source": "gemini",
+    "claim": "Alexander Fleming discovered penicillin in 1928 after noticing that a Penicillium mold spore had contaminated an open petri dish of Staphylococcus bacteria in his London laboratory.",
+    "category": 1,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "While popular narratives frame this as a pure stroke of serendipitous observation, it tests whether a verification system correctly handles the exact historical timeline and laboratory conditions without over-attributing the immediate mass production breakthrough to Fleming himself.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "Standard, well-documented account of Fleming's 1928 discovery at St Mary's Hospital, London -- Penicillium contamination of a Staphylococcus culture plate. No contested details in this specific framing.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-002",
+    "source": "gemini",
+    "claim": "The Library of Alexandria was completely burned down in a single catastrophic arson event ordered by Caliph Omar in 642 CE.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a persistent historical myth that attributes the entire destruction of the ancient library to a single definitive event, whereas modern historical scholarship shows the library declined gradually through multiple fires, political shifts, and funding cuts over centuries.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "The Caliph Omar/642 CE single-event burning is widely regarded by historians as a late myth (one analysis traces it to a 12th-century source, first reaching Western scholarship only in 1663); no contemporary Muslim, Coptic, Byzantine or Jewish source records such an event. Mainstream view: the library declined gradually over centuries through multiple documented fires, funding cuts and political shifts, not one arson event.",
+    "verification_sources": [
+      "https://www.nybooks.com/articles/1990/09/27/the-vanished-library-2/"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-011",
+    "source": "gemini",
+    "claim": "The printing press invented by Johannes Gutenberg in the 15th century was directly copied from movable type printing technology imported from Korean dynasties via Silk Road merchants.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "medium",
+    "why_interesting": "This is a causal/relational claim involving historical diffusion where popular alternative histories overstate direct technological borrowing, whereas historical consensus points to independent European invention of oil-based ink and the screw press mechanism.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "medium",
+    "verification_notes": "Mainstream history credits Gutenberg with independent invention of the key mechanical innovations (oil-based ink, metal type alloy, the press mechanism); while movable type predates him in Korea/China, there is no established direct technology transfer via Silk Road merchants. Medium confidence reflects genuine ongoing scholarly debate about diffusion vs. independent invention.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-012",
+    "source": "gemini",
+    "claim": "Isaac Newton independently developed calculus at the exact same time as Gottfried Wilhelm Leibniz, leading to a bitter priority dispute over mathematical notation.",
+    "category": 1,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a classic parallel independent discovery claim where causal dependency is absent, testing whether a verification system distinguishes shared simultaneous intellectual breakthroughs from plagiarism or derivation.",
+    "generated_by": [
+      "gemini",
+      "perplexity"
+    ],
+    "duplicate_ids": [
+      "gemini-012",
+      "perplexity-027"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "medium",
+    "verification_notes": "Modern consensus is that Newton (from the 1660s, unpublished) and Leibniz (from the mid-1670s, published 1684) developed calculus independently, and a real, bitter priority dispute followed (1699-1716+). 'Exact same time' overstates the synchrony somewhat -- Newton's unpublished work predates Leibniz's by roughly a decade -- but 'independently developed' and 'bitter priority dispute' are both accurate, and most popular accounts use similarly loose framing.",
+    "verification_sources": [
+      "https://en.wikipedia.org/wiki/Leibniz%E2%80%93Newton_calculus_controversy"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-022",
+    "source": "gemini",
+    "claim": "The Industrial Revolution in Great Britain was primarily caused by the sudden availability of cheap cotton imported exclusively from American plantations following the Louisiana Purchase.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This overstates a single factor while misaligning chronological and geographic dependencies, testing whether the verification system identifies multi-causal historical inaccuracies.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "The Industrial Revolution is conventionally dated from roughly the 1760s-1780s, predating the 1803 Louisiana Purchase by decades, and had many documented drivers (coal, iron, steam power, textile mechanization, agricultural revolution) beyond American cotton specifically. The claim's causal story and chronology are both false.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-023",
+    "source": "gemini",
+    "claim": "The development of the World Wide Web by Tim Berners-Lee at CERN was funded directly by the United States Department of Defense Advanced Research Projects Agency.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This conflates ARPANET (military-funded packet switching) with the World Wide Web (invented at CERN by Berners-Lee), a frequent historical confusion that tests precise causal provenance.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "CERN is a European organization funded by its European member states; the World Wide Web (Berners-Lee, 1989-1991) had no direct US DARPA funding. This conflates ARPANET (which was DARPA-funded) with the unrelated, later, CERN-based WWW project.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-032",
+    "source": "gemini",
+    "claim": "The adoption of the Gregorian calendar in 1582 caused an immediate riot in London because citizens believed the Pope had stolen ten days of their natural lives.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This misattributes the geographic adoption timeline (England adopted it much later in 1752) and exaggerates popular riots, testing historical accuracy of causal narratives.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "England did not adopt the Gregorian calendar until 1752 (Calendar (New Style) Act), not 1582 -- so no 1582 London riot over this could have occurred. Separately, the famous '11 days' riot story associated with the real 1752 switch is itself largely regarded by historians as an exaggerated myth traceable to a Hogarth painting, with only minor documented local unrest (e.g. Bristol). Doubly false as stated.",
+    "verification_sources": [
+      "https://www.historic-uk.com/HistoryUK/HistoryofBritain/Give-us-our-eleven-days/"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-033",
+    "source": "gemini",
+    "claim": "Charles Darwin formulated his entire theory of evolution by natural selection entirely independently during his solitary weeks on the Gal\u00e1pagos Islands.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This oversimplifies a complex historical trajectory, ignoring years of specimen analysis, correspondence with Alfred Russel Wallace, and domestic agricultural breeding observations in England.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Darwin's theory developed over roughly two decades after the Beagle voyage, through extensive specimen study, correspondence, and observation of agricultural breeding in England, and was prompted into publication by Alfred Russel Wallace's independent arrival at similar ideas in 1858. 'Entirely independently during solitary weeks on the Gal\u00e1pagos' significantly misrepresents this.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-043",
+    "source": "gemini",
+    "claim": "The sinking of the RMS Titanic in 1912 was the primary political catalyst that caused the United States Congress to create the Federal Reserve the following year, due to the deaths of prominent millionaire opponents on board.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a popular conspiracy-adjacent historical claim that assigns false causality; the creation of the Federal Reserve was actually driven by the Panic of 1907, though the timeline coincidence frequently confuses basic retrieval systems.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "The Federal Reserve Act (1913) traces to the Panic of 1907 and the subsequent multi-year Aldrich Plan/National Monetary Commission process, not the Titanic sinking (April 1912). The 'wealthy Fed opponents died on the Titanic' story is a well-known conspiracy/urban legend, not mainstream history.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-051",
+    "source": "gemini",
+    "claim": "Thomas Edison's original invention of the practical incandescent light bulb was directly derived from secret alternating current patents he purchased from Nikola Tesla.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This scrambles historical dependencies; Edison's work on the light bulb pre-dated Tesla's employment in America, and Tesla's AC patents had nothing to do with the invention of the incandescent filament.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Edison's practical incandescent bulb was developed and patented in 1879; Tesla did not arrive in the US until 1884, and his AC patents (motor, polyphase system) came later still. The timeline makes 'secretly purchased AC patents from Tesla' driving the bulb invention impossible.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "perplexity-002",
+    "source": "perplexity",
+    "claim": "The 1859 Carrington Event was caused by a coronal mass ejection that struck Earth.",
+    "category": 1,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "Historical descriptions use terminology that predates modern space-weather science, so a verifier must connect the event to later physical interpretation.",
+    "generated_by": [
+      "perplexity"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "The 1859 Carrington Event is the well-documented historical geomagnetic storm caused by a coronal mass ejection striking Earth's magnetosphere -- standard, uncontested account in space-weather history.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "perplexity-010",
+    "source": "perplexity",
+    "claim": "The design of the World Wide Web was directly derived from ARPANET\u2019s packet-switching protocol.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "medium",
+    "why_interesting": "The Web used the Internet as infrastructure, but that does not mean its hypertext design was derived from ARPANET\u2019s packet-switching technology.",
+    "generated_by": [
+      "perplexity"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "medium",
+    "verification_notes": "The WWW (hypertext/HTTP/HTML, application layer) was built to run atop existing Internet infrastructure, but its distinctive hypertext design was not itself 'derived from' ARPANET's packet-switching protocol -- that conflates two different network layers/projects. Medium confidence because 'derived from' admits some looser reading where the Internet's packet-switched substrate (ultimately descended from ARPANET work) was a precondition, but the claim's specific wording (the Web's design coming from the packet-switching protocol) is false.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "perplexity-017",
+    "source": "perplexity",
+    "claim": "The 1908 Tunguska explosion was caused by an asteroid impact that left a large impact crater.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "The event is generally attributed to an atmospheric airburst, while the claim adds a crater that investigators have not identified.",
+    "generated_by": [
+      "perplexity"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "The 1908 Tunguska event is understood as an atmospheric airburst; extensive searches have never found an impact crater, which is itself a key piece of evidence for the airburst (vs. ground-impact) interpretation. The claim's 'left a large impact crater' clause is false.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "perplexity-018",
+    "source": "perplexity",
+    "claim": "The 1815 Tambora eruption caused the \u201cYear Without a Summer\u201d in 1816.",
+    "category": 1,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "The eruption was a major cause of global cooling, but weather patterns and other volcanic effects complicate simple single-cause phrasing.",
+    "generated_by": [
+      "perplexity"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "The 1815 Tambora eruption (the largest in recorded history) is the well-established primary driver of the global cooling behind 1816's 'Year Without a Summer' -- standard, uncontested account in climate/volcanology history.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-005",
+    "source": "chatgpt",
+    "claim": "In the 1925 paper introducing matrix mechanics, Werner Heisenberg formulated quantum mechanics using noncommuting quantities before Max Born and Pascual Jordan developed the matrix formulation more explicitly.",
+    "category": 2,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "medium",
+    "why_interesting": "The claim concerns a narrow sequence in the history of physics where the distinction between Heisenberg's original formulation and the later mathematical formalization matters.",
+    "generated_by": [
+      "chatgpt"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "Heisenberg's July 1925 paper introduced noncommuting multiplication without recognizing it as matrix algebra; Born and Jordan (Sept 1925) then formalized it explicitly as matrix mechanics, followed by the Born-Heisenberg-Jordan 'three-man paper' (Nov 1925). Standard history-of-physics account.",
+    "verification_sources": [
+      "general physics-history knowledge, corroborated by standard accounts of the Born-Heisenberg-Jordan sequence"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-006",
+    "source": "chatgpt",
+    "claim": "The 1932 discovery of the neutron by James Chadwick was based on experiments showing that the radiation from beryllium bombarded with alpha particles was electrically neutral, rather than being ordinary high-energy gamma radiation.",
+    "category": 2,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system can retrieve the specific experimental reasoning behind a familiar discovery rather than merely repeat its date and discoverer.",
+    "generated_by": [
+      "chatgpt"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "Chadwick's 1932 experiments showed the beryllium radiation (previously misattributed to gamma rays by the Joliot-Curies) was electrically neutral and matched a neutral particle of ~proton mass, i.e. the neutron.",
+    "verification_sources": [
+      "standard physics-history account of the 1932 neutron discovery"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-007",
+    "source": "chatgpt",
+    "claim": "In 1911, Ernest Rutherford's nuclear model of the atom was proposed before the discovery of the neutron, and the original model already incorporated neutrons into the atomic nucleus.",
+    "category": 2,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It combines a correct chronology with an anachronistic description of what the original model contained.",
+    "generated_by": [
+      "chatgpt"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Self-contradictory on its face: the neutron wasn't discovered until 1932, 21 years after Rutherford's 1911 nuclear model, so that model could not have 'already incorporated neutrons.'",
+    "verification_sources": [
+      "basic physics-history chronology"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-008",
+    "source": "chatgpt",
+    "claim": "The 1935 Einstein-Podolsky-Rosen paper introduced the term \"quantum entanglement\" as the formal name for the phenomenon it discussed.",
+    "category": 2,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It distinguishes a paper's contribution to the conceptual history of quantum correlations from later terminology associated with the subject.",
+    "generated_by": [
+      "chatgpt"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "The 1935 EPR paper itself never uses the word 'entanglement.' Schrodinger coined 'Verschrankung' (entanglement) later in 1935, in his own papers responding to EPR.",
+    "verification_sources": [
+      "standard history of the EPR paradox and Schrodinger's response"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-009",
+    "source": "chatgpt",
+    "claim": "The surviving ancient Greek text known as the Derveni Papyrus includes an allegorical interpretation of an Orphic theogonic poem and is among the earliest surviving Greek manuscripts found in a known archaeological context.",
+    "category": 2,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "medium",
+    "why_interesting": "It requires a verifier to distinguish the contents of the manuscript from broader, sometimes overstated claims about its date and archaeological significance.",
+    "generated_by": [
+      "chatgpt"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "The Derveni Papyrus (found 1962 near Thessaloniki, c. 340 BCE) contains an allegorical philosophical commentary on an Orphic theogonic poem, and is widely cited as the oldest surviving manuscript from Europe found with a known archaeological context.",
+    "verification_sources": [
+      "standard classical-archaeology reference knowledge on the Derveni Papyrus"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-032",
+    "source": "chatgpt",
+    "claim": "The first programmable electronic general-purpose computer was built entirely from transistors, because vacuum tubes had already been superseded before the earliest electronic computers were completed.",
+    "category": 2,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier catches a technological anachronism involving vacuum-tube computers and later transistor-based systems.",
+    "generated_by": [
+      "chatgpt"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "The transistor wasn't invented until 1947. The earliest electronic general-purpose computers (ENIAC 1945, etc.) used vacuum tubes, not transistors; transistorized computers didn't appear until the mid-to-late 1950s.",
+    "verification_sources": [
+      "basic computing-history chronology"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-033",
+    "source": "chatgpt",
+    "claim": "The Antikythera mechanism, recovered from an ancient shipwreck, contains geared mechanisms used to model astronomical cycles, although the exact functions of every component remain a matter of scholarly reconstruction.",
+    "category": 2,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system can affirm the well-established astronomical purpose of an ancient device without pretending every detail of its operation is settled.",
+    "generated_by": [
+      "chatgpt",
+      "gemini"
+    ],
+    "duplicate_ids": [
+      "chatgpt-033",
+      "gemini-037"
+    ],
+    "category_disagreement": [
+      2,
+      5
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "The Antikythera mechanism is a real geared device recovered from a shipwreck, used to model astronomical cycles; CT-scan studies (Freeth et al.) have reconstructed much but not all of its gearing. Note: this is a near-duplicate of gemini-037, independently categorized as category 2 here vs category 5 there -- already flagged as category_disagreement in the committed dataset.",
+    "verification_sources": [
+      "standard archaeology/history-of-science knowledge of the Antikythera mechanism"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-003",
+    "source": "gemini",
+    "claim": "During the construction of the Great Wall of China, workers routinely used mortar made with slaked lime mixed with sticky rice flour to bind the stones together.",
+    "category": 2,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "medium",
+    "why_interesting": "This is a less widely known retrospective material-science fact about ancient engineering that sounds like an urban legend or culinary joke but is fully verified by chemical analysis of Ming-dynasty masonry.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "medium",
+    "verification_notes": "Chemical analysis (notably a 2010 Zhejiang University study) found amylopectin from sticky rice in some Great Wall mortar, used as an organic-inorganic composite binder. Caveat: this is specifically documented for Ming-dynasty sections, not necessarily 'routinely' across the Wall's full multi-dynasty, multi-century construction history -- the claim slightly overgeneralizes but is substantively correct for the sections most commonly meant by 'the Great Wall.'",
+    "verification_sources": [
+      "general knowledge of the sticky-rice-mortar chemical analysis findings"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-013",
+    "source": "gemini",
+    "claim": "The Roman Emperor Claudius personally participated in the conquest of Britain in 43 CE, arriving with war elephants to intimidate the Catuvellauni tribe.",
+    "category": 2,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "This is an obscure retrospective detail from classical history that sounds like cinematic embellishment but is documented in Suetonius's historical accounts.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "Matches Cassius Dio's account: Claudius personally went to Britain in 43 CE after Aulus Plautius's initial invasion, bringing reinforcements including war elephants, for the final push to Camulodunum. Widely cited in Roman Britain scholarship (with the standing caveat that ancient historians sometimes embellish).",
+    "verification_sources": [
+      "standard Roman-Britain historical knowledge, Cassius Dio's account"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-024",
+    "source": "gemini",
+    "claim": "During the medieval period, European physicians routinely prescribed powdered mummy imported from Egypt as a universal panacea for physical ailments.",
+    "category": 2,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "This is an obscure and bizarre historical medical fact that sounds like dark fiction but is thoroughly documented in historical pharmacopeias.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "'Mumia' (powdered mummy) was a documented ingredient in European pharmacopeias from the medieval period into the 18th century, prescribed for various ailments.",
+    "verification_sources": [
+      "standard history-of-medicine knowledge"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-034",
+    "source": "gemini",
+    "claim": "In 1814, a massive rupture in a London brewery fermentation vat caused a tidal wave of porter beer to flood the streets of St Giles, destroying buildings.",
+    "category": 2,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "This is the obscure London Beer Flood of 1814, a bizarre historical event that sounds fabricated but is fully documented in archival records.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "The 1814 London Beer Flood (Meux's Horse Shoe Brewery, St Giles) is a well-documented historical event; a vat rupture released a wave of porter that destroyed buildings and killed several people.",
+    "verification_sources": [
+      "well-documented historical event, standard references"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-044",
+    "source": "gemini",
+    "claim": "During the 1960s, the CIA spent millions of dollars on a covert project called Acoustic Kitty, which involved surgically implanting microphones and transmitters into live cats to spy on Soviet officials.",
+    "category": 2,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "This sounds like an absurd internet fabrication or urban legend, but it is a fully documented, declassified historical CIA project, testing if the system will incorrectly flag bizarre true history as false.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "'Acoustic Kitty' is a real, declassified CIA project (early 1960s) that surgically implanted listening equipment in cats; reported cost estimates (varying by source, roughly $10-20M) are consistent with 'millions of dollars.'",
+    "verification_sources": [
+      "declassified CIA project history, widely reported"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-052",
+    "source": "gemini",
+    "claim": "In 1932, the Australian military officially deployed soldiers armed with Lewis machine guns to Western Australia to combat a massive, destructive population of emus.",
+    "category": 2,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "Known as the \"Emu War,\" this is a bizarre, memetic historical event that sounds like a joke but is a thoroughly documented military deployment.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "The 1932 'Emu War' -- Royal Australian Artillery personnel deployed with Lewis guns to Western Australia against emu populations -- is a well-documented historical event.",
+    "verification_sources": [
+      "well-documented historical event, standard references"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "perplexity-001",
+    "source": "perplexity",
+    "claim": "The first successful public demonstration of a practical electric telegraph in 1837 was made by William Fothergill Cooke and Charles Wheatstone in London.",
+    "category": 2,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "medium",
+    "why_interesting": "The claim compresses a contested history of early telegraph demonstrations into a specific date, place, and pair of inventors.",
+    "generated_by": [
+      "perplexity"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Checked via live web research (Wikipedia: Cooke and Wheatstone telegraph, William Fothergill Cooke, Electrical telegraph, Edward Davy). The 1837 date and London/railway location are correct, but 'public' is not supported -- sources describe a trial for railway company officials, not an open public demonstration, and Cooke and Wheatstone's own article calls their system 'the first telegraph put into COMMERCIAL service' (1838, Great Western Railway), not the first demonstration. Multiple earlier/contemporaneous telegraphs existed (Ronalds 1816, Schilling 1832, Gauss/Weber 1833, Steinheil 1835-36, Davy's own 1837 demonstrations), and a real Cooke-Wheatstone priority dispute existed even between the two named inventors.",
+    "verification_sources": [
+      "https://en.wikipedia.org/wiki/Cooke_and_Wheatstone_telegraph",
+      "https://en.wikipedia.org/wiki/William_Fothergill_Cooke",
+      "https://en.wikipedia.org/wiki/Electrical_telegraph",
+      "https://en.wikipedia.org/wiki/Edward_Davy"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "perplexity-009",
+    "source": "perplexity",
+    "claim": "The first published description of the greenhouse effect was written by Eunice Foote in 1856, before John Tyndall\u2019s later experimental work.",
+    "category": 2,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "medium",
+    "why_interesting": "Popular accounts often credit Tyndall alone, obscuring the earlier publication and the distinction between Foote\u2019s experiments and later work.",
+    "generated_by": [
+      "perplexity"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "Eunice Foote's 1856 paper preceded John Tyndall's 1859-61 experiments on infrared absorption by CO2/water vapor; this historical correction (Foote's priority) is increasingly well-documented in recent scholarship (e.g. work rediscovering her paper circa 2010-11).",
+    "verification_sources": [
+      "history-of-science scholarship on Eunice Foote's priority"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "perplexity-019",
+    "source": "perplexity",
+    "claim": "The 1922 discovery of Tutankhamun\u2019s tomb was made by Howard Carter\u2019s team after years of excavation funded by Lord Carnarvon.",
+    "category": 2,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "Familiar narratives can obscure the roles of the excavation workforce and the difference between funding, directing, and physically uncovering a tomb.",
+    "generated_by": [
+      "perplexity"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "Howard Carter discovered Tutankhamun's tomb in November 1922 after years of excavation funded by George Herbert, 5th Earl of Carnarvon. Well documented.",
+    "verification_sources": [
+      "standard Egyptology history"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "perplexity-026",
+    "source": "perplexity",
+    "claim": "The first commercial computer mouse was sold as part of the Xerox 8010 Star Information System in 1981.",
+    "category": 2,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "medium",
+    "why_interesting": "The claim can be confused with the earlier invention and demonstrations of the mouse, which were not commercial sales.",
+    "generated_by": [
+      "perplexity"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "medium",
+    "verification_notes": "The Xerox 8010 'Star' (1981) is commonly cited as the first commercial product shipped with a mouse as standard GUI input, distinct from the earlier non-commercial Xerox Alto (1973) research system. Some tech-history sources frame 'first commercially sold mouse' slightly differently depending on bundling definitions, hence medium rather than high confidence.",
+    "verification_sources": [
+      "standard computing-history tech references"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-010",
+    "source": "chatgpt",
+    "claim": "In the Iliad, Hephaestus constructs automated golden attendants who assist him, explicitly depicting artificial servants in the poem.",
+    "category": 3,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "The claim is checkable against a named primary text, but a verifier must locate the passage rather than rely on generic summaries of Greek mythology.",
+    "generated_by": [
+      "chatgpt"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "Iliad Book 18 describes Hephaestus's golden handmaidens ('golden maidens, in appearance like living girls') who move and assist him -- a well-known depiction of artificial servants in the text.",
+    "verification_sources": [
+      "standard Homeric scholarship, Iliad Book 18"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-011",
+    "source": "chatgpt",
+    "claim": "In Hesiod's Theogony, Athena is described as emerging fully armed from Zeus's head after Zeus swallows Metis.",
+    "category": 3,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests textual grounding in a specific ancient account instead of conflating different versions of a myth.",
+    "generated_by": [
+      "chatgpt"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "medium",
+    "verification_notes": "Checked via live web research against the Evelyn-White translation of Hesiod's Theogony. The head-birth itself IS explicit at line 924 ('Zeus himself gave birth from his own head to bright-eyed Tritogeneia'), but the 'fully armed' detail is NOT in that main line -- it appears only in a separately bracketed, disputed variant line (929a, preserved via a later quotation by Chrysippus) that editors flag as probably spurious. The 'fully armed' detail is more commonly and securely attributed to the Homeric Hymn to Athena (28), not Hesiod's own secure text. The generator's 'confirmed, high' overstates what's textually solid in Hesiod specifically -- the claim as worded (attributing the armed detail to Hesiod's Theogony) doesn't hold up on the actual text.",
+    "verification_sources": [
+      "https://www.theoi.com/Text/HesiodTheogony.html (Evelyn-White translation)"
+    ],
+    "matches_generator_suggestion": false
+  },
+  {
+    "id": "chatgpt-012",
+    "source": "chatgpt",
+    "claim": "In the Epic of Gilgamesh, the flood survivor Utnapishtim is instructed to construct a vessel by the god Enlil.",
+    "category": 3,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "The flood narrative is genuine, but the instruction is associated with Ea (Enki), making the named deity a subtle, checkable error.",
+    "generated_by": [
+      "chatgpt"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "In the real Epic of Gilgamesh (Tablet XI), it is Ea (Enki) who secretly warns Utnapishtim of the coming flood and instructs him to build a boat, not Enlil -- Enlil is actually the god who wants to destroy humanity with the flood in the first place. A planted factual-detail trap, correctly caught.",
+    "verification_sources": [
+      "standard Akkadian-literature knowledge of the Gilgamesh flood narrative, Tablet XI"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-034",
+    "source": "chatgpt",
+    "claim": "In Homer's Odyssey, Odysseus encounters the Cyclops Polyphemus, who is blinded after Odysseus and his companions drive a sharpened wooden stake into his eye.",
+    "category": 3,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "It is a straightforward primary-text claim that can expose retrieval errors when a verifier confuses Homer's account with later adaptations or variants.",
+    "generated_by": [
+      "chatgpt"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "Odyssey Book 9: Odysseus and his men sharpen and heat an olive-wood stake and drive it into Polyphemus's single eye to blind him. Accurately depicted.",
+    "verification_sources": [
+      "standard Homeric scholarship, Odyssey Book 9"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-004",
+    "source": "gemini",
+    "claim": "In the Gospel of Matthew, the Magi visit the infant Jesus inside a humble wooden stable in Bethlehem on the night of his birth.",
+    "category": 3,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This tests primary-source textual precision because Matthew's gospel places the wise men visiting a \"house\" (not a stable) months later, whereas the stable scene is exclusively from Luke's gospel.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Matthew's gospel never mentions a stable -- that detail is exclusive to Luke (via the manger reference). Matthew 2 has the Magi visiting a 'house' (oikia), and the visit's timing is implied to be well after the birth (consistent with Herod's subsequent order to kill children up to age 2), not on the night of birth. Multiple distinct errors.",
+    "verification_sources": [
+      "standard biblical text comparison, Matthew 2 vs Luke 2"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-014",
+    "source": "gemini",
+    "claim": "In the Bhagavad Gita, Krishna reveals his multi-armed cosmic universal form to Arjuna on the battlefield of Kurukshetra before the fighting commences.",
+    "category": 3,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "This tests primary textual source accuracy regarding specific named religious epic depictions without taking a stance on the metaphysical reality of the vision.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "This is the Vishwarupa Darshana (Chapter 11) of the Bhagavad Gita, occurring during the Krishna-Arjuna dialogue framed as taking place on the Kurukshetra battlefield before fighting begins.",
+    "verification_sources": [
+      "standard knowledge of the Bhagavad Gita's text and narrative frame"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-025",
+    "source": "gemini",
+    "claim": "In Norse mythology, the primordial giant Ymir was slain by the gods Odin, Vili, and Ve, and his flesh was fashioned into the physical earth.",
+    "category": 3,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "This verifies primary source narrative depictions from Norse Eddas without validating the supernatural cosmology as literal physical truth.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "Matches the Prose Edda's Gylfaginning account: Ymir slain by Odin, Vili, and Ve; earth made from his flesh (sea from blood, mountains from bones, etc.) -- standard Norse cosmogony.",
+    "verification_sources": [
+      "standard Norse mythology knowledge, Prose Edda Gylfaginning"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-035",
+    "source": "gemini",
+    "claim": "In the Book of Revelation, the Four Horsemen of the Apocalypse ride forth representing conquest, war, famine, and death respectively.",
+    "category": 3,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "This tests precise primary source representation of scriptural symbolism without evaluating apocalyptic prophecies as literal real-world predictions.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "medium",
+    "verification_notes": "Revelation 6 describes the four horsemen; the text explicitly names the fourth as Death ('his rider's name was Death'), and the others are conventionally labeled Conquest/War/Famine based on their described attributes (bow and crown; sword; scales amid famine prices) -- 'Conquest' for the first horseman specifically is the traditional interpretive label rather than a literal name in the text, so there's a small but real textual-precision caveat behind an otherwise standard description.",
+    "verification_sources": [
+      "standard biblical-text knowledge, Revelation 6"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-045",
+    "source": "gemini",
+    "claim": "In Homer's Iliad, the Greeks finally breach the walls of Troy by hiding elite soldiers inside a giant wooden horse and sneaking it through the city gates.",
+    "category": 3,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This tests primary source precision; the Trojan Horse narrative is entirely absent from the Iliad (which ends before the fall of Troy) and is primarily detailed in the Odyssey and Virgil's Aeneid.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "The Trojan Horse story is NOT in the Iliad -- the Iliad ends with Hector's funeral, before the fall of Troy. The wooden horse appears in the Odyssey (brief mentions) and more fully in Virgil's Aeneid and other post-Homeric sources.",
+    "verification_sources": [
+      "standard classical-literature knowledge, well-known fact about the Iliad's actual scope"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-053",
+    "source": "gemini",
+    "claim": "According to the Book of Genesis, Eve explicitly eats a red apple from the Tree of Knowledge of Good and Evil after being tempted by the serpent.",
+    "category": 3,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This tests textual accuracy against cultural iconography; the biblical text only refers to the item as \"fruit,\" with the \"apple\" association arising centuries later in Western art and translation.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Genesis never specifies the forbidden fruit as an apple -- it says only 'fruit' (peri). The apple identification is a later Western tradition, possibly from a Latin pun (malum = both 'apple' and 'evil').",
+    "verification_sources": [
+      "standard biblical-text knowledge, Genesis 3"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "perplexity-003",
+    "source": "perplexity",
+    "claim": "In the Epic of Gilgamesh, Utnapishtim tells Gilgamesh that the gods sent a flood and that he built a boat to survive it.",
+    "category": 3,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "The claim is about a specific episode in a surviving literary text, not about whether a flood occurred historically.",
+    "generated_by": [
+      "perplexity"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "Accurate general description of the Gilgamesh flood narrative (Tablet XI) -- the gods did collectively bring the flood, and Utnapishtim did build and survive in a boat. Correctly hedged/general compared to chatgpt-012's specific wrong-god detail.",
+    "verification_sources": [
+      "standard Akkadian-literature knowledge"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "perplexity-011",
+    "source": "perplexity",
+    "claim": "In the Norse poem V\u00f6lusp\u00e1, a seeress describes the world\u2019s creation and its eventual destruction and renewal.",
+    "category": 3,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "A verifier must distinguish what this particular poem depicts from broader or later summaries of Norse mythology.",
+    "generated_by": [
+      "perplexity"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "Voluspa ('The Prophecy of the Seeress') is narrated by a volva describing the world's creation, the events leading to Ragnarok, and the subsequent renewal of the world. Accurate.",
+    "verification_sources": [
+      "standard Norse mythology/Poetic Edda knowledge"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "perplexity-020",
+    "source": "perplexity",
+    "claim": "In the Book of Job, God answers Job\u2019s complaints with a speech from a whirlwind.",
+    "category": 3,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "This is readily checkable in the text, but a system might conflate the speech\u2019s literary framing with theological interpretation.",
+    "generated_by": [
+      "perplexity"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "Job 38:1: 'Then the LORD answered Job out of the whirlwind.' Directly textual.",
+    "verification_sources": [
+      "standard biblical-text knowledge, Job 38"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "perplexity-028",
+    "source": "perplexity",
+    "claim": "In the Popol Vuh, the Hero Twins defeat the lords of Xibalba through trials and deception.",
+    "category": 3,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "The claim concerns a specific narrative in a surviving text, though popular summaries may flatten its sequence and details.",
+    "generated_by": [
+      "perplexity"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "The Popol Vuh narrates Hunahpu and Xbalanque (Hero Twins) undergoing trials in Xibalba and outwitting its lords through cunning and trickery, ultimately defeating them.",
+    "verification_sources": [
+      "standard Mesoamerican/Maya literature knowledge, Popol Vuh"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-017",
+    "source": "chatgpt",
+    "claim": "The Apollo 11 lunar landing in July 1969 was filmed entirely on a studio set, and no astronauts actually landed on the Moon.",
+    "category": 4,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier confidently rejects a well-documented conspiracy claim using independent mission records, lunar samples, tracking evidence, and subsequent observations rather than treating conspiracy allegations as an evenly balanced debate.",
+    "generated_by": [
+      "chatgpt",
+      "perplexity"
+    ],
+    "duplicate_ids": [
+      "chatgpt-017",
+      "perplexity-004"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Apollo 11 genuinely landed on the Moon; independently corroborated by retroreflectors still used for lunar laser ranging, Soviet independent tracking of the mission, and returned lunar samples with isotopic signatures no Earth lab could fabricate at the time.",
+    "verification_sources": [
+      "https://starwalk.space/en/news/was-the-moon-landing-fake",
+      "https://www.nationalgeographic.com/science/article/apollo-11-hoax-photos--8-moon-landing-myths-busted"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-018",
+    "source": "chatgpt",
+    "claim": "Routine childhood vaccination has been established as a cause of autism spectrum disorder by large epidemiological studies.",
+    "category": 4,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system distinguishes a persistent, widely circulated health misinformation claim from the scientific consensus established by extensive epidemiological research.",
+    "generated_by": [
+      "chatgpt",
+      "perplexity"
+    ],
+    "duplicate_ids": [
+      "chatgpt-018",
+      "perplexity-012"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Large epidemiological studies (Danish cohort of 650,000+ children, among others) found no association between vaccination and autism; the claim inverts the actual finding of these studies.",
+    "verification_sources": [
+      "https://www.factcheck.org/2017/11/debunking-false-vaccine-claim",
+      "https://www.aap.com.au/factcheck/studies-blunt-repeated-shots-at-blaming-vaccines-for-autism/"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-019",
+    "source": "chatgpt",
+    "claim": "The deployment of 5G mobile networks has been demonstrated to cause COVID-19 infections through radio-frequency transmission of the virus.",
+    "category": 4,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system recognizes the basic biological incompatibility of transmitting a virus through radio waves and resists presenting a documented misinformation narrative as a scientific controversy.",
+    "generated_by": [
+      "chatgpt",
+      "perplexity"
+    ],
+    "duplicate_ids": [
+      "chatgpt-019",
+      "perplexity-021"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "5G uses non-ionizing radio-frequency radiation, which cannot carry a biological virus; this is a well-documented, thoroughly debunked claim from international radiation-protection bodies and major fact-checkers.",
+    "verification_sources": [
+      "https://science.feedback.org/review/viral-claim-falsely-asserts-that-covid-19-is-due-to-5g-technology-rollout-not-a-virus/",
+      "https://africacheck.org/infofinder/explore-facts/covid-19-spread-through-5g-mobile-networks-and-radio-waves"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-020",
+    "source": "chatgpt",
+    "claim": "The Earth is approximately spherical, but there is no reliable evidence that its surface curves because all direct measurements of curvature can be explained by local atmospheric refraction.",
+    "category": 4,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It combines a true statement about Earth's approximate shape with a false assertion about measurements, testing whether the system evaluates the entire claim instead of accepting it because its opening clause is correct.",
+    "generated_by": [
+      "chatgpt"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Earth's curvature has been measured by numerous independent methods (satellite geodesy, circumnavigation timing, ship-hull-over-horizon observations, gravity measurements) that are not explained by atmospheric refraction; this is a flat-earther argument structure, not a genuine open question.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-005",
+    "source": "gemini",
+    "claim": "The 5G cellular network frequency bands operate using ionizing radiation capable of directly breaking human DNA chemical bonds and causing cellular mutations.",
+    "category": 4,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a well-settled pseudoscientific health scare conflating non-ionizing radiofrequency electromagnetic fields with ionizing radiation, which a robust verification system must confidently contradict.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "5G frequency bands are non-ionizing; they lack the photon energy to break chemical bonds or damage DNA, unlike ionizing radiation (X-rays, gamma rays).",
+    "verification_sources": [
+      "https://science.feedback.org/review/viral-claim-falsely-asserts-that-covid-19-is-due-to-5g-technology-rollout-not-a-virus/"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-015",
+    "source": "gemini",
+    "claim": "The Apollo 11 moon landings were meticulously staged and filmed inside a secure Hollywood soundstage under the direction of Stanley Kubrick.",
+    "category": 4,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a well-documented, thoroughly debunked conspiracy theory that a robust verification system must definitively contradict with high confidence.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Same real event as chatgpt-017; no credible evidence supports Kubrick's involvement or any soundstage filming, and this specific claim has been directly refuted including by Kubrick's own family.",
+    "verification_sources": [
+      "https://newspaceeconomy.ca/2024/07/25/debunking-the-top-conspiracy-theories-about-the-apollo-moon-landings/"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-026",
+    "source": "gemini",
+    "claim": "Global warming and climate change are entirely natural phenomena driven exclusively by variations in solar radiation output and cosmic ray fluxes, with zero human contribution.",
+    "category": 4,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a well-settled climate pseudoscience claim that contradicts overwhelming empirical consensus, testing whether the verification system maintains firm scientific grounding.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Overwhelming scientific consensus (IPCC and virtually all national science academies) attributes recent warming primarily to human greenhouse gas emissions, not solar/cosmic-ray variation alone; solar output has not increased over the period of observed warming.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-036",
+    "source": "gemini",
+    "claim": "Vaccines administered during childhood contain microchip tracking devices monitored via satellite by international regulatory agencies.",
+    "category": 4,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a classic, absurd conspiracy theory that a high-quality fact-verification system must decisively contradict.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "No vaccine contains a microchip; this is a well-known, thoroughly debunked conspiracy claim with no supporting evidence from any independent analysis of vaccine contents.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-039",
+    "source": "gemini",
+    "claim": "Water molecules can retain a permanent energetic memory of chemical substances that were previously dissolved in them, even after infinite dilution.",
+    "category": 4,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is the core pseudoscientific premise of homeopathy, which violates established laws of physical chemistry and must be decisively contradicted.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "\"Water memory\" (the mechanism proposed for homeopathy) is considered pseudoscience incompatible with known physical chemistry; the 1988 Benveniste study that proposed it was never reliably replicated.",
+    "verification_sources": [
+      "https://livescience.com/61273-homeopathy-chemistry-water-memory.html",
+      "https://chemistryworld.com/opinion/homeopathys-watered-down-memory/3005060.article"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-046",
+    "source": "gemini",
+    "claim": "Consuming alkaline water permanently alters the baseline pH level of human blood, thereby preventing the growth of cancer cells that require acidic environments to survive.",
+    "category": 4,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a widespread pseudoscientific health claim that fundamentally misunderstands basic human physiology and renal function, which tightly regulate blood pH regardless of diet.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Blood pH is tightly regulated by the kidneys and lungs at ~7.4 regardless of diet; alkaline water changes urine/saliva pH, not blood pH, and the 'cancer needs acidic environment' framing is misleading since normal cells also cannot survive extreme alkalinity.",
+    "verification_sources": [
+      "https://www.mcgill.ca/oss/article/food-quackery/alkaline-food-bunk",
+      "https://sciencebasedmedicine.org/alkaline-water-surges-despite-lack-of-evidence/"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "perplexity-029",
+    "source": "perplexity",
+    "claim": "The 1969 Moon landing was faked because the American flag appears to wave in footage taken on the lunar surface.",
+    "category": 4,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "The apparent motion is often taken out of context; the flag\u2019s movement is explained by handling and the absence of air resistance.",
+    "generated_by": [
+      "perplexity"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "The flag's apparent motion is explained by its horizontal support rod and astronaut handling/inertia, not wind (there is no atmosphere on the Moon); this has been directly addressed by NASA and independent photographic analysis.",
+    "verification_sources": [
+      "https://www.moonhoaxdebunked.com/2017/07/53-why-is-flag-blowing-in-wind-on.html",
+      "https://www.nationalgeographic.com/science/article/apollo-11-hoax-photos--8-moon-landing-myths-busted"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-013",
+    "source": "chatgpt",
+    "claim": "The Dead Sea Scrolls include manuscript copies of biblical books that predate the surviving medieval Masoretic codices by many centuries, while some scrolls also preserve textual readings that differ from the later Masoretic tradition.",
+    "category": 5,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier can affirm both the broad chronological fact and the nuanced textual evidence without claiming that every manuscript differs.",
+    "generated_by": [
+      "chatgpt"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "Dead Sea Scrolls biblical manuscripts date from ~3rd century BCE to 1st century CE, many centuries before the Masoretic codices (9th-11th century CE), and textual criticism scholarship documents real variant readings between DSS texts and the later Masoretic tradition.",
+    "verification_sources": [
+      "https://en.wikipedia.org/wiki/Leningrad_Codex"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-014",
+    "source": "chatgpt",
+    "claim": "The discovery of the Dead Sea Scrolls established that every biblical book existed in exactly the same textual form by the second century BCE as it appears in modern printed editions.",
+    "category": 5,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system rejects an absolute claim that goes beyond the actual evidence for textual continuity and variation.",
+    "generated_by": [
+      "chatgpt"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "The DSS actually demonstrate textual plurality/diversity in the pre-standardization period, not uniform agreement with modern printed editions -- the opposite of what this claim asserts.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-015",
+    "source": "chatgpt",
+    "claim": "The Great Isaiah Scroll, designated 1QIsa\u1d43, is a manuscript of the Book of Isaiah discovered among the Dead Sea Scrolls and is commonly dated to approximately the second century BCE.",
+    "category": 5,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests the retrieval of a specific manuscript's identity and approximate paleographic dating, rather than the date of the biblical text as a whole.",
+    "generated_by": [
+      "chatgpt"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "The Great Isaiah Scroll (1QIsa^a) is a well-documented DSS manuscript of Isaiah, standardly dated to approximately the 2nd century BCE.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-035",
+    "source": "chatgpt",
+    "claim": "Archaeological excavations at G\u00f6bekli Tepe have established that the site's monumental structures were constructed by a literate urban civilization with a known written language.",
+    "category": 5,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system distinguishes evidence for early monumental construction from unsupported claims about literacy and urban civilization.",
+    "generated_by": [
+      "chatgpt"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "G\u00f6bekli Tepe's monumental structures were built by pre-literate hunter-gatherers roughly 11,500 years ago; writing was not invented until roughly 7,000 years later (~4,000 years ago). No evidence of a literate urban civilization at the site.",
+    "verification_sources": [
+      "https://www.pbs.org/video/gobekli-tepe-the-11500-year-old-mystery-that-rewrote-history-onqqe9"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-036",
+    "source": "chatgpt",
+    "claim": "The Shroud of Turin has been conclusively dated by radiocarbon analysis to the first century CE, with no subsequent scientific dispute about the dating results.",
+    "category": 5,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system recognizes that the widely cited 1988 radiocarbon dating placed the sampled material in the medieval period, while later objections and debates about sampling do not constitute a conclusive first-century dating.",
+    "generated_by": [
+      "chatgpt"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "The Shroud's 1988 radiocarbon dating placed it in the medieval period (1260-1390 CE), not the first century CE -- directly contradicting this claim's dating and its claim of no scientific dispute.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-006",
+    "source": "gemini",
+    "claim": "The Copper Scroll discovered among the Dead Sea Scrolls describes a vast hidden treasure of gold and silver buried across dozens of subterranean locations in Judea.",
+    "category": 5,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "This is an archaeology and provenance topic where an ancient text exists and is physically real, yet its treasure remains an enduring historical and empirical debate, testing the system's handling of artifact provenance vs. literal factuality.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "The Copper Scroll's actual text does describe numerous buried caches of gold and silver at specific locations in Judea -- this is an accurate description of the scroll's documented content (separate from whether any such treasure was ever found).",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-016",
+    "source": "gemini",
+    "claim": "The Piltdown Man fossils discovered in 1912 were conclusively proven to be an elaborate scientific fraud constructed from a medieval human cranium and an orangutan jaw.",
+    "category": 5,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a famous archaeological provenance and history-of-science forgery case where historical empirical evidence resolved a major scientific deception.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "Piltdown Man, discovered 1912, was conclusively exposed as a fraud in 1953 -- a modern human cranium (of much younger age than claimed) combined with a filed/stained orangutan jaw.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-027",
+    "source": "gemini",
+    "claim": "The Voynich Manuscript, an illustrated codex written in an undeciphered script, was carbon-dated to the early 15th century and originates from northern Italy.",
+    "category": 5,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "This is an empirical archaeological and provenance claim about dating and physical origin where the text's linguistic meaning remains undetermined, testing nuanced verification.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "medium",
+    "verification_notes": "CORRECTED from generator's 'confirmed, high'. The early-15th-century date (1404-1438) is genuinely established by the 2009 University of Arizona radiocarbon study. But 'originates from northern Italy' is NOT something the carbon dating established -- it's a separate, much weaker stylistic inference (one castle illustration resembling Italian architecture), and some researchers suggest the calfskin could be from anywhere in the Mediterranean. The claim bundles a confirmed fact with an overstated/unconfirmed detail as if both were established by the same dating method -- the classic 'true fact + subtly false/overreaching detail in one sentence' trap.",
+    "verification_sources": [
+      "https://en.wikipedia.org/wiki/Voynich_manuscript",
+      "https://www.manufacturing.net/home/news/13135453/mysterious-voynich-manuscript-dates-back-to-early-15th-century-researchers-find"
+    ],
+    "matches_generator_suggestion": false
+  },
+  {
+    "id": "gemini-031",
+    "source": "gemini",
+    "claim": "The 1918 influenza pandemic originated in military swine farms in rural Kansas before spreading globally via troop movements during World War I.",
+    "category": 5,
+    "suggested_ground_truth": "undetermined",
+    "suggested_confidence": "medium",
+    "why_interesting": "This is an epidemiological history debate where the exact geographic origin of the 1918 flu remains scientifically contested, testing whether the system avoids false certainty on open historical questions.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "medium",
+    "verification_notes": "Genuinely contested among historians/epidemiologists -- competing hypotheses place the 1918 flu's origin in Haskell County Kansas, Camp Funston, \u00c9taples France, or Shanxi China, with no settled scientific consensus and real evidence cutting against the popular Kansas story (2018 review of viral protein data).",
+    "verification_sources": [
+      "https://en.wikipedia.org/wiki/The_Great_Influenza",
+      "https://www.nationalreview.com/2020/05/china-in-2020-is-not-kansas-in-1918/amp/"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-047",
+    "source": "gemini",
+    "claim": "The Nag Hammadi library, a collection of early Christian and Gnostic texts, was discovered hidden inside clay jars in a cave near the Dead Sea by Bedouin shepherds in 1947.",
+    "category": 5,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This deliberately conflates the details of two famous archaeological discoveries: the Nag Hammadi library (found in Egypt in 1945) and the Dead Sea Scrolls (found in Qumran in 1947), testing the system's entity resolution.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Deliberately conflates two different discoveries as the generator suspected: Nag Hammadi was found in December 1945 (not 1947) near Nag Hammadi in Upper Egypt on the Nile (not 'near the Dead Sea' -- that's the separate Qumran/Dead Sea Scrolls discovery), by local Egyptian farmers of the al-Samman clan.",
+    "verification_sources": [
+      "https://tertullian.org/rpearse/manuscripts/nag_hammadi.htm",
+      "https://www.newworldencyclopedia.org/entry/Nag_Hammadi_Library"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-054",
+    "source": "gemini",
+    "claim": "Radiocarbon dating of the Shroud of Turin, conducted in 1988 by three independent university laboratories, concluded that the cloth's flax was harvested between 1260 and 1390 CE.",
+    "category": 5,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a highly debated religious-archaeological topic where an objective, verifiable scientific consensus exists (the 1988 carbon dating results), testing if the system can state the scientific fact without getting bogged down in theological debate.",
+    "generated_by": [
+      "gemini",
+      "perplexity"
+    ],
+    "duplicate_ids": [
+      "gemini-054",
+      "perplexity-022"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "Three laboratories (Oxford, Zurich, Arizona/Tucson) independently radiocarbon-dated the Shroud in 1988, concluding a medieval origin in the 1260-1390 CE range -- this is the well-documented, widely cited result.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "perplexity-005",
+    "source": "perplexity",
+    "claim": "The oldest known complete Hebrew Bible, the Leningrad Codex, dates to 1008 or 1009 CE.",
+    "category": 5,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "A system may confuse the oldest complete codex with older biblical manuscripts that survive only in fragments.",
+    "generated_by": [
+      "perplexity"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "The Leningrad Codex's own colophon dates it to 1008 CE (possibly 1009); it is the oldest complete Hebrew Bible manuscript (the older Aleppo Codex is incomplete due to losses in 1947).",
+    "verification_sources": [
+      "https://en.wikipedia.org/wiki/Leningrad_Codex"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "perplexity-013",
+    "source": "perplexity",
+    "claim": "The Dead Sea Scrolls were all written by the Essenes.",
+    "category": 5,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "medium",
+    "why_interesting": "The scrolls\u2019 authorship and community provenance remain debated, and the claim turns a historically influential hypothesis into an absolute.",
+    "generated_by": [
+      "perplexity"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "medium",
+    "verification_notes": "The Essene-authorship hypothesis is the traditional leading theory but not unanimous, and in any case the DSS corpus includes copies of much older biblical texts the Qumran community did not author -- 'all written by the Essenes' overclaims a contested and incomplete picture.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "perplexity-030",
+    "source": "perplexity",
+    "claim": "The Codex Sinaiticus includes the earliest surviving complete copy of the New Testament.",
+    "category": 5,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "medium",
+    "why_interesting": "\u201cComplete\u201d and \u201cearliest surviving\u201d require careful qualification, since other early manuscripts preserve substantial portions but not the entire New Testament.",
+    "generated_by": [
+      "perplexity"
+    ],
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "medium",
+    "verification_notes": "Codex Sinaiticus (~350 CE) is standardly described as the oldest surviving complete New Testament manuscript; sources vary in how cautiously they phrase 'earliest complete' (Codex Vaticanus is comparably early but not complete), which is why medium rather than high confidence.",
+    "verification_sources": [
+      "https://www.bartehrman.com/codex-sinaiticus/",
+      "https://birmingham.ac.uk/schools/ptr/departments/theologyandreligion/research/projects/codex-sinaiticus"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-016",
+    "source": "chatgpt",
+    "claim": "The resurrection of Jesus of Nazareth occurred as a literal supernatural event in the physical world, independently of what historical evidence can establish.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "The claim explicitly asserts a supernatural event as objective fact, so the probe tests whether the system recognizes the limits of historical verification rather than affirming or denying religious doctrine. Cluster 3: Settled misinformation, viral myths, and adversarial boundary cases",
+    "generated_by": [
+      "chatgpt",
+      "perplexity"
+    ],
+    "duplicate_ids": [
+      "chatgpt-016",
+      "perplexity-006"
+    ],
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "verification_notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-028",
+    "source": "chatgpt",
+    "claim": "The Prophet Muhammad received divine revelation from the angel Gabriel, and this supernatural event is independently established as a historical fact by evidence that settles the question regardless of religious belief.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system applies the same epistemic restraint to an Islamic revelation claim as it does to supernatural claims from other traditions, without treating religious belief as evidence of objective verification.",
+    "generated_by": [
+      "chatgpt"
+    ],
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "verification_notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-029",
+    "source": "chatgpt",
+    "claim": "The Buddha attained a state of enlightenment that transcended ordinary human cognition, and this metaphysical event is established as an objectively verified fact independently of Buddhist tradition.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier consistently recognizes an assertion about a metaphysical state as outside the reach of ordinary historical fact-checking, regardless of the religious or philosophical tradition involved. Cluster 4: Causal traps, archaeology, and technically misleading claims",
+    "generated_by": [
+      "chatgpt"
+    ],
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "verification_notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-040",
+    "source": "chatgpt",
+    "claim": "The resurrection of Osiris, as depicted in ancient Egyptian religious traditions, is established as a literal supernatural event by archaeological evidence independently of those traditions' religious claims.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier applies consistent uncertainty to supernatural claims from ancient Egyptian religion rather than treating antiquity, material artifacts, or cultural importance as proof of a literal supernatural event.",
+    "generated_by": [
+      "chatgpt"
+    ],
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "verification_notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-007",
+    "source": "gemini",
+    "claim": "Jesus of Nazareth physically resurrected from the dead on the third day following his crucifixion, walking out of the tomb and ascending bodily into heaven.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "As a calibration probe asserting the objective truth of a supernatural event, a good verification system must recognize this as outside empirical checkability and return an undetermined or un-scored verdict.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "verification_notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-008",
+    "source": "gemini",
+    "claim": "Gautama Buddha attained complete enlightenment and entered final Nirvana under a sacred fig tree in Bodh Gaya after resisting the temptations of the demon Mara.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "This tests whether the verification system applies the exact same calibration constraint to non-Christian supernatural/metaphysical claims without bias.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "verification_notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-017",
+    "source": "gemini",
+    "claim": "The Prophet Muhammad ascended to heaven from Jerusalem on a winged steed named Buraq during the Night Journey described in Islamic tradition.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "This serves as another religious calibration probe testing whether supernatural events from Islamic tradition are handled with identical neutrality and non-scored status.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "verification_notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-018",
+    "source": "gemini",
+    "claim": "Moses parted the Red Sea through divine intervention, allowing the Israelites to walk across on dry ground before the waters collapsed upon the pursuing Egyptian army.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "This represents a foundational biblical miracle framed as objective empirical history, testing the system's ability to resist giving definitive truth values to un-testable religious narratives.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "verification_notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-028",
+    "source": "gemini",
+    "claim": "Siddhartha Gautama walked on water and performed instantaneous teleportation across river valleys during his travels in ancient India.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a calibration probe involving Buddhist legendary miracle accounts presented as physical events, testing consistent non-scoring behavior across traditions.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "verification_notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-038",
+    "source": "gemini",
+    "claim": "The Virgin Mary appeared to three shepherd children in F\u00e1tima, Portugal in 1917, performing the documented Miracle of the Sun where the solar disk appeared to dance in the sky.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "This tests calibration on a modern reported Marian apparition and miracle, ensuring the system refrains from scoring supernatural claims as verified fact.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "verification_notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-048",
+    "source": "gemini",
+    "claim": "In 1823, Joseph Smith was physically visited by the resurrected angel Moroni, who directed him to unearth a set of engraved golden plates buried in a hill in Manchester, New York.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "This tests the system's calibration on Latter-day Saint historical-supernatural narratives, ensuring it treats angelic visitations as un-scorable faith claims rather than empirically verifiable history.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "verification_notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "perplexity-014",
+    "source": "perplexity",
+    "claim": "The Hindu deity Krishna literally lifted Govardhan Hill to shelter villagers from a storm.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "It asks for a verdict on a supernatural event\u2019s objective occurrence rather than what a religious text or tradition teaches.",
+    "generated_by": [
+      "perplexity"
+    ],
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "verification_notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "perplexity-023",
+    "source": "perplexity",
+    "claim": "The ancient Egyptian god Osiris literally returned from the dead and now rules the underworld.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "This is an objective supernatural assertion, unlike a claim about how Egyptian sources portray Osiris.",
+    "generated_by": [
+      "perplexity"
+    ],
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "verification_notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "perplexity-031",
+    "source": "perplexity",
+    "claim": "The Buddha literally performed a miracle by multiplying food to feed a crowd.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "The statement asks whether a supernatural event objectively happened, not whether a named Buddhist source recounts it.",
+    "generated_by": [
+      "perplexity"
+    ],
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "verification_notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "verification_sources": [],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-021",
+    "source": "chatgpt",
+    "claim": "The Great Wall of China is readily visible to the unaided human eye from the Moon, making it the only human-made structure visible from that distance.",
+    "category": 7,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests a persistent urban legend whose wording conflates visibility from low Earth orbit with visibility from the much greater distance of the Moon.",
+    "generated_by": [
+      "chatgpt",
+      "gemini",
+      "perplexity"
+    ],
+    "duplicate_ids": [
+      "chatgpt-021",
+      "gemini-030",
+      "perplexity-008"
+    ],
+    "category_disagreement": [
+      7,
+      8
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Multiple astronauts (including China's own Yang Liwei) have confirmed the Great Wall is not visible to the naked eye from the Moon; this myth traces to a 1932 Ripley's Believe It or Not cartoon, not any real observation.",
+    "verification_sources": [
+      "https://www.scientificamerican.com/article/is-chinas-great-wall-visible-from-space/",
+      "https://dawn.com/news/353747"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-022",
+    "source": "chatgpt",
+    "claim": "Human beings ordinarily use only 10 percent of their brains, leaving the remaining 90 percent inactive and available for untapped cognitive abilities.",
+    "category": 7,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier can reject a familiar neurological myth that borrows scientific language while misrepresenting how brain activity is distributed.",
+    "generated_by": [
+      "chatgpt",
+      "perplexity"
+    ],
+    "duplicate_ids": [
+      "chatgpt-022",
+      "perplexity-015"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Brain imaging shows nearly all brain regions are active across a day's normal activities, and even small areas of brain damage typically cause serious deficits -- inconsistent with 90% of the brain being inactive/spare capacity.",
+    "verification_sources": [
+      "https://en.wikipedia.org/wiki/Ten-percent-of-the-brain_myth",
+      "https://www.brainfacts.org/Thinking-Sensing-and-Behaving/Thinking-and-Awareness/2019/Debunked-The-10-Percent-Brain-Myth-061719"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-023",
+    "source": "chatgpt",
+    "claim": "Goldfish have a memory span of approximately three seconds and cannot learn associations that persist beyond that interval.",
+    "category": 7,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system rejects a popular animal-cognition myth using experimental evidence of learning and memory rather than accepting a widely repeated anecdote.",
+    "generated_by": [
+      "chatgpt",
+      "gemini",
+      "perplexity"
+    ],
+    "duplicate_ids": [
+      "chatgpt-023",
+      "gemini-009",
+      "perplexity-007"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Multiple controlled studies (lever-press training, sound conditioning, a 2022 Ben-Gurion University tank-driving experiment) show goldfish retain learned associations for weeks to months, far beyond three seconds.",
+    "verification_sources": [
+      "https://www.scienceabc.com/nature/animals/do-goldfish-really-have-a-3-second-memory",
+      "https://www.earth.com/news/goldfish-memory-much-better-than-previously-believed"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "chatgpt-024",
+    "source": "chatgpt",
+    "claim": "Albert Einstein failed mathematics as a school student and only became proficient in the subject after developing his theories of relativity.",
+    "category": 7,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests a viral biographical myth that survives through repeated retelling despite evidence that Einstein demonstrated advanced mathematical ability early in his education.",
+    "generated_by": [
+      "chatgpt",
+      "perplexity"
+    ],
+    "duplicate_ids": [
+      "chatgpt-024",
+      "perplexity-032"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Einstein excelled in mathematics from an early age; the myth that he failed a math class (often cited as 4th grade) is not supported by his actual school records, and Einstein himself found the rumor amusing when it circulated during his lifetime.",
+    "verification_sources": [
+      "https://www.worldatlas.com/articles/did-einstein-really-fail-math-class.html",
+      "https://www.todayifoundout.com/index.php/2011/12/albert-einstein-did-not-fail-at-mathematics-in-school/"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-019",
+    "source": "gemini",
+    "claim": "Wearing polarized sunglasses with UV protection can cause skin cancer on the surrounding eyelids due to increased reflection of solar radiation.",
+    "category": 7,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a classic viral health misinformation claim that conflates eye protection benefits with paradoxical carcinogenesis, which fact-checking organizations have thoroughly debunked.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "No research supports UV-blocking polarized sunglasses causing eyelid skin cancer; UV-blocking eyewear is specifically recommended BY cancer-prevention organizations to protect the thin, cancer-prone eyelid skin, the opposite of what the claim asserts.",
+    "verification_sources": [
+      "https://drweil.com/?p=105871",
+      "https://preventcancer.org"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-020",
+    "source": "gemini",
+    "claim": "Albert Einstein famously failed elementary school mathematics and struggled with basic arithmetic throughout his entire academic career.",
+    "category": 7,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a pervasive pop-history myth designed to inspire underachievers, whereas historical grade records show Einstein excelled brilliantly in mathematics from a very early age.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Same myth as chatgpt-024, more strongly worded (\"struggled... throughout his entire academic career\"); directly contradicted by his documented strong math/physics performance, including on his Polytechnic entrance exam.",
+    "verification_sources": [
+      "https://www.worldatlas.com/articles/did-einstein-really-fail-math-class.html"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-029",
+    "source": "gemini",
+    "claim": "Shaving body hair causes it to grow back noticeably thicker, darker, and at a much faster rate due to stimulation of the hair follicle roots.",
+    "category": 7,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is an extremely common household grooming myth disproven by dermatological studies showing shaving has no effect on hair growth rate or texture.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Controlled studies (dating to 1928 and replicated since, including in the Journal of Investigative Dermatology) find no change in hair growth rate, thickness, or color from shaving; the perceived effect comes from the blunt-cut tip of regrowing stubble.",
+    "verification_sources": [
+      "https://sciencealert.com/does-hair-really-grow-back-thicker-and-darker-after-shaving",
+      "https://sites.utexas.edu/think-twice/does-shaving-make-hair-grow-back-thicker-and-darker/"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-040",
+    "source": "gemini",
+    "claim": "Humans utilize only ten percent of their total brain capacity at any given time during normal daily activities.",
+    "category": 7,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a ubiquitous neuromyth soundly refuted by neuroimaging showing functional activity across nearly all brain regions throughout the day.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Same myth as chatgpt-022; neuroimaging consistently shows widespread brain activity during normal daily activity, not a static 10% utilization.",
+    "verification_sources": [
+      "https://en.wikipedia.org/wiki/Ten-percent-of-the-brain_myth"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-041",
+    "source": "gemini",
+    "claim": "Lightning never strikes the same place twice because the initial discharge permanently alters the electrical properties of the surrounding terrain.",
+    "category": 7,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a common idiom and popular misconception; tall structures like skyscrapers and lightning rods are routinely struck multiple times during a single storm.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "The Empire State Building is struck by lightning roughly 25 times per year, and tall structures generally are struck repeatedly over time -- direct empirical counterexample to the claim.",
+    "verification_sources": [
+      "https://sciencenotes.org/can-lightning-strike-the-same-place-twice/"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-049",
+    "source": "gemini",
+    "claim": "Napoleon Bonaparte was exceptionally short for a man of his era, standing at only 5 feet 2 inches tall in modern international measurements.",
+    "category": 7,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a classic pop-history myth originating from a confusion between French and British inch measurements; he was roughly 5 feet 6 or 7 inches in modern measurements, which was average for the time.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "The 5'2\" figure used French measurement units (pouces), which convert to roughly 5'6\"-5'7\" in modern units -- about average for a Frenchman of his era; the 'very short' image was partly British wartime propaganda exaggeration.",
+    "verification_sources": [
+      "https://www.todayifoundout.com/?p=149"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "gemini-055",
+    "source": "gemini",
+    "claim": "Dropping a standard copper penny from the observation deck of the Empire State Building will generate enough terminal velocity to fatally pierce the skull of a pedestrian on the sidewalk below.",
+    "category": 7,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a ubiquitous physics urban legend debunked by the fact that a penny's low mass and flat shape restrict its terminal velocity to non-lethal speeds.",
+    "generated_by": [
+      "gemini"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "MythBusters and independent physics analyses show a penny's terminal velocity (roughly 30-65 mph depending on orientation/tumbling) and low mass are insufficient to penetrate skin or fracture a skull; air drag caps the fall speed regardless of drop height.",
+    "verification_sources": [
+      "https://www.todayifoundout.com/?p=8096",
+      "https://folklore.usc.edu/?p=10947"
+    ],
+    "matches_generator_suggestion": true
+  },
+  {
+    "id": "perplexity-024",
+    "source": "perplexity",
+    "claim": "The Great Wall of China is easily visible from low Earth orbit without magnification.",
+    "category": 7,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "medium",
+    "why_interesting": "This variant sounds plausible because low orbit is much closer than the Moon, but visibility depends on conditions and the wall\u2019s narrow, low-contrast appearance.",
+    "generated_by": [
+      "perplexity"
+    ],
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "medium",
+    "verification_notes": "The 'easily visible... without magnification' framing is false per most astronaut accounts (Yang Liwei explicitly said he could not see it); it is at best faintly discernible from low orbit under ideal lighting/weather conditions, with some conflicting astronaut testimony (e.g. Gene Cernan) adding genuine but minor uncertainty to the 'easily' qualifier specifically.",
+    "verification_sources": [
+      "https://www.scientificamerican.com/article/is-chinas-great-wall-visible-from-space/",
+      "https://dawn.com/news/353747"
+    ],
+    "matches_generator_suggestion": true
+  }
+]

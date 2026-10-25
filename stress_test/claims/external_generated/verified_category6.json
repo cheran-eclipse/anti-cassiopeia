@@ -1,0 +1,114 @@
+[
+  {
+    "id": "chatgpt-016",
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "sources": []
+  },
+  {
+    "id": "chatgpt-028",
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "sources": []
+  },
+  {
+    "id": "chatgpt-029",
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "sources": []
+  },
+  {
+    "id": "chatgpt-040",
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "sources": []
+  },
+  {
+    "id": "gemini-007",
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "sources": []
+  },
+  {
+    "id": "gemini-008",
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "sources": []
+  },
+  {
+    "id": "gemini-017",
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "sources": []
+  },
+  {
+    "id": "gemini-018",
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "sources": []
+  },
+  {
+    "id": "gemini-028",
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "sources": []
+  },
+  {
+    "id": "gemini-038",
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "sources": []
+  },
+  {
+    "id": "gemini-048",
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "sources": []
+  },
+  {
+    "id": "perplexity-014",
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "sources": []
+  },
+  {
+    "id": "perplexity-023",
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "sources": []
+  },
+  {
+    "id": "perplexity-031",
+    "verified_ground_truth": "undetermined",
+    "verification_confidence": "high",
+    "matches_suggestion": true,
+    "notes": "Calibration probe: asserts the literal, objective truth of a supernatural/metaphysical event as real-world fact. Per this project's own established convention, these are never scored confirmed/contradicted regardless of tradition -- the correct verdict is always undetermined, by design, not by research into the specific claim.",
+    "sources": []
+  }
+]
