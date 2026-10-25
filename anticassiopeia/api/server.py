@@ -68,13 +68,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from anticassiopeia.api.upload_store import StoredDocument, UploadStore
-from anticassiopeia.core import Claim, UnknownDomainError, VerificationEngine
-from anticassiopeia.core.compound import SubClaimResult, rollup
+from anticassiopeia.core import Claim, UnknownDomainError, VerdictState, VerificationEngine
+from anticassiopeia.core.compound import DECOMPOSABLE_DOMAINS, DecompositionError, SubClaimResult, decompose_claim, rollup
 from anticassiopeia.domains import default_domains
 # Reused, not reimplemented, for /verify/project's domain sniffing below --
 # same "one place, not two that could drift" reasoning retrieval/stance.py's
 # own docstring already states for a different extraction.
 from anticassiopeia.domains.fpga_embedded import _DESIGN_TIMING_SUMMARY_HEADER_RE, _SVD_DEVICE_TAG_RE
+from anticassiopeia.llm.nebius_client import NebiusClientError, NebiusTokenFactoryClient
 from anticassiopeia.retrieval import DocumentIngestError, extract_text
 from anticassiopeia.retrieval.document_ingest import SUPPORTED_EXTENSIONS
 
@@ -142,6 +143,22 @@ _PROJECT_SCRATCH_DIR.mkdir(parents=True, exist_ok=True)
 
 engine = VerificationEngine(domains=default_domains(extra_allowed_base_dirs=[_PROJECT_SCRATCH_DIR]))
 upload_store = UploadStore()
+
+# v3 §1.2: /verify/compound's OWN LLM client, for the decompose_claim() call
+# specifically -- separate from each domain adapter's own client (e.g.
+# robotics.py's ROBOTICS_MODEL override) since decomposition is a
+# different task needing no particular model override. Constructed
+# eagerly but safely: NebiusTokenFactoryClient() only reads env vars, no
+# network call, so this is safe even when NEBIUS_API_KEY isn't set --
+# same "error surfaces per-call, not at import/construction time" pattern
+# robotics.py's own __init__ already establishes for exactly this reason.
+_compound_client: NebiusTokenFactoryClient | None
+try:
+    _compound_client = NebiusTokenFactoryClient()
+    _compound_client_error: str | None = None
+except NebiusClientError as exc:
+    _compound_client = None
+    _compound_client_error = str(exc)
 
 #: v2 master build prompt §3.1: generous enough for a real datasheet/
 #: report/CSV/PDF, far below anything that risks memory exhaustion --
@@ -357,6 +374,37 @@ def _enforce_project_rate_limit(api_key: str) -> None:
         raise HTTPException(status_code=429, detail="Rate limit exceeded for /verify/project. Try again shortly.")
 
 
+# v3 §1.2: /verify/compound's OWN rate limit, STRICTER than /verify/project's --
+# one compound call can trigger 1 (the decomposition call itself) + N (one
+# engine.verify() per sub-claim) live LLM calls from a SINGLE HTTP request,
+# more fan-out per call than even /verify/project, so this is sized
+# stricter: one call every 20s, burst of 2.
+_COMPOUND_RATE_LIMIT_PER_SECOND = 0.05
+_COMPOUND_RATE_LIMIT_BURST = 2
+_compound_buckets: dict[str, _TokenBucket] = {}
+_compound_buckets_lock = threading.RLock()
+#: decompose_claim() (an LLM call) must not be trusted to produce an
+#: unbounded number of sub-claims from one input -- a hard cap, with a
+#: clear 422 above it rather than silently truncating (truncating would
+#: mean "verifying" a claim that wasn't actually fully checked).
+_MAX_SUBCLAIMS = 8
+
+
+def _compound_bucket_for(client_key: str) -> _TokenBucket:
+    with _compound_buckets_lock:
+        bucket = _compound_buckets.get(client_key)
+        if bucket is None:
+            _make_room_for_one_more(_compound_buckets)
+            bucket = _TokenBucket(_COMPOUND_RATE_LIMIT_PER_SECOND, _COMPOUND_RATE_LIMIT_BURST)
+            _compound_buckets[client_key] = bucket
+        return bucket
+
+
+def _enforce_compound_rate_limit(api_key: str) -> None:
+    if not _compound_bucket_for(api_key).allow():
+        raise HTTPException(status_code=429, detail="Rate limit exceeded for /verify/compound. Try again shortly.")
+
+
 class VerifyRequest(BaseModel):
     text: str
     domain: str
@@ -398,6 +446,26 @@ class ProjectClaimRequest(BaseModel):
 
 class ProjectVerifyRequest(BaseModel):
     claims: list[ProjectClaimRequest]
+
+
+class CompoundVerifyRequest(BaseModel):
+    """One free-text claim for /verify/compound to split and verify. NO
+    `domain` field, unlike VerifyRequest/ProjectClaimRequest -- deliberate,
+    not an oversight: decompose_claim() classifies EACH sub-claim into its
+    own domain itself (see core/compound.py's own system prompt), so a
+    top-level domain on the whole compound claim would be meaningless and
+    always ignored. This project's own convention (see
+    _run_one_project_claim's document_id-for-an-unsupported-domain error)
+    is to never accept a field that would just be silently ignored --
+    better to not have the field at all than accept-and-ignore it.
+
+    `context` exists only so a 400 can name EXACTLY what's not allowed in
+    it (document_id/document_pool) with a clear reason, rather than
+    accepting no context at all and giving a generic "extra field not
+    permitted" validation error with none of that reasoning."""
+
+    text: str
+    context: dict = {}
 
 
 @app.get("/health")
@@ -814,3 +882,93 @@ async def _run_one_project_claim(claim_req: ProjectClaimRequest, scratch_dir: Pa
         return {**base_result, "domain": domain, "error": str(exc)}
 
     return {**base_result, "domain": domain, "verdict_obj": verdict, "verdict": verdict.to_dict()}
+
+
+@app.post("/verify/compound")
+async def verify_compound_endpoint(req: CompoundVerifyRequest, api_key: str = Depends(_require_api_key)) -> dict:
+    """v3 §1.2: makes core/compound.py's decompose_claim()/rollup() (item
+    20, library-only until now -- see docs/ARCHITECTURE.md's "Item 20"
+    section) reachable over HTTP, LAST of everything this build shipped --
+    the least-requested of the original gaps this round closed, the most
+    expensive in live-LLM-call terms (1 decompose call + up to
+    _MAX_SUBCLAIMS verify calls from ONE request), and the one that
+    benefits most from everything else being stable first.
+
+    Calls the real pieces directly (decompose_claim(), then this SAME
+    module-level `engine` per sub-claim, then rollup()) rather than
+    verify_compound() as one atomic call -- verify_compound() has no cap
+    on sub-claim count, and verifying every decomposed part BEFORE
+    checking the cap would waste exactly the live calls this cap exists
+    to bound. The cap is checked between decompose and verify, so a
+    claim that decomposes into too many parts is rejected (422) before
+    any of those parts are ever verified.
+
+    REJECTS (400) any request whose context names document_id OR
+    document_pool -- broader than this build's own spec text, which named
+    only document_id; document_pool (v3 §2.3) didn't change the
+    underlying reason at all: an LLM-invented sub-claim has no way to
+    know which uploaded document, or pool, if any, it would even
+    correspond to. Loosening either would reintroduce exactly the
+    fabricated-file-path risk DECOMPOSABLE_DOMAINS (robotics/research_web
+    only -- see core/compound.py's own docstring) already exists to
+    close.
+    """
+    _enforce_compound_rate_limit(api_key)
+
+    if "document_id" in req.context or "document_pool" in req.context:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "compound decomposition is not available for document-bound claims -- an "
+                "LLM-invented sub-claim has no way to know which uploaded document (or "
+                "document pool), if any, it corresponds to."
+            ),
+        )
+
+    if _compound_client is None:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Compound decomposition's LLM client is not available: {_compound_client_error}",
+        )
+
+    try:
+        parts = await decompose_claim(_compound_client, req.text)
+    except DecompositionError as exc:
+        return {
+            "claim_text": req.text,
+            "state": VerdictState.UNDETERMINED.value,
+            "confidence": None,
+            "sub_claims": [],
+            "reasoning": [f"Could not decompose this claim into parts: {exc}"],
+        }
+
+    if len(parts) > _MAX_SUBCLAIMS:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"This claim decomposed into {len(parts)} parts; at most {_MAX_SUBCLAIMS} are "
+                "allowed per /verify/compound call. Not silently truncated -- a truncated "
+                "compound claim would mean verifying something that wasn't actually fully checked."
+            ),
+        )
+
+    sub_results: list[SubClaimResult] = []
+    for part in parts:
+        text, domain = part["text"], part["domain"]
+        if domain not in DECOMPOSABLE_DOMAINS:
+            sub_results.append(SubClaimResult(text=text, domain="unsupported", verdict=None))
+            continue
+        verdict = await engine.verify(Claim(text=text, domain=domain, context={}))
+        sub_results.append(SubClaimResult(text=text, domain=domain, verdict=verdict))
+
+    state, confidence, reasoning = rollup(sub_results)
+    return {
+        "claim_text": req.text,
+        "state": state.value,
+        "confidence": confidence,
+        "sub_claims": [
+            {"text": r.text, "domain": r.domain, "verdict": r.verdict.to_dict() if r.verdict is not None else None}
+            for r in sub_results
+        ],
+        "reasoning": reasoning,
+    }

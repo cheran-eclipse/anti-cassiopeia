@@ -817,12 +817,13 @@ appropriate to do unprompted.
 Built following `claude/ANTI_CASSIOPEIA_V2_MASTER_BUILD_PROMPT.md`'s
 successor spec (same verbatim-handoff convention), in the build order
 that spec itself locked, each step committed and offline-suite-green
-before the next started (`git log --grep "v3 §"`). As of this section's
-last edit, §1.1/§2.1/§2.2/§2.3/§2.4/§1.3 are shipped; §2.5 (frontend) and
-§1.2 (`/verify/compound`) are explicitly deferred — see their own
-sub-sections below for why, same "say so plainly, don't half-wire it in"
-discipline the rest of this document already holds every other
-deliberately-deferred piece of scope to.
+before the next started (`git log --grep "v3 §"`). All of §1.1/§2.1/
+§2.2/§2.3/§2.4/§1.3/§2.5/§1.2 shipped in this round — §1.2
+(`POST /verify/compound`) was built last, exactly as the spec's own
+build order placed it (the least-requested of the original gaps, the
+most expensive in live-LLM-call terms, and the one that benefited most
+from everything above being stable first), but nothing was actually
+dropped from this round's scope.
 
 **§1.1 — plain `/verify` no longer silently no-ops on `ml_data`/
 `fpga_embedded` uploads.** Before this fix, `_resolve_document_context()`
@@ -947,25 +948,58 @@ first stated this limitation — restated here because pooled search adds
 a second, related failure mode (an incomplete-looking pool) on top of
 v2's original one (a falsely-expired `document_id`).
 
-**§2.5 (frontend) and §1.2 (`POST /verify/compound`) — deliberately NOT
-done in this round, stated plainly rather than silently dropped.** The
-spec's own build order places both last: §2.5 because it depends on the
-backend above being stable first and was explicitly lower-priority than
-the pooled-search backend itself (the project owner's own new-feature
-ask was pooled search, not a compound-claim endpoint); §1.2 because it
-is the least-requested of the three original gaps, the most expensive in
-live-LLM-call terms (one call to decompose, then one more per sub-claim
-— more fan-out per call than even `/verify/project`), and benefits most
-from everything above being proven first. `core/compound.py`'s
-`decompose_claim()`/`verify_compound()` remain real, tested, standalone
-orchestration logic, reachable by importing the module directly — still
-not wired to any HTTP endpoint. If a future round ships §1.2, the spec's
-own locked design is: its own strict rate-limit bucket, a hard cap on
-decomposed sub-claims, and a flat REJECTION of any `document_id` in a
-compound-claim's context (an LLM-invented sub-claim has no way to know
-which, if any, uploaded document it would even correspond to — the same
-reasoning `/verify/project` already uses to justify never calling
-`decompose_claim()` itself, see the "Item 20" section above).
+**§2.5 — frontend: 3-way document choice.** Both the single-claim
+panel's document dropdown and each project-verify claim row's document
+dropdown gained a 3rd option, "🔍 Search all uploaded documents (robotics
+only)", alongside the existing "none" / "one specific document" choices.
+Selecting it sends `context.document_pool = true` instead of
+`document_id` — a sentinel `<select>` value (`__search_all__`, distinct
+from any real `document_id`, which are `secrets.token_urlsafe(32)` and
+far longer) drives this in `runVerification()`/`runProjectVerification()`.
+The evidence card's existing source display needed no change — it
+already renders `Evidence.source` generically, which
+`_gather_byoe_pool()` already resolves to the real originating filename,
+never a placeholder. Verified with `node --check` on the extracted
+script plus a real `jsdom` dry run of the actual shipped file (mocked
+`fetch()`, real DOM/event dispatch) proving both panels send
+`document_pool: true` with no `document_id` present when the new option
+is selected — same verification standard v2's own frontend rebuild used,
+no browser tool being available in-session either time.
+
+**§1.2 — `POST /verify/compound`, built LAST as the spec's own build
+order required** (the least-requested of the three original gaps, the
+most expensive in live-LLM-call terms — one decompose call plus up to
+`_MAX_SUBCLAIMS` verify calls from a single request — and the one that
+benefited most from everything above being proven first). Makes
+`core/compound.py`'s `decompose_claim()`/`rollup()` (item 20, library-
+only until now) reachable over HTTP by calling those real pieces
+directly against the module-level `engine`, rather than through
+`verify_compound()` as one atomic call — `verify_compound()` has no cap
+on decomposed sub-claim count, and verifying every part before checking
+a cap would waste exactly the live calls the cap exists to bound, so the
+cap (`_MAX_SUBCLAIMS = 8`, a clear `422` above it, never a silent
+truncation) is checked between decompose and verify instead. Its own
+request model, `CompoundVerifyRequest`, deliberately has NO `domain`
+field at all — `decompose_claim()` classifies each sub-claim into its
+own domain itself, so a top-level domain would be meaningless and always
+ignored, and this project's own convention is to never accept a field
+that would just be silently ignored. Rejects (400) any request whose
+`context` contains `document_id` OR `document_pool` — broader than the
+spec's own literal text, which named only `document_id`; `document_pool`
+(§2.3) didn't change the underlying reason at all (an LLM-invented
+sub-claim has no way to know which uploaded document, or pool, it would
+even correspond to), so both are rejected for the same stated reason.
+Its own rate-limit bucket, stricter than `/verify/project`'s (one call
+every 20s, burst of 2) given the larger potential fan-out. Its own LLM
+client (`_compound_client`), constructed eagerly but safely at import
+time — `NebiusTokenFactoryClient()` only reads env vars, no network
+call, same "error surfaces per-call, not at construction time" pattern
+`robotics.py`'s own `__init__` already established, giving a clean `503`
+rather than an import-time crash when `NEBIUS_API_KEY` isn't set. 11 new
+offline tests, all against a fake decompose client and fixed-evidence
+fake domain adapters — no live Nebius call needed, including one that
+proves the cap-before-verify ordering directly (a capturing adapter
+asserting zero calls when decomposition blows past the cap).
 
 ## Open design decisions (not yet made)
 

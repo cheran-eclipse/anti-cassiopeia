@@ -160,15 +160,29 @@ the batch can use `"document_pool": true` instead of `document_id` (v3) —
 one project call can mix claims pinned to a specific document with claims
 that search your whole upload pool.
 
-Honest, stated scope boundary: a *compound* claim split by an LLM
-(`anticassiopeia/core/compound.py`, library-only, not wired to any HTTP
-endpoint — see `docs/ARCHITECTURE.md`'s "Item 20" section) still only
-ever decomposes into `robotics`/`research_web` sub-claims — that
-restriction is deliberately **not** loosened just because `/verify/project`
-can now resolve a real uploaded path elsewhere; an LLM splitting free
-text never sees which document a sub-claim would even need, and
-loosening it would reintroduce exactly the fabricated-file-path risk
-that restriction exists to prevent.
+**Compound claims (v3)** — `POST /verify/compound` splits ONE free-text
+claim ("A and B") into independent parts via an LLM call
+(`anticassiopeia/core/compound.py`'s `decompose_claim()` — see
+`docs/ARCHITECTURE.md`'s "Item 20" section for the full history), verifies
+each part through this same engine, and rolls the sub-verdicts up with
+AND-semantics (any real `CONTRADICTED` part falsifies the whole claim):
+
+```bash
+curl -X POST localhost:8000/verify/compound -H "X-API-Key: $ANTICASSIOPEIA_API_KEY" \
+  -H 'content-type: application/json' \
+  -d '{"text": "The ODrive is open-source and BlueROV2 uses a Bar30 sensor rated for 300m"}'
+```
+
+Decomposition only ever classifies a sub-claim into `robotics`/
+`research_web` — that restriction is deliberately **not** loosened just
+because `/verify/project`/pooled search can now resolve a real uploaded
+document elsewhere; an LLM splitting free text never sees which
+document, or document pool, a sub-claim would even need. `context` on
+this endpoint flatly REJECTS `document_id` and `document_pool` (a clean
+400, not a silent ignore) for exactly that reason. Its own, stricter
+rate limit (one call every 20s) — a single call here can fan out into a
+decompose call plus one verify call per sub-claim — and a hard cap of 8
+decomposed sub-claims (a clear `422` above it, never a silent truncation).
 
 ## How the model choice was made
 
@@ -347,13 +361,13 @@ not skip them).
 ```
 anticassiopeia/
   core/        verdict types, DomainAdapter interface, VerificationEngine,
-               compound.py (LLM claim decomposition, library-only)
+               compound.py (LLM claim decomposition + AND-rollup)
   domains/     robotics, ml_data, fpga_embedded, research_web — all real
   retrieval/   shared chunk/BM25/propose/verify/stance pipeline +
                document_ingest.py (.txt/.md/.csv/.rpt/.svd/.xml/.pdf/.docx)
   llm/         Nebius Token Factory client (live-verified, see docstring)
-  api/         FastAPI surface — POST /verify, POST /upload,
-               POST /verify/project, GET /health, GET /domains
+  api/         FastAPI surface — POST /verify, POST /upload, GET /documents,
+               POST /verify/project, POST /verify/compound, GET /health, GET /domains
 evals/         31 real test cases + fixtures + the runner (run_evals.py)
 scripts/       demo.py — judge-facing end-to-end demo
 docs/          index.html (the frontend, GitHub-Pages-served — see
