@@ -496,16 +496,15 @@ password input stored only in that browser's `localStorage`, pre-filled
 with a dedicated, separately-rate-limited public demo key (never the
 primary one) so a first-time visitor can try it immediately.
 
-**Known gap, stated plainly:** the live Cloud Run deployment this
-frontend points at by default has not yet been redeployed with this
-repo's current `server.py` — its own `/openapi.json` currently lists
-only `/health`, `/domains`, and `/verify`. The frontend's Documents and
-Project-verify panels need `POST /upload` / `POST /verify/project`,
-which only exist in this repository right now, not yet on that live
-service. The single-claim verify flow is unaffected (unchanged endpoint,
-unchanged contract). Redeploying the service is a real, billed action on
-whoever controls that Cloud Run project, so it's intentionally not done
-automatically by any CI step in this repo.
+**Redeployed 2026-10-25** (confirmed live: `/openapi.json` now lists
+`/documents`, `/domains`, `/health`, `/upload`, `/verify`,
+`/verify/compound`, `/verify/project` — every endpoint this repo ships,
+and `/domains` returns the renamed `substrate`/`searchlight`/`quant`/
+`silicon`, matching the frontend). The gap this section used to describe
+(a stale backend missing `/upload`/`/verify/project`, then briefly a
+frontend/backend domain-name mismatch from the rename) is closed — the
+whole surface below works end to end against the live deployment, not
+just the single-claim flow.
 
 ## Docker
 
