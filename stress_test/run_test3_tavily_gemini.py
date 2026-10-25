@@ -53,6 +53,7 @@ free-credit figures.
 
 from __future__ import annotations
 
+import asyncio
 import re
 import sys
 import time
@@ -113,7 +114,29 @@ class GeminiQuotaExhausted(TavilyGeminiError):
     distinct from a generic failure so the batch loop can circuit-break
     instead of burning Tavily credits on a long, uninformative CRASH tail
     once the day's free-tier quota is actually gone (found the hard way in
-    this test's own pilot: 15/28 claims crashed before this breaker existed)."""
+    this test's own pilot: 15/28 claims crashed before this breaker existed).
+
+    FOUND (round 2, external review): the breaker above was built for a
+    genuinely permanent **per-day** cap (quotaId
+    GenerateRequestsPerDayPerProjectPerModel-FreeTier), but RESOURCE_EXHAUSTED
+    is also the exact error Gemini returns for an ordinary, short-lived
+    **per-minute** rate limit (quotaId ...PerMinutePerProjectPerModel-FreeTier,
+    seen live in round 2: "limit: 15 ... per minute", with a `retryDelay` of
+    under a minute in the error body) -- a transient condition that resolves
+    on its own, not a reason to give up on the rest of the batch. `retry_after_s`
+    carries that parsed delay (None if the body has no `retryDelay`, which is
+    the signal for the genuinely-permanent daily case this breaker was
+    originally built for)."""
+
+    def __init__(self, message: str, retry_after_s: float | None = None) -> None:
+        super().__init__(message)
+        self.retry_after_s = retry_after_s
+
+
+#: A per-minute rate limit's retryDelay is always well under this; a missing
+#: retryDelay (the daily-cap case this breaker was built for) or an
+#: implausibly long one is treated as genuinely permanent, not retried.
+_MAX_RETRIABLE_DELAY_S = 90.0
 
 
 def parse_verdict(text: str) -> str:
@@ -160,7 +183,11 @@ async def _gemini_complete(prompt: str) -> tuple[str, float, int, int]:
         )
     if resp.status_code != 200:
         if resp.status_code == 429 and "RESOURCE_EXHAUSTED" in resp.text:
-            raise GeminiQuotaExhausted(f"Gemini returned {resp.status_code}: {resp.text}")
+            retry_after_s = None
+            m = re.search(r'"retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s"', resp.text)
+            if m:
+                retry_after_s = float(m.group(1))
+            raise GeminiQuotaExhausted(f"Gemini returned {resp.status_code}: {resp.text}", retry_after_s=retry_after_s)
         raise TavilyGeminiError(f"Gemini returned {resp.status_code}: {resp.text}")
     data = resp.json()
     try:
@@ -228,7 +255,24 @@ async def run_tavily_gemini_batch(
 
                 t1 = time.monotonic()
                 prompt = _build_prompt(claim_text, context)
-                response_text, gemini_cost, _ptoks, _otoks = await _gemini_complete(prompt)
+                try:
+                    response_text, gemini_cost, _ptoks, _otoks = await _gemini_complete(prompt)
+                except GeminiQuotaExhausted as exc:
+                    # A short, parsed retryDelay means this is the ordinary
+                    # per-minute rate limit, not the genuinely permanent
+                    # per-day cap the breaker below exists for -- back off
+                    # once for the stated delay (plus a small buffer) and
+                    # retry this same claim, rather than immediately
+                    # counting it as a quota failure toward the breaker.
+                    if exc.retry_after_s is not None and exc.retry_after_s <= _MAX_RETRIABLE_DELAY_S:
+                        wait_s = exc.retry_after_s + 2.0
+                        print(f"\n[{tag}] (tavily+gemini) {c['claim_id']}: per-minute rate limit "
+                              f"(retryDelay={exc.retry_after_s:.0f}s) -- backing off {wait_s:.0f}s and retrying "
+                              f"once, not treating as quota exhaustion.\n")
+                        await asyncio.sleep(wait_s)
+                        response_text, gemini_cost, _ptoks, _otoks = await _gemini_complete(prompt)
+                    else:
+                        raise
                 gemini_latency = time.monotonic() - t1
                 predicted = parse_verdict(response_text)
                 consecutive_quota_failures = 0
