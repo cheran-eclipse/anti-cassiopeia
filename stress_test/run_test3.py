@@ -1,13 +1,24 @@
 """
 Stress Test #3 orchestrator: pilot (then, after explicit go-ahead, full)
-run of the four NEW variants -- Nebius-agent (3), generic RAG (4),
-Perplexity (5), Tavily+Gemini (6) -- against a stratified subset of
-Test #2's existing 1,000-claim sample, so results are exactly
-apples-to-apples with the already-measured pipeline (1) and bare Nebius
-(2) numbers from Test #2. No new claims are generated.
+run of FIVE variants -- bare model (2, Test #3's own re-run of Test #2's
+already-built baseline), Nebius-agent (3), generic RAG (4), Perplexity
+(5), Tavily+Gemini (6) -- against a stratified subset of Test #2's
+existing 1,000-claim sample, so results are exactly apples-to-apples with
+the already-measured real pipeline (1) from Test #2. No new claims are
+generated.
+
+Variant 2 (bare model) was added after the causal-claim stance fix round
+(see claude/ANTI_CASSIOPEIA_COMPETITIVE_BENCHMARK_PROTOCOL.md) -- it is a
+thin wrapper around run_test2_bare.py's pre-existing run_bare_batch(),
+re-run here so its numbers come from the SAME claim set/run as variants
+3-6 in a given Test #3 invocation, not just inherited from Test #2's own,
+separately-timed run. It is a REAL Nebius call per claim (openai/gpt-oss-120b,
+no retrieval at all) -- its cost is real and tracked in the SAME Nebius
+sub-cap pool as variants 3/4 below, never reported as zero just because
+retrieval itself is free for this one.
 
 Budget tracks THREE separate things, never summed into one number:
-- Nebius (variants 3 and 4 both call it): checked against a $5.00
+- Nebius (variants 2, 3, and 4 all call it): checked against a $5.00
   sub-cap for this test specifically, itself well within the ~$19.6
   remaining under this project's $20 total Nebius cap (Test #1 spent
   $0.216879, Test #2 spent $0.183357 -- $0.400236 total so far).
@@ -39,6 +50,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 from instrumented_client import UsageTracker  # noqa: E402
 from run_test1 import select_pilot  # noqa: E402
 from run_test2 import load_sample_claims  # noqa: E402
+from run_test3_bare_model import RAW_RESULTS_PATH as BARE_MODEL_RAW_PATH  # noqa: E402
+from run_test3_bare_model import run_bare_model_batch  # noqa: E402
 from run_test3_generic_rag import RAW_RESULTS_PATH as GENERIC_RAG_RAW_PATH  # noqa: E402
 from run_test3_generic_rag import run_generic_rag_batch  # noqa: E402
 from run_test3_nebius_agent import RAW_RESULTS_PATH as NEBIUS_AGENT_RAW_PATH  # noqa: E402
@@ -52,8 +65,14 @@ NEBIUS_TEST3_SUBCAP_USD = 5.00
 NEBIUS_ALREADY_SPENT_TEST1_TEST2 = 0.216879 + 0.183357
 
 
-async def run_all_four(claims: list[dict], tag: str) -> dict:
+async def run_all_five(claims: list[dict], tag: str) -> dict:
     nebius_tracker = UsageTracker()
+
+    print(f"\n--- Variant 2: bare model (no retrieval at all), {tag} ---")
+    bare_model_results = await run_bare_model_batch(
+        claims, tag=tag, raw_results_path=BARE_MODEL_RAW_PATH,
+        tracker=nebius_tracker, budget_usd=NEBIUS_TEST3_SUBCAP_USD,
+    )
 
     print(f"\n--- Variant 3: Nebius-agent (retrieval+propose, no verify), {tag} ---")
     propose_claims = [c for c in claims if c["domain"] in _PROPOSE_ONLY_DOMAINS]
@@ -75,6 +94,7 @@ async def run_all_four(claims: list[dict], tag: str) -> dict:
     tavily_gemini_results = await run_tavily_gemini_batch(claims, tag=tag, raw_results_path=TAVILY_GEMINI_RAW_PATH)
 
     return {
+        "bare_model": bare_model_results,
         "nebius_agent": nebius_agent_results,
         "generic_rag": generic_rag_results,
         "perplexity": perplexity_results,
@@ -112,23 +132,29 @@ def _print_pilot_extrapolation(pilot: list[dict], batches: dict, all_sample_clai
     total_sample = len(all_sample_claims)
     composition = {d: n / total_sample for d, n in composition_counts.items()}
 
+    bare_model_per_domain = _per_domain_mean(batches["bare_model"], "cost_usd")
     nebius_agent_per_domain = _per_domain_mean(batches["nebius_agent"], "cost_usd")
     generic_rag_per_domain = _per_domain_mean(batches["generic_rag"], "cost_usd")
     perplexity_per_domain = _per_domain_mean(batches["perplexity"], "cost_usd")
     gemini_per_domain = _per_domain_mean(batches["tavily_gemini"], "gemini_cost_usd")
 
+    bare_model_cost = sum(r["cost_usd"] for r in batches["bare_model"])
     nebius_agent_cost = sum(r["cost_usd"] for r in batches["nebius_agent"])
     generic_rag_cost = sum(r["cost_usd"] for r in batches["generic_rag"])
     perplexity_cost = sum(r["cost_usd"] for r in batches["perplexity"])
     gemini_cost = sum(r["gemini_cost_usd"] for r in batches["tavily_gemini"])
     tavily_calls = len(batches["tavily_gemini"])
-    nebius_combined = nebius_agent_cost + generic_rag_cost
+    # Includes bare_model's cost -- a real Nebius completion call, same sub-cap
+    # pool as variants 3/4 (see this module's own docstring: retrieval is free
+    # for this variant, the completion call itself is not).
+    nebius_combined = bare_model_cost + nebius_agent_cost + generic_rag_cost
 
     print(f"\n=== Pilot actuals ({n_pilot} claims, EQUAL stratification across domains; "
           f"{n_propose} of them robotics/research_web for variant 3's propose-based retrieval) ===")
+    print(f"Bare model (variant 2, all domains, zero retrieval): ${bare_model_cost:.6f} over {n_pilot} claims")
     print(f"Nebius-agent (variant 3, robotics/research_web only): ${nebius_agent_cost:.6f} over {n_propose} claims")
     print(f"Generic RAG (variant 4, all domains): ${generic_rag_cost:.6f} over {n_pilot} claims")
-    print(f"Nebius combined (variants 3+4): ${nebius_combined:.6f}")
+    print(f"Nebius combined (variants 2+3+4): ${nebius_combined:.6f}")
     print(f"Perplexity (variant 5): ${perplexity_cost:.6f} over {n_pilot} claims")
     print(f"Gemini (variant 6's completion leg): ${gemini_cost:.6f} over {n_pilot} claims")
     print(f"Tavily (variant 6's search leg): {tavily_calls} call(s), free-credit, no $ figure returned")
@@ -144,12 +170,13 @@ def _print_pilot_extrapolation(pilot: list[dict], batches: dict, all_sample_clai
     print("=== Extrapolation to candidate M (claims drawn proportionally from the SAME "
           "Test #2 1,000-claim sample, NOT the pilot's equal-per-domain shape) ===")
     for M in (200, 500, 1000):
+        bm_m = _extrapolate(bare_model_per_domain, composition, M)
         na_m = _extrapolate(nebius_agent_per_domain, composition, M)
         gr_m = _extrapolate(generic_rag_per_domain, composition, M)
         pp_m = _extrapolate(perplexity_per_domain, composition, M)
         gm_m = _extrapolate(gemini_per_domain, composition, M)
-        print(f"M={M:5d}: nebius-agent~${na_m:.4f}  generic-rag~${gr_m:.4f}  "
-              f"nebius(3+4)~${na_m + gr_m:.4f}  perplexity~${pp_m:.4f}  "
+        print(f"M={M:5d}: bare-model~${bm_m:.4f}  nebius-agent~${na_m:.4f}  generic-rag~${gr_m:.4f}  "
+              f"nebius(2+3+4)~${bm_m + na_m + gr_m:.4f}  perplexity~${pp_m:.4f}  "
               f"gemini~${gm_m:.4f}  tavily~{M} calls")
 
     print("\nSTOPPING HERE -- waiting for explicit go-ahead on final M before --mode full.")
@@ -186,14 +213,14 @@ def main() -> None:
             for domain, domain_claims in by_domain.items():
                 n = round(len(domain_claims) / len(all_sample_claims) * args.m)
                 full_claims.extend(domain_claims[:n])
-        print(f"Full Test #3 run: {len(full_claims)} claims through all 4 new variants, user-authorized.\n")
-        asyncio.run(run_all_four(full_claims, tag="full"))
+        print(f"Full Test #3 run: {len(full_claims)} claims through all 5 variants, user-authorized.\n")
+        asyncio.run(run_all_five(full_claims, tag="full"))
         return
 
     pilot = select_pilot(all_sample_claims, n_per_domain=args.n_per_domain)
     print(f"Pilot batch: {len(pilot)} claims, stratified across domains/tiers, "
-          f"run through all 4 new variants.\n")
-    batches = asyncio.run(run_all_four(pilot, tag="pilot"))
+          f"run through all 5 variants.\n")
+    batches = asyncio.run(run_all_five(pilot, tag="pilot"))
     _print_pilot_extrapolation(pilot, batches, all_sample_claims)
 
 

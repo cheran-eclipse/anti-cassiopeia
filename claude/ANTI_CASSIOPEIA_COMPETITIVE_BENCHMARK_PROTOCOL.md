@@ -38,6 +38,23 @@ harness with new claims and, if genuinely needed, new competitor variants
 already covered by one of the above) — do not create a second, parallel
 comparison system.
 
+**Addendum (post-causal-claim-fix round): a 6th variant now exists.**
+`run_test3_bare_model.py` — a thin wrapper around the pre-existing
+`run_test2_bare.py`'s `run_bare_batch()` (zero retrieval, zero tools,
+just the claim asked directly of the same `openai/gpt-oss-120b` model
+already used elsewhere, one real but tiny Nebius completion call per
+claim). Wired into `run_test3.py`'s orchestration as "variant 2" (Test
+#2's own numbering, since it's that same baseline, re-run against
+whatever claims a given Test #3 invocation uses) alongside the four
+above. Reused as-is for the SAME reason §0's own rule applies: it
+already existed, with a smarter fabrication-detection flag for file-
+dependent domains (`ml_data`/`fpga_embedded`) than a from-scratch
+version would have had reason to build. A future round should check
+for this kind of existing-but-not-yet-listed harness piece before
+assuming something needs to be built new — the check that found this
+one was reading `run_test2.py`'s own imports, not assuming §0's list
+was exhaustive.
+
 ## §0.5. Fact-checking ORGANIZATIONS (Snopes, PolitiFact, Reuters Fact
 Check, AFP Fact Check, Full Fact, AP Fact Check) are a DIFFERENT kind of
 comparison than §0's live competitors — do not try to wire them in as a
