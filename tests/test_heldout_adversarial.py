@@ -15,9 +15,9 @@ stress_test/bootstrap_data.py, item 14), so NOT present in CI or a fresh
 clone unless bootstrapped first. Skipped (not failed) when that data is
 missing, same convention as test_bootstrap_data.py's own skip -- a
 missing local data dir is an environment fact, not this test failing.
-robotics/research_web ones need a live NEBIUS_API_KEY (same
-`_requires_live_key` skip convention as tests/test_domains_robotics.py
-and tests/test_domains_research_web.py).
+substrate/searchlight ones need a live NEBIUS_API_KEY (same
+`_requires_live_key` skip convention as tests/test_domains_substrate.py
+and tests/test_domains_searchlight.py).
 """
 
 import json
@@ -148,7 +148,7 @@ async def test_fpga_embedded_adversarial_cases_match_ground_truth_against_the_re
 
 
 # --- live tests: require a real, working NEBIUS_API_KEY. Skipped (not run) when
-# the var is entirely unset -- same convention as tests/test_domains_robotics.py. ---
+# the var is entirely unset -- same convention as tests/test_domains_substrate.py. ---
 
 _requires_live_key = pytest.mark.skipif(
     not os.environ.get("NEBIUS_API_KEY"), reason="requires a real, working NEBIUS_API_KEY"
