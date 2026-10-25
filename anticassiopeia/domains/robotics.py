@@ -322,6 +322,11 @@ async def _propose_with_retry(
 #: Also satisfies the "a real NVIDIA model in the request path" track
 #: requirement for real, not as a comment -- every live propose() call
 #: this adapter makes now actually goes to this model.
+#: Also happens to match retrieval/stance.py's RECOMMENDED_STANCE_MODEL --
+#: this adapter's judge_stance() calls (in _gather_byoe/_gather_byoe_pool)
+#: already go to the right model for that separate, later-measured reason
+#: too, since this adapter only ever has the one client. Coincidental, not
+#: imported from there -- see that constant's own docstring.
 ROBOTICS_MODEL = "nvidia/Nemotron-3-Ultra-550b-a55b"
 
 _RETRIEVAL_QUERIES: dict[str, dict[str, str]] = {

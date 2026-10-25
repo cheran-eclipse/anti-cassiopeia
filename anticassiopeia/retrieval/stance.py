@@ -35,6 +35,26 @@ from __future__ import annotations
 
 from anticassiopeia.llm.nebius_client import NebiusTokenFactoryClient
 
+#: RECOMMENDED model for judge_stance() calls specifically -- found live
+#: (2026-10-25, see claude/ANTI_CASSIOPEIA_STANCE_CAUSAL_CLAIM_FIX_PROMPT.md's
+#: addendum): on the real Wiesner/BB84 causal-claim pair (this module's own
+#: new "SECOND" prompt paragraph above), a real, REPRODUCED 10-call live
+#: comparison found `openai/gpt-oss-120b` (research_web.py's own propose()
+#: model) correct only 2/6 times, while this model was correct 5/5 on the
+#: identical, already-fixed prompt. A 5-pair balanced sample (3 "should be
+#: unrelated" / 2 "should be supports" cases) showed both models tied 5/5
+#: on the EASIER pairs -- the gap is specific to genuinely borderline
+#: causal/relational judgments, not a general difference. This is NOT a
+#: recommendation to also move propose()/decompose() calls here --
+#: NEMOTRON_PIVOT_REPORT.md already found gpt-oss-120b strictly better at
+#: full-pipeline scale for research_web's OWN propose() step; this constant
+#: is scoped to judge_stance() only. robotics.py's own ROBOTICS_MODEL
+#: already happens to be this same model, for its own, broader reasons
+#: (see that module) -- not imported from here, to avoid coupling two
+#: adapters' otherwise-independent model choices to one shared constant
+#: for what is, for robotics.py, a coincidence.
+RECOMMENDED_STANCE_MODEL = "nvidia/Nemotron-3-Ultra-550b-a55b"
+
 # FOUND BUG (external review, live, during the Nemotron pivot's pilot runs — not
 # hypothetical, discovered on research_web.py before this module existed): a
 # passage about the ESP32-S31 ("Espressif Systems has officially started mass
@@ -51,6 +71,24 @@ from anticassiopeia.llm.nebius_client import NebiusTokenFactoryClient
 # would otherwise seem to support or contradict the claim's general shape — do not
 # let topical similarity substitute for actually checking the subject is the same
 # one the claim names.
+#
+# FOUND BUG (live, 2026-10-25, direct test of the deployed /verify/compound
+# against a real quantum-cryptography history claim — see
+# claude/ANTI_CASSIOPEIA_STANCE_CAUSAL_CLAIM_FIX_PROMPT.md for the full
+# finding): "The BB84 protocol was built on Stephen Wiesner's earlier
+# concept of quantum conjugate coding" was judged "supports" on a passage
+# that only narrates "In 1984, the two combined quantum conjugate coding
+# with a cryptographic key-exchange scheme, producing ... BB84" — that
+# sentence is consistent with a "built on" relationship but does not
+# actually ASSERT one (real historical accounts describe BB84 as closer
+# to an independent rediscovery, later credited to Wiesner). This is a
+# gap specific to CAUSAL/DEPENDENCY claims ("X was built on/inspired by/
+# derived from/caused Y") — a plain factual claim (a date, a name, a
+# number) has no such gap, since "the passage states the fact" and "the
+# passage supports the claim" are the same thing there. SECOND check,
+# for a causal/dependency claim specifically: does the passage actually
+# STATE that relationship, not just mention both things in a way that's
+# merely consistent with it.
 STANCE_SYSTEM_PROMPT = """You will be given a CLAIM and a PASSAGE. The passage has already been \
 independently confirmed to be real, verbatim text from a real, already-verified source — your \
 only job is to decide how it relates to the claim's SPECIFIC assertion, not just whether they \
@@ -63,6 +101,18 @@ facts. A passage about a DIFFERENT specific entity than the one the claim names 
 even if it uses similar or identical wording about that different entity, and even if it would \
 otherwise seem to support or contradict the claim's general shape — do not let topical similarity \
 substitute for actually checking the subject is the same one the claim names.
+
+SECOND, for a claim that asserts a CAUSAL or DEPENDENCY relationship between two things (e.g. "X \
+was built on Y", "X was inspired by Y", "X was derived from Y", "X caused Y") — as opposed to a \
+claim stating a single fact about one thing (a date, a name, a number) — check whether the \
+passage actually STATES that relationship, not just whether it mentions both things in a way \
+that is merely consistent with it. A passage that narrates two things happening in the same \
+event or time period, without explicitly asserting that one depended on, was derived from, or \
+was caused by the other, does NOT support a causal/dependency claim about them — treat it as \
+"unrelated" to that specific relational assertion, even though it would be real, valid \
+supporting evidence for a plain claim about either thing on its own. This matters because many \
+real historical/technical narratives describe two actually-independent developments in the same \
+breath without asserting either caused the other.
 
 Reply with EXACTLY one word, nothing else:
 supports — the passage confirms the claim's specific assertion is true, about the SAME entity the \

@@ -1061,6 +1061,102 @@ client producing a named error rather than a crash, and the specific
 point of the design — `ml_data` (otherwise LLM-free) successfully
 getting a summary when asked.
 
+## Causal-claim stance fix + judge_stance() model routing (found live, 2026-10-25)
+
+Found by the project owner directly testing the live deployed
+`/verify/compound` endpoint against a real, obscure historical claim
+from their own research area (quantum key distribution) — not by an
+internal test suite. Full finding, locked fix spec, and testing
+requirements: `claude/ANTI_CASSIOPEIA_STANCE_CAUSAL_CLAIM_FIX_PROMPT.md`.
+
+**The bug:** "The BB84 protocol was built on Stephen Wiesner's earlier
+concept of quantum conjugate coding" was `CONFIRMED` on a passage that
+only narrates "In 1984, the two combined quantum conjugate coding with a
+cryptographic key-exchange scheme, producing ... BB84" — consistent with
+a causal relationship but not actually asserting one. `judge_stance()`
+had no notion of evidence *strength* for causal/dependency claims
+specifically (a plain factual claim has no such gap — "the passage
+states the fact" and "the passage supports the claim" are the same
+thing there).
+
+**The fix:** one additive paragraph in `retrieval/stance.py`'s
+`STANCE_SYSTEM_PROMPT`, right after the existing ESP32/ESP32-S31 entity-
+matching caution — instructs the model to check, for a causal/
+dependency claim specifically, whether the passage actually STATES the
+relationship rather than merely mentioning both things in a way that's
+consistent with it. No new return value, no claim-type classifier added
+in code (same "ask the model, don't pre-filter with a keyword list"
+reasoning the entity-matching fix already established). 11 new offline
+tests in the new `tests/test_retrieval_stance.py` (judge_stance()'s own
+parsing contract, both fix paragraphs' guidance text locked in place
+against accidental removal, and the Wiesner/BB84 shape scripted through
+a fake client).
+
+**The model-routing question, raised alongside the fix:** the finding's
+own §0 text noted that asking Nemotron Ultra directly (outside this
+pipeline) got the Wiesner/BB84 distinction right. A live paired test
+(same fixed prompt, same real claim/passage pair) found gpt-oss-120b
+(research_web's own default) returned "supports" — still wrong — while
+Nemotron Ultra returned "unrelated", correctly. Per this project's own
+`NEMOTRON_PIVOT_REPORT.md` standard (n=1 is not a conclusion), this was
+escalated before any code changed:
+- A 5-pair BALANCED live sample (3 "should be unrelated" co-occurrence-
+  only pairs including the real Wiesner/BB84 case, 2 "should be
+  supports" explicit-assertion pairs, covering different relation verbs)
+  — both models scored 5/5. This matters because a model that just says
+  "unrelated" to everything would trivially "win" a sample skewed toward
+  negative cases without being more correct (the exact failure mode
+  `NEMOTRON_PIVOT_REPORT.md` already documented for the Nemotron
+  Lightning tier: "extremely safe but extremely unhelpful").
+- The balanced sample alone didn't explain the one real disagreement, so
+  the Wiesner/BB84 pair specifically was repeated 4 more times per
+  model. **Reproducible result: gpt-oss-120b correct only 2/6 times
+  total on this one genuinely borderline pair (coin-flip-ish, biased
+  toward the wrong answer); Nemotron Ultra correct 5/5 times total.**
+  The gap is specific to genuinely borderline causal/relational
+  judgments, not a general difference between the models (both tied on
+  every easier pair).
+- **Decision: `research_web.py`'s `judge_stance()` calls now route to a
+  separate, dedicated client on `RECOMMENDED_STANCE_MODEL`
+  (`nvidia/Nemotron-3-Ultra-550b-a55b`, defined in `retrieval/stance.py`
+  itself) — `propose()`/the live-search step stay on gpt-oss-120b**
+  (`NEMOTRON_PIVOT_REPORT.md` already found it strictly better there at
+  full-pipeline scale; nothing in this round's evidence says otherwise).
+  `ResearchWebAdapter.__init__` gained a `stance_client` param,
+  defaulting to the SAME object as `client` when a caller explicitly
+  injects one — every existing test's single fake client keeps working
+  unchanged; only `default_domains()`'s real, no-arg construction
+  actually gets two different real clients. `robotics.py`'s own
+  `ROBOTICS_MODEL` already happens to equal `RECOMMENDED_STANCE_MODEL`
+  (for its own, broader, pre-existing reasons) — not imported from
+  there, to avoid coupling two adapters' otherwise-independent model
+  choices to one shared constant for what is, for `robotics.py`, a
+  coincidence. 6 new offline tests in
+  `tests/test_research_web_stance_routing.py` (two different real
+  clients when nothing is injected; a single injected fake still
+  handles both prompt shapes; two injected fakes are routed correctly;
+  a broken stance client is a named per-source gap that doesn't block
+  `propose()`).
+
+**Honest note from the live end-to-end re-test:** re-running the exact
+sub-claim through the REAL engine (live search, not the isolated
+`judge_stance()` call) found a DIFFERENT source this time — Wikipedia's
+"Timeline of cryptography" — whose own text states "Based on Stephen
+Wiesner's idea ... Bennett and Brassard design ... BB84." That IS an
+explicit causal assertion, so a `CONFIRMED` verdict on THAT passage is
+correct, not a regression — live search results vary run to run (the
+same documented caveat this project's test suite already carries
+elsewhere). This surfaces a genuine, separate fact: real sources
+disagree on whether BB84 was "based on" Wiesner's work or an
+independent rediscovery later credited to him (Wikipedia's own timeline
+page asserts the former; Brassard's own retrospectives lean toward the
+latter) — this claim's ground truth is itself contested among reliable
+sources, not something this fix is expected to resolve. Flagged here,
+not silently absorbed into "the fix worked" or "the fix failed" —
+exactly the kind of case `claude/ANTI_CASSIOPEIA_COMPETITIVE_BENCHMARK_PROTOCOL.md`'s
+category 1 exists to probe at proper scale across many claims, not just
+this one.
+
 ## Open design decisions (not yet made)
 
 - Evidence retrieval inside each domain adapter: web search? local

@@ -180,7 +180,7 @@ from anticassiopeia.llm.nebius_client import NebiusClientError, NebiusTokenFacto
 from anticassiopeia.retrieval import BM25Index, Chunk, ScoredChunk, chunk_document, verify_proposal
 from anticassiopeia.retrieval.bm25 import tokenize
 from anticassiopeia.retrieval.extract import propose
-from anticassiopeia.retrieval.stance import judge_stance
+from anticassiopeia.retrieval.stance import RECOMMENDED_STANCE_MODEL, judge_stance
 
 _TAG_RE = re.compile(r"<[^>]+>")
 _WS_RE = re.compile(r"\s+")
@@ -606,6 +606,7 @@ class ResearchWebAdapter(DomainAdapter):
     def __init__(
         self,
         client: NebiusTokenFactoryClient | None = None,
+        stance_client: NebiusTokenFactoryClient | None = None,
         search: Callable[[str, int], Awaitable[list[str]]] | None = None,
         block_private_networks: bool = True,
     ) -> None:
@@ -626,6 +627,25 @@ class ResearchWebAdapter(DomainAdapter):
                 self._client = NebiusTokenFactoryClient()
             except NebiusClientError as exc:
                 self._client_error = str(exc)
+
+        # judge_stance() routing (v3, found live -- see
+        # retrieval/stance.py's RECOMMENDED_STANCE_MODEL for the full
+        # finding): propose()/the live-search step stay on `self._client`
+        # (gpt-oss-120b by default -- NEMOTRON_PIVOT_REPORT.md already
+        # found it strictly better there at full-pipeline scale); only the
+        # stance-JUDGING sub-step routes to a separate model. `stance_client`
+        # defaults to the SAME object as `client` when a caller explicitly
+        # injected one -- a test's single fake client already dispatches on
+        # prompt shape (propose vs. stance) the same way it always has, so
+        # existing tests are unaffected. Only default_domains()'s real,
+        # no-arg construction actually gets two DIFFERENT real clients.
+        self._stance_client = stance_client if stance_client is not None else client
+        self._stance_client_error: str | None = None
+        if self._stance_client is None:
+            try:
+                self._stance_client = NebiusTokenFactoryClient(model=RECOMMENDED_STANCE_MODEL)
+            except NebiusClientError as exc:
+                self._stance_client_error = str(exc)
 
     async def gather_evidence(self, claim: Claim) -> list[Evidence]:
         ctx = claim.context
@@ -827,7 +847,9 @@ class ResearchWebAdapter(DomainAdapter):
                 continue
 
             try:
-                stance = await judge_stance(self._client, claim.text, proposal.quote)
+                if self._stance_client is None:
+                    raise NebiusClientError(self._stance_client_error or "stance client not configured")
+                stance = await judge_stance(self._stance_client, claim.text, proposal.quote)
             except (NebiusClientError, httpx.HTTPError) as exc:
                 problems.append(f"{source_url}: stance-judging call failed: {exc}")
                 continue
