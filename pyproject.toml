@@ -13,11 +13,16 @@ dependencies = [
     "pypdf>=5.0",
     "python-docx>=1.1",
     "python-multipart>=0.0.12",
+    "numpy>=1.26",
     # Pinned lower bounds verified against what's actually installed and
     # tested in this build's real environment (2026-10-25): pypdf 6.19.0,
-    # python-docx 1.2.0 (pulls in lxml), python-multipart 0.0.32. The
-    # above lower bounds are intentionally looser than that -- the exact
-    # versions tested, not a floor nothing older could possibly satisfy.
+    # python-docx 1.2.0 (pulls in lxml), python-multipart 0.0.32, numpy
+    # 2.5.3 (previously only present transitively via an unrelated
+    # dependency; now a real, direct, load-bearing import in
+    # retrieval/hybrid.py's VectorIndex, so declared explicitly here
+    # rather than left to arrive by accident). The above lower bounds are
+    # intentionally looser than that -- the exact versions tested, not a
+    # floor nothing older could possibly satisfy.
 ]
 
 [project.optional-dependencies]

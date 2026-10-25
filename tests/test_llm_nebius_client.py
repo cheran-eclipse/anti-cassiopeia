@@ -107,3 +107,77 @@ async def test_max_tokens_is_actually_sent_in_the_request(monkeypatch):
     await client.complete("prompt")
 
     assert dummy.last_post_kwargs["json"]["max_tokens"] == 12345
+
+
+# --- embed() -- hybrid-retrieval build ---
+
+
+def _embeddings_response(rows: list[dict], status_code: int = 200) -> httpx.Response:
+    request = httpx.Request("POST", "https://api.tokenfactory.nebius.com/v1/embeddings")
+    return httpx.Response(status_code, request=request, json={"data": rows})
+
+
+async def test_embed_returns_vectors_in_request_order_not_response_order(monkeypatch):
+    """The response is deliberately shuffled here -- embed() must re-sort by
+    the response's own `index` field, never trust response row order."""
+    response = _embeddings_response([
+        {"embedding": [0.2, 0.2], "index": 1},
+        {"embedding": [0.1, 0.1], "index": 0},
+    ])
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **_: _DummyAsyncClient(response))
+
+    client = NebiusTokenFactoryClient(api_key="k")
+    vectors = await client.embed(["first text", "second text"])
+
+    assert vectors == [[0.1, 0.1], [0.2, 0.2]]
+
+
+async def test_embed_empty_input_returns_empty_list_without_a_network_call(monkeypatch):
+    def _fail(**_):
+        raise AssertionError("should never construct an AsyncClient for empty input")
+    monkeypatch.setattr(httpx, "AsyncClient", _fail)
+
+    client = NebiusTokenFactoryClient(api_key="k")
+    assert await client.embed([]) == []
+
+
+async def test_embed_sends_the_embedding_model_not_the_chat_model(monkeypatch):
+    response = _embeddings_response([{"embedding": [0.1], "index": 0}])
+    dummy = _DummyAsyncClient(response)
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **_: dummy)
+
+    client = NebiusTokenFactoryClient(api_key="k", model="some/chat-model", embedding_model="some/embed-model")
+    await client.embed(["x"])
+
+    assert dummy.last_post_kwargs["json"]["model"] == "some/embed-model"
+    assert dummy.last_post_kwargs["json"]["model"] != "some/chat-model"
+
+
+async def test_embed_row_count_mismatch_is_a_named_error_not_a_crash(monkeypatch):
+    response = _embeddings_response([{"embedding": [0.1], "index": 0}])  # only 1 row for 2 inputs
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **_: _DummyAsyncClient(response))
+
+    client = NebiusTokenFactoryClient(api_key="k")
+    with pytest.raises(NebiusClientError, match="1.*2|row"):
+        await client.embed(["a", "b"])
+
+
+async def test_embed_inconsistent_dimensions_is_a_named_error(monkeypatch):
+    response = _embeddings_response([
+        {"embedding": [0.1, 0.2], "index": 0},
+        {"embedding": [0.1], "index": 1},
+    ])
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **_: _DummyAsyncClient(response))
+
+    client = NebiusTokenFactoryClient(api_key="k")
+    with pytest.raises(NebiusClientError, match="inconsistent dimensions"):
+        await client.embed(["a", "b"])
+
+
+async def test_embed_non_200_status_is_a_named_error(monkeypatch):
+    response = _embeddings_response([], status_code=401)
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **_: _DummyAsyncClient(response))
+
+    client = NebiusTokenFactoryClient(api_key="k")
+    with pytest.raises(NebiusClientError, match="401"):
+        await client.embed(["a"])

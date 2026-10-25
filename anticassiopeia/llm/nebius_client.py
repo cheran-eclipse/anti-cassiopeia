@@ -153,6 +153,15 @@ def _env_or_dotenv(name: str) -> str | None:
 
 DEFAULT_BASE_URL = "https://api.tokenfactory.nebius.com/v1"
 DEFAULT_MODEL = "openai/gpt-oss-120b"
+#: CONFIRMED live against this account's own GET /v1/models (2026-10-25):
+#: "Qwen/Qwen3-Embedding-8B" is the one embedding-capable model in the
+#: catalog -- not assumed from Eclipse Constellation's own choice (a
+#: SEPARATE project on a separate Nebius account), checked fresh here.
+#: Same model Constellation's own hybrid-retrieval eval used, via the
+#: same OpenAI-compatible POST /embeddings shape (see embed() below) --
+#: confirmed to work the same way on THIS account/endpoint by this
+#: project's own hybrid-retrieval build, not taken on Constellation's word.
+DEFAULT_EMBEDDING_MODEL = "Qwen/Qwen3-Embedding-8B"
 #: FOUND during the Nemotron pivot's fair-fight investigation: no max_tokens
 #: was ever set, so the API's own implicit default applied -- a crash
 #: observed live against Nemotron Super hit exactly 8192 completion tokens
@@ -176,6 +185,7 @@ class NebiusTokenFactoryClient:
         model: str | None = None,
         timeout: float = 60.0,
         max_tokens: int = DEFAULT_MAX_TOKENS,
+        embedding_model: str | None = None,
     ):
         self.api_key = api_key or _env_or_dotenv("NEBIUS_API_KEY")
         if not self.api_key:
@@ -184,6 +194,12 @@ class NebiusTokenFactoryClient:
         self.model = model or _env_or_dotenv("NEBIUS_MODEL") or DEFAULT_MODEL
         self.timeout = timeout
         self.max_tokens = max_tokens
+        # Deliberately a SEPARATE override from `model` above -- the chat model
+        # this client completes() with and the model it embeds() with are two
+        # different capabilities on two different endpoints; a caller
+        # overriding one (e.g. robotics.py's ROBOTICS_MODEL) must not silently
+        # also change the other.
+        self.embedding_model = embedding_model or _env_or_dotenv("NEBIUS_EMBEDDING_MODEL") or DEFAULT_EMBEDDING_MODEL
 
     async def complete(self, prompt: str, *, system: str | None = None, temperature: float = 0.2) -> str:
         """Single-turn chat completion. Raises NebiusClientError on failure rather than
@@ -217,3 +233,44 @@ class NebiusTokenFactoryClient:
                 f"output) before the model finished responding: {data!r}"
             )
         return content
+
+    async def embed(self, texts: list[str]) -> list[list[float]]:
+        """Batch-embeds `texts` via POST /embeddings (OpenAI-compatible shape,
+        same as complete()'s /chat/completions -- confirmed live on this
+        account/endpoint, ported from the same shape Eclipse Constellation's
+        own nebius.py client already proved works on this provider). Raises
+        NebiusClientError on failure, same convention as complete() -- a
+        silent failure here would otherwise surface as a confusing downstream
+        shape error (wrong vector count/dimension) instead of a named cause.
+
+        Returns one embedding vector per input text, in the SAME order as
+        `texts` -- re-sorted by the response's own `index` field rather than
+        trusted to come back in request order, since nothing in the API
+        contract guarantees that."""
+        if not texts:
+            return []
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            resp = await client.post(
+                f"{self.base_url}/embeddings",
+                headers={"Authorization": f"Bearer {self.api_key}"},
+                json={"model": self.embedding_model, "input": texts},
+            )
+        if resp.status_code != 200:
+            raise NebiusClientError(f"Nebius Token Factory embeddings returned {resp.status_code}: {resp.text}")
+
+        data = resp.json()
+        try:
+            rows = data["data"]
+            if not isinstance(rows, list) or len(rows) != len(texts):
+                raise NebiusClientError(
+                    f"Nebius embeddings response returned {len(rows) if isinstance(rows, list) else 'a non-list'} "
+                    f"row(s) for {len(texts)} input text(s): {data!r}"
+                )
+            vectors = [row["embedding"] for row in sorted(rows, key=lambda row: row["index"])]
+        except (KeyError, TypeError) as exc:
+            raise NebiusClientError(f"Unexpected embeddings response shape from Nebius: {data!r}") from exc
+
+        dims = {len(v) for v in vectors}
+        if len(dims) > 1:
+            raise NebiusClientError(f"Nebius embeddings returned inconsistent dimensions across rows: {dims}")
+        return vectors
