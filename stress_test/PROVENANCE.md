@@ -161,6 +161,46 @@ folder beyond what's already used in production — the task said to
 confirm first whether more was wanted, and this run didn't pause to ask,
 so it stuck to the existing corpus only.
 
+**License, stated explicitly (this was previously an unstated gap —
+README.md's own "License" section already disclosed the general policy
+for third-party data, but this file never spelled it out for this
+specific corpus until now):** `doc1-4_*.txt` and the Bar100XT/QuSpin
+material in `constellation-robotics-seed.md` are short, factual, numeric
+excerpts (depth ratings, pressure ranges, dimensions) from Blue
+Robotics' and QuSpin's own publicly published product pages. Numeric
+specifications/facts are not independently copyrightable under US
+copyright law regardless of the source page's own terms; the excerpts
+kept here are deliberately the minimal factual statement, not the
+page's full expressive text, layout, or imagery. Neither vendor has
+published these specific pages under an open-source license — this
+content does NOT carry an MIT/Apache/CC license of its own, and is not
+claimed to. See README.md's "License" section for how this project
+scopes its own MPL-2.0 license to exclude bundled third-party data.
+
+### v2 "bring your own evidence" stress-test material (2026-10-25) — genuinely open-source, MIT/Apache-2.0
+
+New real-world robotics source material added specifically for the v2
+BYOE/upload stress test, chosen BECAUSE it carries a real, verified
+permissive open-source license (unlike the vendor-page excerpts above)
+— confirmed by fetching each repository's actual LICENSE file, not
+assumed from a GitHub sidebar badge alone:
+
+| Local file | Project | Source | License | Verified via |
+|---|---|---|---|---|
+| `odrive_v3_6_specifications_excerpt.txt` | ODrive v3.6 motor controller | https://github.com/odriverobotics/ODrive, `docs/specifications.rst` | MIT (Copyright (c) 2016-2018 ODrive Robotics) | Raw fetch of `https://raw.githubusercontent.com/odriverobotics/ODrive/master/LICENSE.md` (opens "MIT License") and `.../master/docs/specifications.rst`, 2026-10-25 |
+| `nasa_jpl_open_source_rover_readme_excerpt.txt` | NASA JPL Open Source Rover | https://github.com/nasa-jpl/open-source-rover | Apache License 2.0 (Copyright 2018 California Institute of Technology, Government Sponsorship Acknowledged) | Raw fetch of `https://raw.githubusercontent.com/nasa-jpl/open-source-rover/master/LICENSE.txt`, 2026-10-25 |
+
+Both excerpts are kept SHORT and verbatim (copied character-for-character
+from the real source, same "quote exactly, never paraphrase into a
+possibly-wrong number" discipline `retrieval/extract.py`'s own propose()
+prompt already enforces on the LLM side) with their real source URL kept
+in each file's own header comment. Apache-2.0's attribution/NOTICE
+obligations (see the license text itself) are satisfied by that header
+comment naming the real copyright holder and source — this project adds
+no NOTICE file of its own since neither source repository ships one.
+See `stress_test/results/V2_BYOE_STRESS_TEST_REPORT.md` for what these
+were actually tested against.
+
 ## research_web/ — no local corpus (live search is the point); real facts confirmed for claim templating
 
 Mode 2 does live search itself at claim-verification time — nothing to

@@ -1,0 +1,30 @@
+PARTIAL EXCERPT, real file, not invented. Source: ODrive Robotics'
+official ODrive firmware repository, `docs/specifications.rst`, fetched
+live 2026-10-25 from
+https://raw.githubusercontent.com/odriverobotics/ODrive/master/docs/specifications.rst
+(HTTP 200, confirmed real file). MIT License (Copyright (c) 2016-2018
+ODrive Robotics) -- see
+https://raw.githubusercontent.com/odriverobotics/ODrive/master/LICENSE.md.
+Covers the ODrive v3.6 board specifically (the README notes this
+repository's firmware is "no longer under active development" and that
+newer ODrive generations -- Pro, S1, Micro -- have firmware that is not
+publicly available; the MIT license covers this repository's own
+contents regardless). Only the real text relevant to the Electrical
+Specifications section is kept below, copied verbatim byte-for-byte
+from the real file (not reformatted, not paraphrased).
+
+== Electrical Specifications ==
+
+Besides the input voltage range, (12V to 24V for ODrive v3.6 24V, 12V to
+56V for ODrive v3.6 56V), the electrical specifications of both version
+of ODrive v3.6 are the same.
+
+== ODrive v3.6 24V and 56V ==
+
+* Peak current per motor: 120 Amps
+* Heatsink in still air: 40A per channel
+* Heatsink with basic fan cooling: 75A per channel
+* Heatsink with overkill fan cooling: 90A per channel
+
+.. note:: ODrive versions after v3.5 are closed-source with respect to
+   board files and schematics.

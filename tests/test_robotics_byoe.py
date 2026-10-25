@@ -32,6 +32,7 @@ class _FakeClient:
         self._stance_response = stance_response
 
     async def complete(self, prompt: str, *, system: str | None = None, temperature: float = 0.0) -> str:
+        self.last_prompt = prompt
         if prompt.startswith("CLAIM:"):
             if isinstance(self._stance_response, Exception):
                 raise self._stance_response
@@ -195,6 +196,33 @@ async def test_byoe_unverifiable_quote_is_rejected_not_trusted():
     assert evidence == []
     gaps = adapter.describe_partial_gaps(claim)
     assert any("failed independent verification" in g for g in gaps)
+
+
+async def test_byoe_stance_judging_is_given_the_source_filename_as_entity_context():
+    """BUG FOUND (v2 stress test, live, reproducible 4/4 before this fix --
+    see stress_test/results/V2_BYOE_STRESS_TEST_REPORT.md): extract.py's
+    propose() keeps "quote" deliberately short, so a real document whose
+    entity name lives only in a PRECEDING section heading (not restated in
+    the quoted bullet line itself, e.g. real ODrive docs: "== ODrive v3.6
+    24V and 56V ==" followed by "* Peak current per motor: 120 Amps" with
+    no device name on that line) gave judge_stance() no way to confirm the
+    quote was even about the claimed device -- it safely-but-wrongly
+    returned "unrelated" for a true claim. Fixed by prefixing the text
+    shown to judge_stance() with the real, already-known source filename.
+    This test proves that prefix is actually present in the real prompt
+    sent to the client, not just that the live call happened to work."""
+    quote = "* Peak current per motor: 120 Amps"
+    odrive_like_text = "== ODrive v3.6 24V and 56V ==\n\n* Peak current per motor: 120 Amps\n"
+    client = _FakeClient(_found_json("uploaded#0", quote), stance_response="supports")
+    adapter = RoboticsAdapter(client=client)
+    claim = Claim(
+        text="The ODrive v3.6 24V supports a peak current of 120 Amps per motor.",
+        domain="robotics",
+        context={"document_text": odrive_like_text, "document_filename": "odrive_v3_6_specifications_excerpt.txt"},
+    )
+    await adapter.gather_evidence(claim)
+    assert "odrive_v3_6_specifications_excerpt.txt" in client.last_prompt
+    assert quote in client.last_prompt
 
 
 async def test_byoe_stance_unrelated_is_not_counted_as_evidence():

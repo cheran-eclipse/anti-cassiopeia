@@ -566,8 +566,27 @@ class RoboticsAdapter(DomainAdapter):
             _partial_gaps_var.set(partial_gaps)
             return []
 
+        # BUG FOUND (v2 stress test, live, reproducible 4/4 before this fix):
+        # extract.py's propose() deliberately keeps "quote" SHORT (the single
+        # line stating the fact, not its surrounding paragraph/section) -- for
+        # a real-world document whose entity name lives in a PRECEDING section
+        # heading rather than being restated in every bullet under it (e.g.
+        # ODrive's real docs/specifications.rst: "== ODrive v3.6 24V and 56V
+        # ==" followed by "* Peak current per motor: 120 Amps" with no device
+        # name on that line), the bare quote alone gives judge_stance() no way
+        # to confirm it's even about the claimed device -- its own entity-
+        # matching caution (see retrieval/stance.py's ESP32/ESP32-S31 docstring)
+        # then correctly, safely, but WRONGLY-for-this-case returns "unrelated"
+        # for a claim that is actually true. Confirmed live (3/3) that naming
+        # the real source filename resolves it. Scoped to ONLY this BYOE call
+        # site, not retrieval/stance.py itself or research_web.py's own call --
+        # that shared function's contract and research_web's already-live-
+        # tested behavior are left unchanged; this is additional, real,
+        # already-known context (the uploaded file's own name) specific to
+        # what THIS call site already has in hand, not a prompt change.
+        stance_quote = f"[Source document: {filename}]\n{proposal.quote}"
         try:
-            stance = await judge_stance(self._client, claim.text, proposal.quote)
+            stance = await judge_stance(self._client, claim.text, stance_quote)
         except (NebiusClientError, httpx.HTTPError) as exc:
             partial_gaps.append(f"'{filename}': stance-judging call failed: {exc}")
             _partial_gaps_var.set(partial_gaps)
