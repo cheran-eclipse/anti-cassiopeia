@@ -151,6 +151,18 @@ upload_store = UploadStore()
 #: Content-Length header a client could lie about.
 _MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 
+#: v3 §2.3: pooled BYOE search (context.document_pool=true) searches across
+#: a caller's own uploaded documents instead of one pre-selected
+#: document_id. Capped at the most-recently-uploaded N so one caller
+#: cycling through many uploads can't make a single /verify call fan out
+#: into an unbounded BM25 index / unbounded chunk count -- same "a limit
+#: should exist and be stated, not implicit" discipline as every other cap
+#: in this file. When a caller has MORE than this many valid uploads, the
+#: truncation itself is stated in the verdict's own reasoning (see
+#: robotics.py's _gather_byoe_pool), never silently fewer than the caller
+#: assumed.
+_MAX_POOL_DOCUMENTS = 10
+
 _API_KEY_HEADER = "X-API-Key"
 _RATE_LIMIT_PER_SECOND = 1.0  # sustained rate per API key
 _RATE_LIMIT_BURST = 5  # allowance for a short burst above the sustained rate
@@ -392,7 +404,7 @@ async def domains() -> dict:
 @app.post("/verify")
 async def verify(req: VerifyRequest, api_key: str = Depends(_require_api_key)) -> dict:
     _enforce_rate_limit(api_key)
-    context, scratch_path = _resolve_document_context(req.context, req.domain)
+    context, scratch_path = _resolve_document_context(req.context, req.domain, _owner_key_hash(api_key))
     claim = Claim(text=req.text, domain=req.domain, context=context)
     try:
         verdict = await engine.verify(claim)
@@ -411,19 +423,43 @@ async def verify(req: VerifyRequest, api_key: str = Depends(_require_api_key)) -
     return verdict.to_dict()
 
 
-def _resolve_document_context(context: dict, domain: str) -> tuple[dict, Path | None]:
-    """v2 master build prompt §3.2, generalized by v3 §1.1: if the caller's
-    context names a document_id (from a prior /upload), resolve it to real
-    content HERE, in the API layer, before any domain adapter ever sees the
-    claim. An unknown or expired document_id is a clean, explicit 400 --
-    NOT a silent fall-through to the fixed-corpus behavior a caller who
-    explicitly asked to check against their own document would never want
-    and would have no way to notice happened.
+def _resolve_document_context(context: dict, domain: str, owner_key_hash: str) -> tuple[dict, Path | None]:
+    """v2 master build prompt §3.2, generalized by v3 §1.1, extended by v3
+    §2.3 for pooled search: if the caller's context names a document_id
+    (from a prior /upload) OR sets document_pool=true, resolve it to real
+    content HERE, in the API layer, before any domain adapter ever sees
+    the claim. An unknown/expired document_id, or an empty/unsupported
+    pool request, is a clean, explicit 400 -- NOT a silent fall-through to
+    the fixed-corpus behavior a caller who explicitly asked to check
+    against their own document(s) would never want and would have no way
+    to notice happened.
 
-    What "resolve" means depends on `domain`, same three-way split
-    /verify/project's _run_one_project_claim already established for the
-    project endpoint (see that function's own comments for the full
-    reasoning -- not repeated here):
+    document_id and document_pool are MUTUALLY EXCLUSIVE -- a request
+    naming both is a 400 before either is resolved, same "name the
+    conflict, don't silently prefer one" discipline as every other
+    request-shape check in this file.
+
+    POOLED SEARCH (document_pool=true), robotics-only: looks up the
+    CALLING key's own currently-valid uploads via
+    upload_store.list_for_owner(owner_key_hash) -- never any other
+    caller's documents (see upload_store.py's own ownership docstring) --
+    caps at the _MAX_POOL_DOCUMENTS most recent, and hands robotics.py the
+    already-resolved (filename, text) pairs via
+    context["document_pool_items"], plus the real total available via
+    context["document_pool_total_available"] (so robotics.py can name the
+    truncation in its own reasoning when a caller has more uploads than
+    fit under the cap -- see that module's _gather_byoe_pool). robotics.py
+    itself never imports UploadStore (clean domain/api layering, per that
+    module's own docstring) -- it only ever reads context fields, exactly
+    like the single-document document_text/document_filename path below.
+    An empty pool (no valid uploads at all) is NOT an error here -- it's
+    resolved through fine, and robotics.py's own gather_evidence() turns
+    an empty document_pool_items list into an honest, named gap.
+
+    What "resolve" means for document_id depends on `domain`, same
+    three-way split /verify/project's _run_one_project_claim already
+    established for the project endpoint (see that function's own
+    comments for the full reasoning -- not repeated here):
     - "robotics": inject document_text/document_filename directly --
       robotics.py's BYOE path only ever reads those two context keys,
       never document_id or the upload store itself (clean domain/api
@@ -445,16 +481,39 @@ def _resolve_document_context(context: dict, domain: str) -> tuple[dict, Path | 
       consumes an already-extracted document's text at all -- its two
       modes are URL-fetch or live search) -- a clean, named 400, not a
       silent no-op that would leave a caller thinking their uploaded
-      document was actually checked when it was quietly ignored.
+      document was actually checked when it was quietly ignored. The same
+      named-400 treatment applies to document_pool for any domain other
+      than robotics (ml_data/fpga_embedded need one exact structured
+      file per claim, not a search across several; research_web has no
+      document-consuming mode at all -- see the v3 master build prompt's
+      §2.3 scope note).
 
     Returns (resolved_context, scratch_path_or_None). scratch_path is only
-    ever non-None for the ml_data/fpga_embedded branch.
+    ever non-None for the document_id + ml_data/fpga_embedded branch.
 
     `context` is a plain dict here (Pydantic already validated VerifyRequest.
     context as `dict`), so a non-string document_id (an int, a list, ...)
     simply never matches anything in the store and resolves to the same
     clean 400 below -- no separate type check needed."""
     document_id = context.get("document_id")
+    document_pool = bool(context.get("document_pool"))
+
+    if document_id is not None and document_pool:
+        raise HTTPException(status_code=400, detail="Specify either document_id or document_pool, not both.")
+
+    if document_pool:
+        if domain != "robotics":
+            raise HTTPException(
+                status_code=400,
+                detail=f"domain {domain!r} does not support document_pool search (robotics-only).",
+            )
+        all_owned = upload_store.list_for_owner(owner_key_hash)
+        pool_docs = all_owned[:_MAX_POOL_DOCUMENTS]
+        resolved = dict(context)
+        resolved["document_pool_items"] = [(doc.filename, doc.text) for doc in pool_docs]
+        resolved["document_pool_total_available"] = len(all_owned)
+        return resolved, None
+
     if document_id is None:
         return context, None
     doc = upload_store.get(document_id) if isinstance(document_id, str) else None

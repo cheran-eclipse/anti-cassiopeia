@@ -388,6 +388,20 @@ class RoboticsAdapter(DomainAdapter):
         if document_text:
             return await self._gather_byoe(claim, document_text)
 
+        # v3 §2.3 "pooled search": server.py resolves context.document_pool=true
+        # to the caller's own already-fetched (filename, text) pairs via
+        # context["document_pool_items"] -- this adapter never imports
+        # UploadStore itself (same clean domain/api layering as the
+        # document_text branch above). Checked AFTER document_text so a
+        # context that somehow carries both (not reachable through the
+        # normal /verify flow, which rejects document_id+document_pool
+        # together, but context is caller-supplied JSON) deterministically
+        # prefers the single already-resolved document, consistent with
+        # document_text already "taking over entirely" over the fixed-
+        # corpus path above.
+        if claim.context.get("document_pool"):
+            return await self._gather_byoe_pool(claim)
+
         text = claim.text.lower()
         part = None
         if "bluerov2" in text or "blue rov" in text or "blue rov2" in text:
@@ -599,6 +613,130 @@ class RoboticsAdapter(DomainAdapter):
         _partial_gaps_var.set(partial_gaps)
         return [replace(result.evidence, stance=stance)]
 
+    # v3 §2.3 "bring your own evidence, pooled": same retrieve->propose->
+    # verify->judge_stance shape as _gather_byoe above, but across EVERY
+    # one of the caller's own currently-valid uploaded documents at once,
+    # instead of one pre-selected document_id -- the caller says "find
+    # whichever of my documents (if any) supports or contradicts this",
+    # rather than already knowing which one to point at. Still exactly
+    # ONE propose() call and ONE judge_stance() call per claim, same as
+    # _gather_byoe -- only the BM25 corpus is bigger (more chunks indexed
+    # across more documents), which is pure local computation, not an
+    # extra live-LLM-call cost. server.py resolves the pool (ownership-
+    # scoped, capped at _MAX_POOL_DOCUMENTS) BEFORE this ever runs; this
+    # method only ever reads context fields it's handed, same clean
+    # domain/api layering as _gather_byoe.
+    async def _gather_byoe_pool(self, claim: Claim) -> list[Evidence]:
+        partial_gaps: list[str] = []
+        pool_items: list[tuple[str, str]] = claim.context.get("document_pool_items") or []
+        total_available = claim.context.get("document_pool_total_available", len(pool_items))
+
+        # Stated UNCONDITIONALLY, before any other outcome, so a caller with
+        # more uploads than fit under server.py's _MAX_POOL_DOCUMENTS cap
+        # always learns only a subset was actually searched -- never
+        # silently fewer than they assumed (v3 master build prompt §2.3).
+        # describe_partial_gaps() surfaces every entry in partial_gaps
+        # through Verdict.reasoning UNCONDITIONALLY, regardless of how the
+        # rest of this call turns out (see core/domain.py's own docstring).
+        if total_available > len(pool_items):
+            partial_gaps.append(
+                f"document pool: only the {len(pool_items)} most recently uploaded document(s) "
+                f"were searched; {total_available} total document(s) are currently available for "
+                "this caller -- the rest were not searched."
+            )
+
+        if not pool_items:
+            partial_gaps.append(
+                "document_pool was requested, but this caller currently has no valid uploaded "
+                "documents to search."
+            )
+            _partial_gaps_var.set(partial_gaps)
+            return []
+
+        if self._client is None:
+            partial_gaps.append(f"LLM propose step can't run: {self._client_error}")
+            _partial_gaps_var.set(partial_gaps)
+            return []
+
+        # ONE combined BM25 index across every pooled document's chunks.
+        # Chunks are namespaced by pool INDEX ("doc0", "doc1", ...), not by
+        # filename -- two of a caller's uploads can share the same
+        # filename (e.g. two different "spec.txt" uploads), and a shared
+        # chunk_id prefix across documents would silently collide entries
+        # in chunks_by_id below. The index -> filename mapping is kept
+        # separately so the final Evidence.source/citation still names the
+        # REAL originating filename, not a generic "pool" placeholder.
+        all_chunks = []
+        chunks_by_id = {}
+        doc_tag_to_filename: dict[str, str] = {}
+        for idx, (filename, text) in enumerate(pool_items):
+            doc_tag = f"doc{idx}"
+            doc_tag_to_filename[doc_tag] = filename
+            doc_chunks = chunk_document(doc_tag, text, chunk_size=300, overlap=50)
+            all_chunks.extend(doc_chunks)
+            chunks_by_id.update({c.chunk_id: c for c in doc_chunks})
+
+        index = BM25Index(all_chunks)
+        hits = index.search(claim.text, top_k=_BYOE_TOP_K)
+        if not hits:
+            names = ", ".join(f"'{f}'" for f in doc_tag_to_filename.values())
+            partial_gaps.append(
+                f"document pool ({names}): BM25 found no passage matching this claim's terms at "
+                "all (zero keyword overlap) across any pooled document -- a pooled document may "
+                "still be relevant, phrased in a way this search didn't surface."
+            )
+            _partial_gaps_var.set(partial_gaps)
+            return []
+
+        model_question = (
+            f"{claim.text} -- quote the passage that states the actual relevant fact, "
+            "even if it states a different value than this claim asserts."
+        )
+        try:
+            proposal = await _propose_with_retry(model_question, hits, self._client)
+        except (NebiusClientError, httpx.HTTPError, ValueError) as exc:
+            partial_gaps.append(f"document pool: LLM propose call failed: {exc}")
+            _partial_gaps_var.set(partial_gaps)
+            return []
+        if proposal is None:
+            partial_gaps.append(
+                f"document pool: checked across every pooled document, but the model reported no "
+                f"matching fact across {_PROPOSE_RETRY_ATTEMPTS} independent attempts -- treated as "
+                "genuinely absent."
+            )
+            _partial_gaps_var.set(partial_gaps)
+            return []
+
+        winning_chunk = chunks_by_id.get(proposal.chunk_id)
+        source_filename = doc_tag_to_filename.get(winning_chunk.doc_id, "uploaded document") if winning_chunk else "uploaded document"
+
+        result = verify_proposal(proposal, chunks_by_id, source=source_filename, stance="supports", trust=_BYOE_TRUST)
+        if not result.accepted or result.evidence is None:
+            partial_gaps.append(f"document pool: proposed quote failed independent verification ({result.reason}).")
+            _partial_gaps_var.set(partial_gaps)
+            return []
+
+        # Same ODrive/heading-entity-ambiguity fix as _gather_byoe above --
+        # same shared risk, now across a pool instead of one document (see
+        # that method's own comment for the full root cause).
+        stance_quote = f"[Source document: {source_filename}]\n{proposal.quote}"
+        try:
+            stance = await judge_stance(self._client, claim.text, stance_quote)
+        except (NebiusClientError, httpx.HTTPError) as exc:
+            partial_gaps.append(f"document pool: stance-judging call failed: {exc}")
+            _partial_gaps_var.set(partial_gaps)
+            return []
+        if stance == "unrelated":
+            partial_gaps.append(
+                f"'{source_filename}': real verified quote found in the document pool, but doesn't "
+                "address this specific claim."
+            )
+            _partial_gaps_var.set(partial_gaps)
+            return []
+
+        _partial_gaps_var.set(partial_gaps)
+        return [replace(result.evidence, stance=stance)]
+
     def describe_partial_gaps(self, claim: Claim) -> list[str]:
         return list(_partial_gaps_var.get())
 
@@ -621,6 +759,18 @@ class RoboticsAdapter(DomainAdapter):
                 "No passage in the uploaded document matched this claim, after independent "
                 "verification. A plausible-sounding citation is not evidence until it's "
                 "actually retrieved."
+            ]
+
+        if claim.context.get("document_pool"):
+            gaps = _partial_gaps_var.get()
+            if gaps:
+                return gaps
+            pool_items = claim.context.get("document_pool_items") or []
+            names = ", ".join(f"'{f}'" for f, _ in pool_items) or "none"
+            return [
+                f"No passage in any of the searched pooled documents ({names}) matched this "
+                "claim, after independent verification. A plausible-sounding citation is not "
+                "evidence until it's actually retrieved."
             ]
 
         text = claim.text.lower()
