@@ -812,6 +812,161 @@ project, not something any CI step in this repo does automatically, and
 this session had no `gcloud` CLI available to do it even if that were
 appropriate to do unprompted.
 
+## v3: closing the v2 gaps + multi-document pooled search
+
+Built following `claude/ANTI_CASSIOPEIA_V2_MASTER_BUILD_PROMPT.md`'s
+successor spec (same verbatim-handoff convention), in the build order
+that spec itself locked, each step committed and offline-suite-green
+before the next started (`git log --grep "v3 §"`). As of this section's
+last edit, §1.1/§2.1/§2.2/§2.3/§2.4/§1.3 are shipped; §2.5 (frontend) and
+§1.2 (`/verify/compound`) are explicitly deferred — see their own
+sub-sections below for why, same "say so plainly, don't half-wire it in"
+discipline the rest of this document already holds every other
+deliberately-deferred piece of scope to.
+
+**§1.1 — plain `/verify` no longer silently no-ops on `ml_data`/
+`fpga_embedded` uploads.** Before this fix, `_resolve_document_context()`
+only ever injected `document_text`/`document_filename` — fields neither
+`ml_data.py` nor `fpga_embedded.py` ever reads — so uploading a CSV and
+then calling plain `/verify` with `domain=ml_data` and that `document_id`
+silently ignored the upload (an honest `UNDETERMINED` gap, never a wrong
+confident answer, but a real usability gap: the document picker did
+nothing for 2 of the 4 domains). Fixed by generalizing the same real-
+scratch-file translation `/verify/project` already did: the function
+gained a `domain` parameter and now branches three ways (`robotics` →
+inject text directly; `ml_data`/`fpga_embedded` → write a real scratch
+file under the SAME `_PROJECT_SCRATCH_DIR` `/verify/project` already
+uses, now shared rather than duplicated; anything else, most notably
+`research_web` → a clean named 400, not a silent no-op). Lifecycle is
+different from the batch endpoint's per-request subdirectory: a single
+`/verify` call writes and deletes its own one file in a `finally` block
+right around `engine.verify()`. 6 new offline tests, including one
+proving cleanup happens even when the claim itself resolves to an honest
+gap, not just on the happy path.
+
+**§2.1 — ownership added to `UploadStore`.** Foundational for pooled
+search: without an owner concept, "search across my documents" would
+mean "search across every caller's documents" — a real scope violation
+the moment more than one caller shares this server, which the public
+demo key already risks (anyone who visits the hosted frontend shares
+it). `StoredDocument` gained a frozen `owner_key_hash: str` field (a
+SHA-256 hash of the uploading API key, never the raw key — defense in
+depth even though this never leaves process memory); `put()` takes it as
+a new required param; a new `list_for_owner()` returns one owner's own
+currently-valid uploads, most-recent first. `get()` by `document_id` is
+DELIBERATELY UNCHANGED in signature and behavior — every existing
+single-document flow (`robotics` BYOE, `/verify/project`'s per-claim
+`document_id`) keeps working exactly as before, regardless of who
+uploaded the document a valid id happens to reference. Honest limitation
+stated in the module docstring: under the shared public demo key
+specifically, "your pool" really means "every demo-key visitor's
+uploads, pooled together" — expected for a shared sandbox, not real
+per-caller isolation; a caller's own real key gets genuine isolation. 5
+new ownership-isolation tests (including: key A's list never contains
+key B's documents; expired documents are excluded; direct `get()` is
+unaffected).
+
+**§2.2 — `GET /documents`.** Lists the calling key's own currently-valid
+uploads (id, filename, size_bytes, and `seconds_until_expiry` — NOT a raw
+`uploaded_at`, because `StoredDocument.uploaded_at` is
+`time.monotonic()`-based with no wall-clock meaning on its own; handing
+it back verbatim would be a meaningless number, so this endpoint returns
+the actually-useful derived quantity instead). Reuses `/verify`'s own
+rate-limit bucket rather than getting a dedicated one like `/upload`/
+`/verify/project`/pooled search's resolution did — this is a cheap
+in-memory dict scan, not real disk I/O or live-LLM fan-out, so it didn't
+earn the stricter, separate-bucket treatment those did. 6 new tests,
+including one proving the bucket-sharing itself (hammering `/documents`
+trips the same budget `/verify` uses).
+
+**§2.3 — multi-document pooled search, the core new feature.** New
+`context.document_pool = true` (mutually exclusive with `document_id`;
+robotics-only — `ml_data`/`fpga_embedded` need one exact structured file
+per claim, "which of several CSVs has this column" is a different,
+harder, out-of-scope feature; `research_web` has no document-consuming
+mode at all). `server.py` resolves the pool via
+`upload_store.list_for_owner()`, caps it at `_MAX_POOL_DOCUMENTS` (10,
+most recent), and hands `robotics.py` the already-resolved `(filename,
+text)` pairs plus the real total-available count via two context
+fields — `robotics.py` itself still never imports `UploadStore` (same
+clean domain/api layering `document_text` already established).
+`robotics.py`'s new `_gather_byoe_pool()` builds ONE combined BM25 index
+across every pooled document's chunks, namespaced by POOL INDEX
+(`doc0`, `doc1`, ...) rather than filename — two of a caller's uploads
+can share a filename (e.g. two different uploads both named
+`spec.txt`), and a shared chunk-id prefix would silently collide entries
+in the combined `chunks_by_id` dict; a parallel `doc_tag -> filename`
+map is kept so the final `Evidence.source` still names the REAL
+originating document, never a generic "pool" placeholder. Still exactly
+ONE `propose()` call and ONE `judge_stance()` call per claim, same as
+single-document BYOE — confirmed in testing, and stated here per this
+project's own budget-discipline convention: only the local (free) BM25
+corpus grows, never the live-call count. When a caller has more uploads
+than fit under the cap, that truncation is named in the verdict's own
+`reasoning` UNCONDITIONALLY — even on an otherwise-confirmed claim — via
+the same `describe_partial_gaps()`/`reasoning` mechanism the rest of
+`robotics.py` already uses for "a source was expected but something
+about it didn't pan out." 11 new offline adapter tests (including the
+filename-disambiguation case, the truncation-is-always-named case, and
+the same ODrive-heading entity-ambiguity fix from the v2 stress test,
+re-applied here since pooled search shares the same risk) plus 6 new
+server-layer tests proving the ownership scoping actually holds end to
+end over real HTTP.
+
+**§2.4 — `/verify/project` gets the same `document_pool` option.** A
+`ProjectClaimRequest` entry can set `document_pool: true` instead of
+`document_id`, using the identical resolution §2.3 added — so one
+project batch can mix claims pinned to a specific document with claims
+that search the caller's whole pool. One deliberate deviation from the
+spec's literal wording, stated here rather than silently done: a
+`document_id`+`document_pool` conflict on one claim inside a batch is a
+PER-CLAIM error, not the whole-request 400 plain `/verify` uses for the
+identical conflict — plain `/verify` has only one claim, so request-
+level and claim-level are the same thing there, but a batch's own
+established principle ("one bad claim must not abort every other claim
+in the same batch," stated in `_run_one_project_claim`'s own docstring
+since v2) takes precedence for a multi-claim call. An omitted `domain`
+on a pool claim defaults directly to `"robotics"` (no document to sniff
+a domain FROM, and pooled search is robotics-only anyway, so that
+default is never wrong). 6 new tests, including the actual point of this
+section: one project call mixing a `document_id`-pinned `ml_data` claim
+with a `document_pool` robotics claim in the same batch, both resolving
+correctly.
+
+**§1.3 — multi-instance deployment caveat (docs only, no code).** The
+README's "Running the live API" section now states plainly that every
+piece of this project's own in-memory state (rate-limit buckets,
+`UploadStore`, pooled-search ownership lookups) is per-process, and
+recommends `gcloud run deploy --max-instances=1` for exactly that reason
+— naming the concrete failure mode (a document uploaded to instance A,
+referenced from a later call routed to instance B, giving a false
+"unknown or expired" or an emptier-than-real pool) rather than leaving it
+implicit. A real shared-state fix (Redis, Firestore, etc.) stays out of
+scope for this project's timeline and budget, same as it was when v2
+first stated this limitation — restated here because pooled search adds
+a second, related failure mode (an incomplete-looking pool) on top of
+v2's original one (a falsely-expired `document_id`).
+
+**§2.5 (frontend) and §1.2 (`POST /verify/compound`) — deliberately NOT
+done in this round, stated plainly rather than silently dropped.** The
+spec's own build order places both last: §2.5 because it depends on the
+backend above being stable first and was explicitly lower-priority than
+the pooled-search backend itself (the project owner's own new-feature
+ask was pooled search, not a compound-claim endpoint); §1.2 because it
+is the least-requested of the three original gaps, the most expensive in
+live-LLM-call terms (one call to decompose, then one more per sub-claim
+— more fan-out per call than even `/verify/project`), and benefits most
+from everything above being proven first. `core/compound.py`'s
+`decompose_claim()`/`verify_compound()` remain real, tested, standalone
+orchestration logic, reachable by importing the module directly — still
+not wired to any HTTP endpoint. If a future round ships §1.2, the spec's
+own locked design is: its own strict rate-limit bucket, a hard cap on
+decomposed sub-claims, and a flat REJECTION of any `document_id` in a
+compound-claim's context (an LLM-invented sub-claim has no way to know
+which, if any, uploaded document it would even correspond to — the same
+reasoning `/verify/project` already uses to justify never calling
+`decompose_claim()` itself, see the "Item 20" section above).
+
 ## Open design decisions (not yet made)
 
 - Evidence retrieval inside each domain adapter: web search? local

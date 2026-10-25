@@ -64,7 +64,7 @@ honest, specific, named reason it can't yet — never a guess. See
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full per-piece
 status and known limitations stated plainly, not hidden.
 
-## Bring your own evidence (v2)
+## Bring your own evidence (v2 + v3)
 
 The four domains above also work against a document YOU supply, not just
 the project's own seeded corpus / live search:
@@ -83,15 +83,55 @@ extracted text is held in memory for 24h under an opaque `document_id`,
 capped and evicted the same way the API's own rate-limit state is.
 
 **Single claim against your document** — pass that `document_id` in
-`context`, and `robotics`'s evidence pipeline (real chunk → BM25 retrieve
-→ LLM propose → independently re-verify → judge stance) runs against
-your document's real text instead of the fixed corpus:
+`context`. For `robotics`, the real chunk → BM25 retrieve → LLM propose →
+independently re-verify → judge stance pipeline runs against your
+document's real text instead of the fixed corpus. For `ml_data` /
+`fpga_embedded` (v3), plain `/verify` resolves the same way
+`/verify/project` always has for those two domains — the document's real
+extracted text is written to a server-owned scratch file and pointed at
+by the existing `dataset_path`/`report_path` context field, so you still
+supply every structured field those adapters need (column/stat, or
+peripheral/metric/comparator) — nothing is fabricated. `research_web`'s
+two modes (URL-fetch or live search) don't consume an uploaded document
+at all, so a `document_id` there is a clean, named `400`, not a silent
+no-op:
 
 ```bash
 curl -X POST localhost:8000/verify -H "X-API-Key: $ANTICASSIOPEIA_API_KEY" \
   -H 'content-type: application/json' \
   -d '{"text": "the X9 sensor is rated for 450m depth", "domain": "robotics", "context": {"document_id": "..."}}'
 ```
+
+**Search across all your documents (v3 pooled search)** — don't know
+which of your uploads has the fact? Set `document_pool: true` instead of
+`document_id` (robotics-only; mutually exclusive with `document_id`).
+`GET /documents` lists your own currently-valid uploads first if you want
+to check what's poolable:
+
+```bash
+curl localhost:8000/documents -H "X-API-Key: $ANTICASSIOPEIA_API_KEY"
+# -> {"documents": [{"document_id": "...", "filename": "odrive.txt", "size_bytes": 1824, "seconds_until_expiry": 86391.2}, ...]}
+
+curl -X POST localhost:8000/verify -H "X-API-Key: $ANTICASSIOPEIA_API_KEY" \
+  -H 'content-type: application/json' \
+  -d '{"text": "the X9 sensor is rated for 450m depth", "domain": "robotics", "context": {"document_pool": true}}'
+```
+
+One combined BM25 index is built across every one of your pooled
+documents' chunks — still exactly ONE live LLM propose call and ONE
+judge-stance call per claim, same cost as searching a single document;
+only the local (free) BM25 corpus is bigger. The citation names the real
+document the answer actually came from, never a generic "pool"
+placeholder. Capped at the 10 most-recently-uploaded documents per call —
+stated in the verdict's own reasoning if you have more than that.
+Documents are scoped to the API key that uploaded them (a SHA-256 hash of
+the key, never the raw key, is the ownership tag) — one caller's pool
+never includes another caller's uploads. Honest exception: the public
+demo key is shared by every visitor to the hosted frontend, so under that
+one key specifically, "your pool" means "every demo-key visitor's
+uploads, pooled together" — expected for a shared sandbox, not real
+per-caller isolation. A caller using their own `ANTICASSIOPEIA_API_KEY`
+gets genuine isolation.
 
 **A bundle of claims, each tied to a different document** — `ml_data` and
 `fpga_embedded` need their own structured fields too (column/stat, or
@@ -115,7 +155,10 @@ The response carries both each claim's own full `Verdict` and one rolled-
 up project status (AND-semantics — one real `CONTRADICTED` part falsifies
 the whole bundle; one claim's own error, e.g. an unknown `document_id`,
 never fails the others). Up to 20 claims per call, its own rate limit
-(a project call can fan out into several live LLM calls).
+(a project call can fan out into several live LLM calls). Any claim in
+the batch can use `"document_pool": true` instead of `document_id` (v3) —
+one project call can mix claims pinned to a specific document with claims
+that search your whole upload pool.
 
 Honest, stated scope boundary: a *compound* claim split by an LLM
 (`anticassiopeia/core/compound.py`, library-only, not wired to any HTTP
@@ -235,6 +278,26 @@ curl -X POST localhost:8000/verify \
   -H 'content-type: application/json' \
   -H "X-API-Key: $ANTICASSIOPEIA_API_KEY" \
   -d '{"text": "Bar30 survives 500m depth", "domain": "robotics"}'
+```
+
+**Deploying to Cloud Run (or any multi-instance platform): pin `--max-instances=1`.**
+The rate-limit buckets, `UploadStore`, and `GET /documents`/pooled-search
+ownership lookups are all per-process, in-memory state — stated plainly
+in each module's own docstring, not silently assumed away. A real shared
+store (Redis, Firestore, etc.) would be the correct fix for a genuinely
+multi-instance deployment, but it's out of scope for this project's
+timeline and budget. Without `--max-instances=1`, a document uploaded to
+instance A and then referenced (by `document_id`, or implicitly via
+pooled search) in a later call routed to instance B gives a false
+"Unknown or expired document_id" — or a pool that looks emptier than it
+really is — for a document that is actually still valid, just sitting in
+a different process's memory. If this project's real traffic volume
+needs `--concurrency` raised instead of scaling out, that's a one-line
+fix with no downside; auto-scaling past one instance is what actually
+breaks this design.
+
+```bash
+gcloud run deploy anti-cassiopeia --max-instances=1 ...
 ```
 
 ## Frontend
