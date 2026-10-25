@@ -372,10 +372,26 @@ class ProjectClaimRequest(BaseModel):
     documents without the caller having to pre-sort them by domain. A
     claim with no document_id and no explicit domain defaults to
     research_web (free-text, no-file claims are exactly what that domain
-    is for -- see the v2 master build prompt's scenario #4/#5)."""
+    is for -- see the v2 master build prompt's scenario #4/#5).
+
+    `document_pool` (v3 §2.4): same pooled-search option plain /verify
+    gained in §2.3, now per-claim inside a batch -- lets one project call
+    mix claims pinned to one specific document with claims that search
+    the whole caller's upload pool. Mutually exclusive with document_id
+    (a per-claim error, not a whole-batch 400, if both are set -- a bad
+    claim shape in a batch must not abort every OTHER claim in the same
+    batch, same principle _run_one_project_claim's own docstring already
+    states). There's no document to sniff a domain FROM for a pool claim
+    (sniffing needs one concrete uploaded document), so an omitted
+    `domain` on a pool claim defaults to "robotics" directly, rather than
+    falling through to research_web's own no-document default --
+    document_pool is robotics-only anyway (see §2.3's own scope note), so
+    that default is never wrong, only a convenience for a caller who
+    didn't bother spelling out the only domain that could apply."""
 
     text: str
     document_id: str | None = None
+    document_pool: bool = False
     domain: str | None = None
     context: dict = {}
 
@@ -683,12 +699,13 @@ async def verify_project(req: ProjectVerifyRequest, api_key: str = Depends(_requ
             detail=f"'claims' has {len(req.claims)} entries; at most {_MAX_CLAIMS_PER_PROJECT} per /verify/project call.",
         )
 
+    owner_key_hash = _owner_key_hash(api_key)
     scratch_dir = Path(tempfile.mkdtemp(dir=_PROJECT_SCRATCH_DIR))
     try:
         results: list[dict] = []
         sub_results: list[SubClaimResult] = []
         for claim_req in req.claims:
-            result = await _run_one_project_claim(claim_req, scratch_dir)
+            result = await _run_one_project_claim(claim_req, scratch_dir, owner_key_hash)
             results.append(result)
             sub_results.append(
                 SubClaimResult(
@@ -707,20 +724,50 @@ async def verify_project(req: ProjectVerifyRequest, api_key: str = Depends(_requ
     }
 
 
-async def _run_one_project_claim(claim_req: ProjectClaimRequest, scratch_dir: Path) -> dict:
+async def _run_one_project_claim(claim_req: ProjectClaimRequest, scratch_dir: Path, owner_key_hash: str) -> dict:
     """Runs one claim of a /verify/project batch to completion (or to a
     named, honest per-claim error) -- NEVER raises; a problem with one
     claim (bad document_id, nothing routable, a bad file for its sniffed
-    domain) must not abort the other claims in the same batch, same
-    "one false part falsifies the whole AND, but a different kind of
-    problem must still be visible" principle core.compound.rollup()
-    itself already documents."""
+    domain, an invalid document_id/document_pool combination) must not
+    abort the other claims in the same batch, same "one false part
+    falsifies the whole AND, but a different kind of problem must still
+    be visible" principle core.compound.rollup() itself already
+    documents -- this is also why document_id+document_pool conflicts are
+    a per-claim error here rather than the whole-request 400 plain
+    /verify uses for the same conflict (plain /verify has only one claim,
+    so request-level and claim-level are the same thing there; a batch
+    is not)."""
     base_result = {"text": claim_req.text, "document_id": claim_req.document_id, "domain": None, "verdict_obj": None, "verdict": None, "error": None}
 
     context = dict(claim_req.context)
     domain = claim_req.domain
 
-    if claim_req.document_id is not None:
+    if claim_req.document_id is not None and claim_req.document_pool:
+        return {**base_result, "error": "Specify either document_id or document_pool, not both."}
+
+    if claim_req.document_pool:
+        # v3 §2.4: same pooled-search resolution as plain /verify's §2.3
+        # (see _resolve_document_context's own docstring for the full
+        # reasoning) -- ownership-scoped via upload_store.list_for_owner(),
+        # capped at _MAX_POOL_DOCUMENTS, robotics-only. No document_id
+        # to sniff a domain FROM here, so an omitted domain defaults
+        # directly to "robotics" (see ProjectClaimRequest's own
+        # docstring) rather than falling through to the no-document
+        # research_web default below.
+        if domain is None:
+            domain = "robotics"
+        if domain != "robotics":
+            return {
+                **base_result,
+                "domain": domain,
+                "error": f"domain {domain!r} does not support document_pool search (robotics-only).",
+            }
+        all_owned = upload_store.list_for_owner(owner_key_hash)
+        pool_docs = all_owned[:_MAX_POOL_DOCUMENTS]
+        context["document_pool"] = True
+        context["document_pool_items"] = [(doc.filename, doc.text) for doc in pool_docs]
+        context["document_pool_total_available"] = len(all_owned)
+    elif claim_req.document_id is not None:
         doc = upload_store.get(claim_req.document_id)
         if doc is None:
             return {**base_result, "error": f"Unknown or expired document_id: {claim_req.document_id!r}."}
