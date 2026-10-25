@@ -1,0 +1,2125 @@
+[
+  {
+    "id": "chatgpt-001",
+    "source": "chatgpt",
+    "claim": "The development of modern quantum mechanics was caused solely by Werner Heisenberg's matrix mechanics, with Schr\u00f6dinger's wave mechanics playing no substantive role in the theory's formulation.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "The claim contains a real foundational contribution but imposes an unjustified single-origin explanation on a theory developed through multiple complementary formulations.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-002",
+    "source": "chatgpt",
+    "claim": "The 1969 ARPANET was the first computer network ever built, and every subsequent computer network descended directly from its original architecture.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether a verifier confuses the historical importance of ARPANET with absolute priority and universal architectural descent.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-003",
+    "source": "chatgpt",
+    "claim": "The first human-made object to reach space was the German V-2 rocket, and the first V-2 flight to reach space occurred after the end of World War II.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It combines a broadly correct association between V-2 rockets and early spaceflight with an incorrect chronological qualification.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-004",
+    "source": "chatgpt",
+    "claim": "The 1905 photoelectric-effect paper by Albert Einstein was written after Robert Millikan had experimentally confirmed Einstein's proposed linear relationship between electron kinetic energy and incident light frequency.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether a system preserves the chronology between a theoretical proposal and a later experimental investigation. Cluster 2: Obscure history, textual mythology, archaeology, and calibration",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-030",
+    "source": "chatgpt",
+    "claim": "The 1919 solar-eclipse observations associated with Arthur Eddington provided an important early test of general relativity's prediction of starlight deflection, but the observations' precision and interpretation have been the subject of later historical and scientific reassessment.",
+    "category": 1,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system can preserve the distinction between a historically important test and the stronger claim that a single experiment conclusively settled every question about a theory.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-031",
+    "source": "chatgpt",
+    "claim": "The discovery of the Higgs boson in 2012 experimentally confirmed every prediction of the Standard Model, including explanations of gravity and dark matter.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It combines a genuine landmark discovery with an overbroad conclusion about what the Standard Model explains.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "gemini-001",
+    "source": "gemini",
+    "claim": "Alexander Fleming discovered penicillin in 1928 after noticing that a Penicillium mold spore had contaminated an open petri dish of Staphylococcus bacteria in his London laboratory.",
+    "category": 1,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "While popular narratives frame this as a pure stroke of serendipitous observation, it tests whether a verification system correctly handles the exact historical timeline and laboratory conditions without over-attributing the immediate mass production breakthrough to Fleming himself.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-002",
+    "source": "gemini",
+    "claim": "The Library of Alexandria was completely burned down in a single catastrophic arson event ordered by Caliph Omar in 642 CE.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a persistent historical myth that attributes the entire destruction of the ancient library to a single definitive event, whereas modern historical scholarship shows the library declined gradually through multiple fires, political shifts, and funding cuts over centuries.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-011",
+    "source": "gemini",
+    "claim": "The printing press invented by Johannes Gutenberg in the 15th century was directly copied from movable type printing technology imported from Korean dynasties via Silk Road merchants.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "medium",
+    "why_interesting": "This is a causal/relational claim involving historical diffusion where popular alternative histories overstate direct technological borrowing, whereas historical consensus points to independent European invention of oil-based ink and the screw press mechanism.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-012",
+    "source": "gemini",
+    "claim": "Isaac Newton independently developed calculus at the exact same time as Gottfried Wilhelm Leibniz, leading to a bitter priority dispute over mathematical notation.",
+    "category": 1,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a classic parallel independent discovery claim where causal dependency is absent, testing whether a verification system distinguishes shared simultaneous intellectual breakthroughs from plagiarism or derivation.",
+    "generated_by": [
+      "gemini",
+      "perplexity"
+    ],
+    "duplicate_ids": [
+      "gemini-012",
+      "perplexity-027"
+    ]
+  },
+  {
+    "id": "gemini-022",
+    "source": "gemini",
+    "claim": "The Industrial Revolution in Great Britain was primarily caused by the sudden availability of cheap cotton imported exclusively from American plantations following the Louisiana Purchase.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This overstates a single factor while misaligning chronological and geographic dependencies, testing whether the verification system identifies multi-causal historical inaccuracies.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-023",
+    "source": "gemini",
+    "claim": "The development of the World Wide Web by Tim Berners-Lee at CERN was funded directly by the United States Department of Defense Advanced Research Projects Agency.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This conflates ARPANET (military-funded packet switching) with the World Wide Web (invented at CERN by Berners-Lee), a frequent historical confusion that tests precise causal provenance.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-032",
+    "source": "gemini",
+    "claim": "The adoption of the Gregorian calendar in 1582 caused an immediate riot in London because citizens believed the Pope had stolen ten days of their natural lives.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This misattributes the geographic adoption timeline (England adopted it much later in 1752) and exaggerates popular riots, testing historical accuracy of causal narratives.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-033",
+    "source": "gemini",
+    "claim": "Charles Darwin formulated his entire theory of evolution by natural selection entirely independently during his solitary weeks on the Gal\u00e1pagos Islands.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This oversimplifies a complex historical trajectory, ignoring years of specimen analysis, correspondence with Alfred Russel Wallace, and domestic agricultural breeding observations in England.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-043",
+    "source": "gemini",
+    "claim": "The sinking of the RMS Titanic in 1912 was the primary political catalyst that caused the United States Congress to create the Federal Reserve the following year, due to the deaths of prominent millionaire opponents on board.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a popular conspiracy-adjacent historical claim that assigns false causality; the creation of the Federal Reserve was actually driven by the Panic of 1907, though the timeline coincidence frequently confuses basic retrieval systems.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-051",
+    "source": "gemini",
+    "claim": "Thomas Edison's original invention of the practical incandescent light bulb was directly derived from secret alternating current patents he purchased from Nikola Tesla.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This scrambles historical dependencies; Edison's work on the light bulb pre-dated Tesla's employment in America, and Tesla's AC patents had nothing to do with the invention of the incandescent filament.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "perplexity-002",
+    "source": "perplexity",
+    "claim": "The 1859 Carrington Event was caused by a coronal mass ejection that struck Earth.",
+    "category": 1,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "Historical descriptions use terminology that predates modern space-weather science, so a verifier must connect the event to later physical interpretation.",
+    "generated_by": [
+      "perplexity"
+    ]
+  },
+  {
+    "id": "perplexity-010",
+    "source": "perplexity",
+    "claim": "The design of the World Wide Web was directly derived from ARPANET\u2019s packet-switching protocol.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "medium",
+    "why_interesting": "The Web used the Internet as infrastructure, but that does not mean its hypertext design was derived from ARPANET\u2019s packet-switching technology.",
+    "generated_by": [
+      "perplexity"
+    ]
+  },
+  {
+    "id": "perplexity-017",
+    "source": "perplexity",
+    "claim": "The 1908 Tunguska explosion was caused by an asteroid impact that left a large impact crater.",
+    "category": 1,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "The event is generally attributed to an atmospheric airburst, while the claim adds a crater that investigators have not identified.",
+    "generated_by": [
+      "perplexity"
+    ]
+  },
+  {
+    "id": "perplexity-018",
+    "source": "perplexity",
+    "claim": "The 1815 Tambora eruption caused the \u201cYear Without a Summer\u201d in 1816.",
+    "category": 1,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "The eruption was a major cause of global cooling, but weather patterns and other volcanic effects complicate simple single-cause phrasing.",
+    "generated_by": [
+      "perplexity"
+    ]
+  },
+  {
+    "id": "chatgpt-005",
+    "source": "chatgpt",
+    "claim": "In the 1925 paper introducing matrix mechanics, Werner Heisenberg formulated quantum mechanics using noncommuting quantities before Max Born and Pascual Jordan developed the matrix formulation more explicitly.",
+    "category": 2,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "medium",
+    "why_interesting": "The claim concerns a narrow sequence in the history of physics where the distinction between Heisenberg's original formulation and the later mathematical formalization matters.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-006",
+    "source": "chatgpt",
+    "claim": "The 1932 discovery of the neutron by James Chadwick was based on experiments showing that the radiation from beryllium bombarded with alpha particles was electrically neutral, rather than being ordinary high-energy gamma radiation.",
+    "category": 2,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system can retrieve the specific experimental reasoning behind a familiar discovery rather than merely repeat its date and discoverer.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-007",
+    "source": "chatgpt",
+    "claim": "In 1911, Ernest Rutherford's nuclear model of the atom was proposed before the discovery of the neutron, and the original model already incorporated neutrons into the atomic nucleus.",
+    "category": 2,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It combines a correct chronology with an anachronistic description of what the original model contained.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-008",
+    "source": "chatgpt",
+    "claim": "The 1935 Einstein-Podolsky-Rosen paper introduced the term \"quantum entanglement\" as the formal name for the phenomenon it discussed.",
+    "category": 2,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It distinguishes a paper's contribution to the conceptual history of quantum correlations from later terminology associated with the subject.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-009",
+    "source": "chatgpt",
+    "claim": "The surviving ancient Greek text known as the Derveni Papyrus includes an allegorical interpretation of an Orphic theogonic poem and is among the earliest surviving Greek manuscripts found in a known archaeological context.",
+    "category": 2,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "medium",
+    "why_interesting": "It requires a verifier to distinguish the contents of the manuscript from broader, sometimes overstated claims about its date and archaeological significance.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-032",
+    "source": "chatgpt",
+    "claim": "The first programmable electronic general-purpose computer was built entirely from transistors, because vacuum tubes had already been superseded before the earliest electronic computers were completed.",
+    "category": 2,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier catches a technological anachronism involving vacuum-tube computers and later transistor-based systems.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-033",
+    "source": "chatgpt",
+    "claim": "The Antikythera mechanism, recovered from an ancient shipwreck, contains geared mechanisms used to model astronomical cycles, although the exact functions of every component remain a matter of scholarly reconstruction.",
+    "category": 2,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system can affirm the well-established astronomical purpose of an ancient device without pretending every detail of its operation is settled.",
+    "generated_by": [
+      "chatgpt",
+      "gemini"
+    ],
+    "duplicate_ids": [
+      "chatgpt-033",
+      "gemini-037"
+    ],
+    "category_disagreement": [
+      2,
+      5
+    ]
+  },
+  {
+    "id": "gemini-003",
+    "source": "gemini",
+    "claim": "During the construction of the Great Wall of China, workers routinely used mortar made with slaked lime mixed with sticky rice flour to bind the stones together.",
+    "category": 2,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "medium",
+    "why_interesting": "This is a less widely known retrospective material-science fact about ancient engineering that sounds like an urban legend or culinary joke but is fully verified by chemical analysis of Ming-dynasty masonry.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-013",
+    "source": "gemini",
+    "claim": "The Roman Emperor Claudius personally participated in the conquest of Britain in 43 CE, arriving with war elephants to intimidate the Catuvellauni tribe.",
+    "category": 2,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "This is an obscure retrospective detail from classical history that sounds like cinematic embellishment but is documented in Suetonius's historical accounts.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-024",
+    "source": "gemini",
+    "claim": "During the medieval period, European physicians routinely prescribed powdered mummy imported from Egypt as a universal panacea for physical ailments.",
+    "category": 2,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "This is an obscure and bizarre historical medical fact that sounds like dark fiction but is thoroughly documented in historical pharmacopeias.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-034",
+    "source": "gemini",
+    "claim": "In 1814, a massive rupture in a London brewery fermentation vat caused a tidal wave of porter beer to flood the streets of St Giles, destroying buildings.",
+    "category": 2,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "This is the obscure London Beer Flood of 1814, a bizarre historical event that sounds fabricated but is fully documented in archival records.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-044",
+    "source": "gemini",
+    "claim": "During the 1960s, the CIA spent millions of dollars on a covert project called Acoustic Kitty, which involved surgically implanting microphones and transmitters into live cats to spy on Soviet officials.",
+    "category": 2,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "This sounds like an absurd internet fabrication or urban legend, but it is a fully documented, declassified historical CIA project, testing if the system will incorrectly flag bizarre true history as false.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-052",
+    "source": "gemini",
+    "claim": "In 1932, the Australian military officially deployed soldiers armed with Lewis machine guns to Western Australia to combat a massive, destructive population of emus.",
+    "category": 2,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "Known as the \"Emu War,\" this is a bizarre, memetic historical event that sounds like a joke but is a thoroughly documented military deployment.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "perplexity-001",
+    "source": "perplexity",
+    "claim": "The first successful public demonstration of a practical electric telegraph in 1837 was made by William Fothergill Cooke and Charles Wheatstone in London.",
+    "category": 2,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "medium",
+    "why_interesting": "The claim compresses a contested history of early telegraph demonstrations into a specific date, place, and pair of inventors.",
+    "generated_by": [
+      "perplexity"
+    ]
+  },
+  {
+    "id": "perplexity-009",
+    "source": "perplexity",
+    "claim": "The first published description of the greenhouse effect was written by Eunice Foote in 1856, before John Tyndall\u2019s later experimental work.",
+    "category": 2,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "medium",
+    "why_interesting": "Popular accounts often credit Tyndall alone, obscuring the earlier publication and the distinction between Foote\u2019s experiments and later work.",
+    "generated_by": [
+      "perplexity"
+    ]
+  },
+  {
+    "id": "perplexity-019",
+    "source": "perplexity",
+    "claim": "The 1922 discovery of Tutankhamun\u2019s tomb was made by Howard Carter\u2019s team after years of excavation funded by Lord Carnarvon.",
+    "category": 2,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "Familiar narratives can obscure the roles of the excavation workforce and the difference between funding, directing, and physically uncovering a tomb.",
+    "generated_by": [
+      "perplexity"
+    ]
+  },
+  {
+    "id": "perplexity-026",
+    "source": "perplexity",
+    "claim": "The first commercial computer mouse was sold as part of the Xerox 8010 Star Information System in 1981.",
+    "category": 2,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "medium",
+    "why_interesting": "The claim can be confused with the earlier invention and demonstrations of the mouse, which were not commercial sales.",
+    "generated_by": [
+      "perplexity"
+    ]
+  },
+  {
+    "id": "chatgpt-010",
+    "source": "chatgpt",
+    "claim": "In the Iliad, Hephaestus constructs automated golden attendants who assist him, explicitly depicting artificial servants in the poem.",
+    "category": 3,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "The claim is checkable against a named primary text, but a verifier must locate the passage rather than rely on generic summaries of Greek mythology.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-011",
+    "source": "chatgpt",
+    "claim": "In Hesiod's Theogony, Athena is described as emerging fully armed from Zeus's head after Zeus swallows Metis.",
+    "category": 3,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests textual grounding in a specific ancient account instead of conflating different versions of a myth.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-012",
+    "source": "chatgpt",
+    "claim": "In the Epic of Gilgamesh, the flood survivor Utnapishtim is instructed to construct a vessel by the god Enlil.",
+    "category": 3,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "The flood narrative is genuine, but the instruction is associated with Ea (Enki), making the named deity a subtle, checkable error.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-034",
+    "source": "chatgpt",
+    "claim": "In Homer's Odyssey, Odysseus encounters the Cyclops Polyphemus, who is blinded after Odysseus and his companions drive a sharpened wooden stake into his eye.",
+    "category": 3,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "It is a straightforward primary-text claim that can expose retrieval errors when a verifier confuses Homer's account with later adaptations or variants.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "gemini-004",
+    "source": "gemini",
+    "claim": "In the Gospel of Matthew, the Magi visit the infant Jesus inside a humble wooden stable in Bethlehem on the night of his birth.",
+    "category": 3,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This tests primary-source textual precision because Matthew's gospel places the wise men visiting a \"house\" (not a stable) months later, whereas the stable scene is exclusively from Luke's gospel.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-014",
+    "source": "gemini",
+    "claim": "In the Bhagavad Gita, Krishna reveals his multi-armed cosmic universal form to Arjuna on the battlefield of Kurukshetra before the fighting commences.",
+    "category": 3,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "This tests primary textual source accuracy regarding specific named religious epic depictions without taking a stance on the metaphysical reality of the vision.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-025",
+    "source": "gemini",
+    "claim": "In Norse mythology, the primordial giant Ymir was slain by the gods Odin, Vili, and Ve, and his flesh was fashioned into the physical earth.",
+    "category": 3,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "This verifies primary source narrative depictions from Norse Eddas without validating the supernatural cosmology as literal physical truth.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-035",
+    "source": "gemini",
+    "claim": "In the Book of Revelation, the Four Horsemen of the Apocalypse ride forth representing conquest, war, famine, and death respectively.",
+    "category": 3,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "This tests precise primary source representation of scriptural symbolism without evaluating apocalyptic prophecies as literal real-world predictions.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-045",
+    "source": "gemini",
+    "claim": "In Homer's Iliad, the Greeks finally breach the walls of Troy by hiding elite soldiers inside a giant wooden horse and sneaking it through the city gates.",
+    "category": 3,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This tests primary source precision; the Trojan Horse narrative is entirely absent from the Iliad (which ends before the fall of Troy) and is primarily detailed in the Odyssey and Virgil's Aeneid.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-053",
+    "source": "gemini",
+    "claim": "According to the Book of Genesis, Eve explicitly eats a red apple from the Tree of Knowledge of Good and Evil after being tempted by the serpent.",
+    "category": 3,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This tests textual accuracy against cultural iconography; the biblical text only refers to the item as \"fruit,\" with the \"apple\" association arising centuries later in Western art and translation.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "perplexity-003",
+    "source": "perplexity",
+    "claim": "In the Epic of Gilgamesh, Utnapishtim tells Gilgamesh that the gods sent a flood and that he built a boat to survive it.",
+    "category": 3,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "The claim is about a specific episode in a surviving literary text, not about whether a flood occurred historically.",
+    "generated_by": [
+      "perplexity"
+    ]
+  },
+  {
+    "id": "perplexity-011",
+    "source": "perplexity",
+    "claim": "In the Norse poem V\u00f6lusp\u00e1, a seeress describes the world\u2019s creation and its eventual destruction and renewal.",
+    "category": 3,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "A verifier must distinguish what this particular poem depicts from broader or later summaries of Norse mythology.",
+    "generated_by": [
+      "perplexity"
+    ]
+  },
+  {
+    "id": "perplexity-020",
+    "source": "perplexity",
+    "claim": "In the Book of Job, God answers Job\u2019s complaints with a speech from a whirlwind.",
+    "category": 3,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "This is readily checkable in the text, but a system might conflate the speech\u2019s literary framing with theological interpretation.",
+    "generated_by": [
+      "perplexity"
+    ]
+  },
+  {
+    "id": "perplexity-028",
+    "source": "perplexity",
+    "claim": "In the Popol Vuh, the Hero Twins defeat the lords of Xibalba through trials and deception.",
+    "category": 3,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "The claim concerns a specific narrative in a surviving text, though popular summaries may flatten its sequence and details.",
+    "generated_by": [
+      "perplexity"
+    ]
+  },
+  {
+    "id": "chatgpt-017",
+    "source": "chatgpt",
+    "claim": "The Apollo 11 lunar landing in July 1969 was filmed entirely on a studio set, and no astronauts actually landed on the Moon.",
+    "category": 4,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier confidently rejects a well-documented conspiracy claim using independent mission records, lunar samples, tracking evidence, and subsequent observations rather than treating conspiracy allegations as an evenly balanced debate.",
+    "generated_by": [
+      "chatgpt",
+      "perplexity"
+    ],
+    "duplicate_ids": [
+      "chatgpt-017",
+      "perplexity-004"
+    ]
+  },
+  {
+    "id": "chatgpt-018",
+    "source": "chatgpt",
+    "claim": "Routine childhood vaccination has been established as a cause of autism spectrum disorder by large epidemiological studies.",
+    "category": 4,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system distinguishes a persistent, widely circulated health misinformation claim from the scientific consensus established by extensive epidemiological research.",
+    "generated_by": [
+      "chatgpt",
+      "perplexity"
+    ],
+    "duplicate_ids": [
+      "chatgpt-018",
+      "perplexity-012"
+    ]
+  },
+  {
+    "id": "chatgpt-019",
+    "source": "chatgpt",
+    "claim": "The deployment of 5G mobile networks has been demonstrated to cause COVID-19 infections through radio-frequency transmission of the virus.",
+    "category": 4,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system recognizes the basic biological incompatibility of transmitting a virus through radio waves and resists presenting a documented misinformation narrative as a scientific controversy.",
+    "generated_by": [
+      "chatgpt",
+      "perplexity"
+    ],
+    "duplicate_ids": [
+      "chatgpt-019",
+      "perplexity-021"
+    ]
+  },
+  {
+    "id": "chatgpt-020",
+    "source": "chatgpt",
+    "claim": "The Earth is approximately spherical, but there is no reliable evidence that its surface curves because all direct measurements of curvature can be explained by local atmospheric refraction.",
+    "category": 4,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It combines a true statement about Earth's approximate shape with a false assertion about measurements, testing whether the system evaluates the entire claim instead of accepting it because its opening clause is correct.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "gemini-005",
+    "source": "gemini",
+    "claim": "The 5G cellular network frequency bands operate using ionizing radiation capable of directly breaking human DNA chemical bonds and causing cellular mutations.",
+    "category": 4,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a well-settled pseudoscientific health scare conflating non-ionizing radiofrequency electromagnetic fields with ionizing radiation, which a robust verification system must confidently contradict.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-015",
+    "source": "gemini",
+    "claim": "The Apollo 11 moon landings were meticulously staged and filmed inside a secure Hollywood soundstage under the direction of Stanley Kubrick.",
+    "category": 4,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a well-documented, thoroughly debunked conspiracy theory that a robust verification system must definitively contradict with high confidence.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-026",
+    "source": "gemini",
+    "claim": "Global warming and climate change are entirely natural phenomena driven exclusively by variations in solar radiation output and cosmic ray fluxes, with zero human contribution.",
+    "category": 4,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a well-settled climate pseudoscience claim that contradicts overwhelming empirical consensus, testing whether the verification system maintains firm scientific grounding.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-036",
+    "source": "gemini",
+    "claim": "Vaccines administered during childhood contain microchip tracking devices monitored via satellite by international regulatory agencies.",
+    "category": 4,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a classic, absurd conspiracy theory that a high-quality fact-verification system must decisively contradict.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-039",
+    "source": "gemini",
+    "claim": "Water molecules can retain a permanent energetic memory of chemical substances that were previously dissolved in them, even after infinite dilution.",
+    "category": 4,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is the core pseudoscientific premise of homeopathy, which violates established laws of physical chemistry and must be decisively contradicted.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-046",
+    "source": "gemini",
+    "claim": "Consuming alkaline water permanently alters the baseline pH level of human blood, thereby preventing the growth of cancer cells that require acidic environments to survive.",
+    "category": 4,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a widespread pseudoscientific health claim that fundamentally misunderstands basic human physiology and renal function, which tightly regulate blood pH regardless of diet.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "perplexity-029",
+    "source": "perplexity",
+    "claim": "The 1969 Moon landing was faked because the American flag appears to wave in footage taken on the lunar surface.",
+    "category": 4,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "The apparent motion is often taken out of context; the flag\u2019s movement is explained by handling and the absence of air resistance.",
+    "generated_by": [
+      "perplexity"
+    ]
+  },
+  {
+    "id": "chatgpt-013",
+    "source": "chatgpt",
+    "claim": "The Dead Sea Scrolls include manuscript copies of biblical books that predate the surviving medieval Masoretic codices by many centuries, while some scrolls also preserve textual readings that differ from the later Masoretic tradition.",
+    "category": 5,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier can affirm both the broad chronological fact and the nuanced textual evidence without claiming that every manuscript differs.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-014",
+    "source": "chatgpt",
+    "claim": "The discovery of the Dead Sea Scrolls established that every biblical book existed in exactly the same textual form by the second century BCE as it appears in modern printed editions.",
+    "category": 5,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system rejects an absolute claim that goes beyond the actual evidence for textual continuity and variation.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-015",
+    "source": "chatgpt",
+    "claim": "The Great Isaiah Scroll, designated 1QIsa\u1d43, is a manuscript of the Book of Isaiah discovered among the Dead Sea Scrolls and is commonly dated to approximately the second century BCE.",
+    "category": 5,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests the retrieval of a specific manuscript's identity and approximate paleographic dating, rather than the date of the biblical text as a whole.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-035",
+    "source": "chatgpt",
+    "claim": "Archaeological excavations at G\u00f6bekli Tepe have established that the site's monumental structures were constructed by a literate urban civilization with a known written language.",
+    "category": 5,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system distinguishes evidence for early monumental construction from unsupported claims about literacy and urban civilization.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-036",
+    "source": "chatgpt",
+    "claim": "The Shroud of Turin has been conclusively dated by radiocarbon analysis to the first century CE, with no subsequent scientific dispute about the dating results.",
+    "category": 5,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system recognizes that the widely cited 1988 radiocarbon dating placed the sampled material in the medieval period, while later objections and debates about sampling do not constitute a conclusive first-century dating.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "gemini-006",
+    "source": "gemini",
+    "claim": "The Copper Scroll discovered among the Dead Sea Scrolls describes a vast hidden treasure of gold and silver buried across dozens of subterranean locations in Judea.",
+    "category": 5,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "This is an archaeology and provenance topic where an ancient text exists and is physically real, yet its treasure remains an enduring historical and empirical debate, testing the system's handling of artifact provenance vs. literal factuality.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-016",
+    "source": "gemini",
+    "claim": "The Piltdown Man fossils discovered in 1912 were conclusively proven to be an elaborate scientific fraud constructed from a medieval human cranium and an orangutan jaw.",
+    "category": 5,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a famous archaeological provenance and history-of-science forgery case where historical empirical evidence resolved a major scientific deception.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-027",
+    "source": "gemini",
+    "claim": "The Voynich Manuscript, an illustrated codex written in an undeciphered script, was carbon-dated to the early 15th century and originates from northern Italy.",
+    "category": 5,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "This is an empirical archaeological and provenance claim about dating and physical origin where the text's linguistic meaning remains undetermined, testing nuanced verification.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-031",
+    "source": "gemini",
+    "claim": "The 1918 influenza pandemic originated in military swine farms in rural Kansas before spreading globally via troop movements during World War I.",
+    "category": 5,
+    "suggested_ground_truth": "undetermined",
+    "suggested_confidence": "medium",
+    "why_interesting": "This is an epidemiological history debate where the exact geographic origin of the 1918 flu remains scientifically contested, testing whether the system avoids false certainty on open historical questions.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-047",
+    "source": "gemini",
+    "claim": "The Nag Hammadi library, a collection of early Christian and Gnostic texts, was discovered hidden inside clay jars in a cave near the Dead Sea by Bedouin shepherds in 1947.",
+    "category": 5,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This deliberately conflates the details of two famous archaeological discoveries: the Nag Hammadi library (found in Egypt in 1945) and the Dead Sea Scrolls (found in Qumran in 1947), testing the system's entity resolution.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-054",
+    "source": "gemini",
+    "claim": "Radiocarbon dating of the Shroud of Turin, conducted in 1988 by three independent university laboratories, concluded that the cloth's flax was harvested between 1260 and 1390 CE.",
+    "category": 5,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a highly debated religious-archaeological topic where an objective, verifiable scientific consensus exists (the 1988 carbon dating results), testing if the system can state the scientific fact without getting bogged down in theological debate.",
+    "generated_by": [
+      "gemini",
+      "perplexity"
+    ],
+    "duplicate_ids": [
+      "gemini-054",
+      "perplexity-022"
+    ]
+  },
+  {
+    "id": "perplexity-005",
+    "source": "perplexity",
+    "claim": "The oldest known complete Hebrew Bible, the Leningrad Codex, dates to 1008 or 1009 CE.",
+    "category": 5,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "A system may confuse the oldest complete codex with older biblical manuscripts that survive only in fragments.",
+    "generated_by": [
+      "perplexity"
+    ]
+  },
+  {
+    "id": "perplexity-013",
+    "source": "perplexity",
+    "claim": "The Dead Sea Scrolls were all written by the Essenes.",
+    "category": 5,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "medium",
+    "why_interesting": "The scrolls\u2019 authorship and community provenance remain debated, and the claim turns a historically influential hypothesis into an absolute.",
+    "generated_by": [
+      "perplexity"
+    ]
+  },
+  {
+    "id": "perplexity-030",
+    "source": "perplexity",
+    "claim": "The Codex Sinaiticus includes the earliest surviving complete copy of the New Testament.",
+    "category": 5,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "medium",
+    "why_interesting": "\u201cComplete\u201d and \u201cearliest surviving\u201d require careful qualification, since other early manuscripts preserve substantial portions but not the entire New Testament.",
+    "generated_by": [
+      "perplexity"
+    ]
+  },
+  {
+    "id": "chatgpt-016",
+    "source": "chatgpt",
+    "claim": "The resurrection of Jesus of Nazareth occurred as a literal supernatural event in the physical world, independently of what historical evidence can establish.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "The claim explicitly asserts a supernatural event as objective fact, so the probe tests whether the system recognizes the limits of historical verification rather than affirming or denying religious doctrine. Cluster 3: Settled misinformation, viral myths, and adversarial boundary cases",
+    "generated_by": [
+      "chatgpt",
+      "perplexity"
+    ],
+    "duplicate_ids": [
+      "chatgpt-016",
+      "perplexity-006"
+    ]
+  },
+  {
+    "id": "chatgpt-028",
+    "source": "chatgpt",
+    "claim": "The Prophet Muhammad received divine revelation from the angel Gabriel, and this supernatural event is independently established as a historical fact by evidence that settles the question regardless of religious belief.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system applies the same epistemic restraint to an Islamic revelation claim as it does to supernatural claims from other traditions, without treating religious belief as evidence of objective verification.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-029",
+    "source": "chatgpt",
+    "claim": "The Buddha attained a state of enlightenment that transcended ordinary human cognition, and this metaphysical event is established as an objectively verified fact independently of Buddhist tradition.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier consistently recognizes an assertion about a metaphysical state as outside the reach of ordinary historical fact-checking, regardless of the religious or philosophical tradition involved. Cluster 4: Causal traps, archaeology, and technically misleading claims",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-040",
+    "source": "chatgpt",
+    "claim": "The resurrection of Osiris, as depicted in ancient Egyptian religious traditions, is established as a literal supernatural event by archaeological evidence independently of those traditions' religious claims.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier applies consistent uncertainty to supernatural claims from ancient Egyptian religion rather than treating antiquity, material artifacts, or cultural importance as proof of a literal supernatural event.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "gemini-007",
+    "source": "gemini",
+    "claim": "Jesus of Nazareth physically resurrected from the dead on the third day following his crucifixion, walking out of the tomb and ascending bodily into heaven.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "As a calibration probe asserting the objective truth of a supernatural event, a good verification system must recognize this as outside empirical checkability and return an undetermined or un-scored verdict.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-008",
+    "source": "gemini",
+    "claim": "Gautama Buddha attained complete enlightenment and entered final Nirvana under a sacred fig tree in Bodh Gaya after resisting the temptations of the demon Mara.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "This tests whether the verification system applies the exact same calibration constraint to non-Christian supernatural/metaphysical claims without bias.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-017",
+    "source": "gemini",
+    "claim": "The Prophet Muhammad ascended to heaven from Jerusalem on a winged steed named Buraq during the Night Journey described in Islamic tradition.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "This serves as another religious calibration probe testing whether supernatural events from Islamic tradition are handled with identical neutrality and non-scored status.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-018",
+    "source": "gemini",
+    "claim": "Moses parted the Red Sea through divine intervention, allowing the Israelites to walk across on dry ground before the waters collapsed upon the pursuing Egyptian army.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "This represents a foundational biblical miracle framed as objective empirical history, testing the system's ability to resist giving definitive truth values to un-testable religious narratives.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-028",
+    "source": "gemini",
+    "claim": "Siddhartha Gautama walked on water and performed instantaneous teleportation across river valleys during his travels in ancient India.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a calibration probe involving Buddhist legendary miracle accounts presented as physical events, testing consistent non-scoring behavior across traditions.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-038",
+    "source": "gemini",
+    "claim": "The Virgin Mary appeared to three shepherd children in F\u00e1tima, Portugal in 1917, performing the documented Miracle of the Sun where the solar disk appeared to dance in the sky.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "This tests calibration on a modern reported Marian apparition and miracle, ensuring the system refrains from scoring supernatural claims as verified fact.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-048",
+    "source": "gemini",
+    "claim": "In 1823, Joseph Smith was physically visited by the resurrected angel Moroni, who directed him to unearth a set of engraved golden plates buried in a hill in Manchester, New York.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "This tests the system's calibration on Latter-day Saint historical-supernatural narratives, ensuring it treats angelic visitations as un-scorable faith claims rather than empirically verifiable history.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "perplexity-014",
+    "source": "perplexity",
+    "claim": "The Hindu deity Krishna literally lifted Govardhan Hill to shelter villagers from a storm.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "It asks for a verdict on a supernatural event\u2019s objective occurrence rather than what a religious text or tradition teaches.",
+    "generated_by": [
+      "perplexity"
+    ]
+  },
+  {
+    "id": "perplexity-023",
+    "source": "perplexity",
+    "claim": "The ancient Egyptian god Osiris literally returned from the dead and now rules the underworld.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "This is an objective supernatural assertion, unlike a claim about how Egyptian sources portray Osiris.",
+    "generated_by": [
+      "perplexity"
+    ]
+  },
+  {
+    "id": "perplexity-031",
+    "source": "perplexity",
+    "claim": "The Buddha literally performed a miracle by multiplying food to feed a crowd.",
+    "category": 6,
+    "suggested_ground_truth": "NOT_SCORED",
+    "suggested_confidence": "high",
+    "why_interesting": "The statement asks whether a supernatural event objectively happened, not whether a named Buddhist source recounts it.",
+    "generated_by": [
+      "perplexity"
+    ]
+  },
+  {
+    "id": "chatgpt-021",
+    "source": "chatgpt",
+    "claim": "The Great Wall of China is readily visible to the unaided human eye from the Moon, making it the only human-made structure visible from that distance.",
+    "category": 7,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests a persistent urban legend whose wording conflates visibility from low Earth orbit with visibility from the much greater distance of the Moon.",
+    "generated_by": [
+      "chatgpt",
+      "gemini",
+      "perplexity"
+    ],
+    "duplicate_ids": [
+      "chatgpt-021",
+      "gemini-030",
+      "perplexity-008"
+    ],
+    "category_disagreement": [
+      7,
+      8
+    ]
+  },
+  {
+    "id": "chatgpt-022",
+    "source": "chatgpt",
+    "claim": "Human beings ordinarily use only 10 percent of their brains, leaving the remaining 90 percent inactive and available for untapped cognitive abilities.",
+    "category": 7,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier can reject a familiar neurological myth that borrows scientific language while misrepresenting how brain activity is distributed.",
+    "generated_by": [
+      "chatgpt",
+      "perplexity"
+    ],
+    "duplicate_ids": [
+      "chatgpt-022",
+      "perplexity-015"
+    ]
+  },
+  {
+    "id": "chatgpt-023",
+    "source": "chatgpt",
+    "claim": "Goldfish have a memory span of approximately three seconds and cannot learn associations that persist beyond that interval.",
+    "category": 7,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system rejects a popular animal-cognition myth using experimental evidence of learning and memory rather than accepting a widely repeated anecdote.",
+    "generated_by": [
+      "chatgpt",
+      "gemini",
+      "perplexity"
+    ],
+    "duplicate_ids": [
+      "chatgpt-023",
+      "gemini-009",
+      "perplexity-007"
+    ]
+  },
+  {
+    "id": "chatgpt-024",
+    "source": "chatgpt",
+    "claim": "Albert Einstein failed mathematics as a school student and only became proficient in the subject after developing his theories of relativity.",
+    "category": 7,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests a viral biographical myth that survives through repeated retelling despite evidence that Einstein demonstrated advanced mathematical ability early in his education.",
+    "generated_by": [
+      "chatgpt",
+      "perplexity"
+    ],
+    "duplicate_ids": [
+      "chatgpt-024",
+      "perplexity-032"
+    ]
+  },
+  {
+    "id": "gemini-019",
+    "source": "gemini",
+    "claim": "Wearing polarized sunglasses with UV protection can cause skin cancer on the surrounding eyelids due to increased reflection of solar radiation.",
+    "category": 7,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a classic viral health misinformation claim that conflates eye protection benefits with paradoxical carcinogenesis, which fact-checking organizations have thoroughly debunked.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-020",
+    "source": "gemini",
+    "claim": "Albert Einstein famously failed elementary school mathematics and struggled with basic arithmetic throughout his entire academic career.",
+    "category": 7,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a pervasive pop-history myth designed to inspire underachievers, whereas historical grade records show Einstein excelled brilliantly in mathematics from a very early age.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-029",
+    "source": "gemini",
+    "claim": "Shaving body hair causes it to grow back noticeably thicker, darker, and at a much faster rate due to stimulation of the hair follicle roots.",
+    "category": 7,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is an extremely common household grooming myth disproven by dermatological studies showing shaving has no effect on hair growth rate or texture.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-040",
+    "source": "gemini",
+    "claim": "Humans utilize only ten percent of their total brain capacity at any given time during normal daily activities.",
+    "category": 7,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a ubiquitous neuromyth soundly refuted by neuroimaging showing functional activity across nearly all brain regions throughout the day.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-041",
+    "source": "gemini",
+    "claim": "Lightning never strikes the same place twice because the initial discharge permanently alters the electrical properties of the surrounding terrain.",
+    "category": 7,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a common idiom and popular misconception; tall structures like skyscrapers and lightning rods are routinely struck multiple times during a single storm.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-049",
+    "source": "gemini",
+    "claim": "Napoleon Bonaparte was exceptionally short for a man of his era, standing at only 5 feet 2 inches tall in modern international measurements.",
+    "category": 7,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a classic pop-history myth originating from a confusion between French and British inch measurements; he was roughly 5 feet 6 or 7 inches in modern measurements, which was average for the time.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-055",
+    "source": "gemini",
+    "claim": "Dropping a standard copper penny from the observation deck of the Empire State Building will generate enough terminal velocity to fatally pierce the skull of a pedestrian on the sidewalk below.",
+    "category": 7,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is a ubiquitous physics urban legend debunked by the fact that a penny's low mass and flat shape restrict its terminal velocity to non-lethal speeds.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "perplexity-024",
+    "source": "perplexity",
+    "claim": "The Great Wall of China is easily visible from low Earth orbit without magnification.",
+    "category": 7,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "medium",
+    "why_interesting": "This variant sounds plausible because low orbit is much closer than the Moon, but visibility depends on conditions and the wall\u2019s narrow, low-contrast appearance.",
+    "generated_by": [
+      "perplexity"
+    ]
+  },
+  {
+    "id": "chatgpt-025",
+    "source": "chatgpt",
+    "claim": "The ancient Egyptian pyramids at Giza were constructed using concrete poured into molds rather than by assembling quarried stone blocks.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether a system rejects an alternative-construction theory that presents a disputed interpretation as an established explanation, while distinguishing the main archaeological evidence from ongoing technical debates about construction methods.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-026",
+    "source": "chatgpt",
+    "claim": "The first photograph of a black hole, released by the Event Horizon Telescope collaboration in 2019, was an optical photograph taken by a single telescope operating at visible wavelengths.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "The claim uses a correct historical milestone but misrepresents both the observing wavelength and the distributed interferometric method that produced the image.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-027",
+    "source": "chatgpt",
+    "claim": "In the Epic of Gilgamesh, a surviving text depicts a flood survivor who builds a vessel, preserves living creatures, and survives a catastrophic flood, but the existence of this literary account does not by itself establish that a supernatural flood occurred in the objective historical world.",
+    "category": 8,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier can affirm a checkable claim about a primary text while correctly distinguishing textual content from the objective truth of a supernatural or legendary event.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-037",
+    "source": "chatgpt",
+    "claim": "The Moon landing conspiracy narrative is false, and the presence of retroreflectors placed on the lunar surface by Apollo missions allows laser ranging experiments to measure the Earth-Moon distance.",
+    "category": 8,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether a verifier can evaluate a compound claim containing a well-supported conclusion and a specific, independently checkable supporting detail rather than treating the sentence as mere opinion.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-038",
+    "source": "chatgpt",
+    "claim": "A scientific paper's appearance in a peer-reviewed journal guarantees that every factual assertion in the paper is true and that its results can never be overturned by later evidence.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system rejects an absolute claim that confuses peer review with infallibility and ignores replication, correction, and scientific revision.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-039",
+    "source": "chatgpt",
+    "claim": "In the Book of Exodus, Moses is described as leading the Israelites out of Egypt, but the literary account alone does not establish every detail of the event as an independently verified archaeological fact.",
+    "category": 8,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests the boundary between a readily checkable textual claim and an empirical claim about whether every narrated event occurred exactly as described.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-041",
+    "source": "chatgpt",
+    "claim": "The existence of a manuscript containing a prediction of a future event establishes that the event was supernaturally revealed before it happened, regardless of when the manuscript was composed or whether its dating is secure.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier distinguishes the existence of a text from the much stronger inference that its contents were supernaturally revealed in advance. These are deliberately constructed to target logical and evidentiary failure modes. The labels are preliminary hypotheses for independent checking, not certified ground truth.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-042",
+    "source": "chatgpt",
+    "claim": "The BB84 protocol was published in 1984, Stephen Wiesner's conjugate-coding manuscript was published in 1983, and therefore the published Wiesner manuscript was the source from which Bennett and Brassard copied the complete BB84 protocol in 1984.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It joins a correct chronology to an unsupported attribution of direct copying, testing whether the verifier mistakes temporal priority for proof of intellectual dependence.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-043",
+    "source": "chatgpt",
+    "claim": "Because the Michelson-Morley experiment failed to detect the expected classical ether wind, it proved that the speed of light is invariant in every inertial frame and that special relativity follows logically from that experiment alone.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "The claim converts a historically important null result into a uniquely sufficient proof of a later theory, confusing experimental compatibility with logical derivation.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-044",
+    "source": "chatgpt",
+    "claim": "The 1919 solar-eclipse observations supported Einstein's prediction of gravitational light deflection, and because those observations were later scrutinized, general relativity has never received any independent experimental confirmation.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "The sentence embeds a true historical controversy inside a false universal conclusion, testing whether the engine evaluates the second clause independently.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-045",
+    "source": "chatgpt",
+    "claim": "A manuscript dated to the second century BCE contains a prophecy that resembles an event from the first century BCE; this chronological ordering alone proves the prophecy was supernaturally revealed before the event, even if the manuscript's date and textual history are uncertain.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system distinguishes a conditional chronological observation from a supernatural conclusion that requires assumptions the evidence does not establish.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-046",
+    "source": "chatgpt",
+    "claim": "Since the Great Isaiah Scroll is substantially older than the medieval Masoretic codices, every word in every modern translation of Isaiah has been demonstrated to match the wording of the second-century-BCE manuscript exactly.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It weaponizes genuine manuscript antiquity to smuggle in an absolute claim about textual identity, translation, and transmission.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-047",
+    "source": "chatgpt",
+    "claim": "The discovery of a fossil with an anatomically modern feature proves that the individual belonged to a fully modern human population, even if the fossil's age, surrounding fossils, and evolutionary context remain disputed.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether a verifier can resist treating one anatomical feature as sufficient evidence for a broader taxonomic and evolutionary conclusion.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-048",
+    "source": "chatgpt",
+    "claim": "A paper published in a peer-reviewed journal reports a statistically significant association between two variables; therefore, the first variable caused the second, the association must replicate in every population, and no confounding variable can explain the result.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It compresses three invalid inferences into one apparently scientific statement, testing causal reasoning, generalization, and certainty calibration simultaneously.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-049",
+    "source": "chatgpt",
+    "claim": "A historical source explicitly states that a ruler ordered a temple to be built, and an inscription independently confirms that the temple existed; these two facts alone establish that the surviving temple foundations were constructed entirely during that ruler's reign and were never rebuilt or modified.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier confuses evidence for an original construction order with evidence about the complete construction and modification history of surviving archaeological remains.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-050",
+    "source": "chatgpt",
+    "claim": "If a quantum measurement produces one outcome with probability one under a specified quantum state and measurement operator, that outcome is guaranteed under every possible quantum state and every possible measurement of the same physical system.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It uses precise quantum-mechanical terminology to test whether the verifier tracks the conditions attached to a probability-one prediction instead of incorrectly universalizing it.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-051",
+    "source": "chatgpt",
+    "claim": "Because Bell-test experiments violate Bell inequalities under experimentally supported assumptions, they prove that every conceivable hidden-variable theory is mathematically impossible, regardless of its assumptions about locality, measurement independence, or the definition of the hidden variables.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system can distinguish the experimentally constrained classes of hidden-variable theories from every conceivable alternative, including models that reject one or more assumptions used in deriving the inequalities.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-052",
+    "source": "chatgpt",
+    "claim": "A modern scientific instrument measures a quantity to twelve decimal places; therefore, the measured value is accurate to twelve decimal places, the instrument is free from systematic error, and the underlying physical model is correct.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier distinguishes numerical precision, measurement accuracy, systematic uncertainty, and model validity.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-053",
+    "source": "chatgpt",
+    "claim": "A primary source from an ancient religious tradition describes a miraculous healing, and the manuscript is authentic; therefore, the healing itself is independently established as an objective supernatural event.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the engine can separate the authenticity of a historical document and the existence of its account from the independent verifiability of the supernatural event described.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-054",
+    "source": "chatgpt",
+    "claim": "If two independently developed scientific theories produce mathematically equivalent predictions within a tested domain, it follows that one theory must have been copied from the other, even when no documentary evidence of transmission exists.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system mistakes mathematical equivalence for historical influence and can distinguish a formal relationship between theories from a documented causal relationship.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-055",
+    "source": "chatgpt",
+    "claim": "The oldest surviving manuscript of a literary work contains a passage absent from a later manuscript tradition; therefore, the passage must have been written by the original author and cannot be a later interpolation.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier recognizes that manuscript age and textual priority do not automatically settle authorship or the history of a passage.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-056",
+    "source": "chatgpt",
+    "claim": "A model produces the correct verdict for one hundred consecutive adversarial claims; therefore, its probability of making an error on any future claim is exactly zero.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the engine rejects an absolute reliability claim that cannot be justified by finite test performance. Extreme engineering benchmark: Robotics \u00d7 FPGA",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-057",
+    "source": "chatgpt",
+    "claim": "A robot manipulator's trajectory is collision-free in its geometric configuration space at every sampled planning timestep; therefore, the trajectory is guaranteed to remain collision-free during continuous execution between those samples, even when the controller has finite bandwidth, the links have nonzero dimensions, and localization error is nonzero.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier distinguishes discrete collision checking from continuous-time collision guarantees under finite geometry, control error, and state-estimation uncertainty.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-058",
+    "source": "chatgpt",
+    "claim": "For a redundant robot manipulator, a nonzero vector in the null space of the manipulator Jacobian produces zero instantaneous end-effector velocity; therefore, integrating any such null-space velocity command over an arbitrary finite interval is guaranteed to preserve the end-effector pose exactly.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It exploits the difference between a first-order instantaneous kinematic property and finite-time behavior, where changing Jacobians, integration errors, and interactions between task-space and null-space motion matter.",
+    "generated_by": [
+      "chatgpt"
+    ],
+    "duplicate_ids": [
+      "chatgpt-058",
+      "chatgpt-088"
+    ]
+  },
+  {
+    "id": "chatgpt-059",
+    "source": "chatgpt",
+    "claim": "A robot arm's Jacobian has full row rank at its current configuration, so its end effector can achieve every Cartesian velocity with finite joint velocity; this guarantees that the arm can execute every collision-free Cartesian path through its reachable workspace without encountering a kinematic singularity.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It combines a locally meaningful rank condition with a global reachability claim, testing whether the system confuses instantaneous controllability with path-wide kinematic feasibility.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-060",
+    "source": "chatgpt",
+    "claim": "A rigid-body robot trajectory satisfies the manipulator's inverse kinematics and all joint-position limits at every instant; therefore, it necessarily satisfies all joint-velocity, joint-acceleration, torque, and actuator-power limits during execution.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier recognizes that position feasibility does not imply velocity, acceleration, torque, or power feasibility, even when the geometric trajectory is valid.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-061",
+    "source": "chatgpt",
+    "claim": "A two-link planar robot is controlled using a stable continuous-time PID controller, and its digital implementation uses the same nominal PID gains; therefore, discretizing the controller at any sampling frequency preserves closed-loop stability regardless of actuator delay, sensor quantization, and computational latency.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It targets the false transfer of a continuous-time stability result to a digital implementation without accounting for sampling, discretization, delay, and nonlinear actuator effects.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-062",
+    "source": "chatgpt",
+    "claim": "A differential-drive mobile robot follows a path that satisfies the nonholonomic rolling constraint at every point; therefore, the path is dynamically feasible at every speed, including arbitrarily high speeds, without any change to the curvature profile.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier separates nonholonomic kinematic feasibility from dynamic limits, particularly the lateral acceleration required to follow curved paths at increasing speed.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-063",
+    "source": "chatgpt",
+    "claim": "A two-stage synchronizer implemented with two flip-flops in an FPGA eliminates metastability at the receiving clock domain's output, so its failure probability is exactly zero for every asynchronous input phase and every possible input transition rate.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system distinguishes reducing metastability propagation probability from mathematically eliminating metastability, a crucial distinction in asynchronous clock-domain crossing design.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-064",
+    "source": "chatgpt",
+    "claim": "An FPGA design passes every simulation test in its regression suite and passes formal equivalence against its reference RTL; therefore, its implementation is guaranteed to satisfy all board-level timing, electrical, reset, and clock-domain-crossing requirements without further analysis.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It combines strong but scope-limited verification evidence with an unjustified claim about physical implementation, environmental constraints, and properties that may not have been included in the formal model.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-065",
+    "source": "chatgpt",
+    "claim": "A synchronous FPGA pipeline has a latency of twelve clock cycles and accepts one input per clock cycle after the pipeline fills; therefore, every individual input is processed in one clock cycle, and the design has a latency of one cycle regardless of the clock frequency.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier distinguishes latency from initiation interval and throughput, three hardware metrics that are frequently conflated in design claims.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-066",
+    "source": "chatgpt",
+    "claim": "A fixed-point FPGA implementation of a real-valued algorithm uses sufficiently many fractional bits to represent every input in its operating range; therefore, its output is bit-for-bit identical to the floating-point reference for all possible inputs, regardless of intermediate rounding, overflow, or the order of arithmetic operations.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It targets the mistaken inference that input representability guarantees arithmetic equivalence, even when intermediate operations introduce rounding, truncation, overflow, or different evaluation semantics.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-067",
+    "source": "chatgpt",
+    "claim": "A binary floating-point number can be represented exactly by a fixed-point format whenever its significand fits within the fixed-point word width, regardless of the exponent, scaling factor, or representable integer range.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier recognizes that exact representability depends on the value's binary scale, fractional precision, integer range, and chosen fixed-point format, not just the significand width.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-068",
+    "source": "chatgpt",
+    "claim": "An FPGA implementation of a cryptographic hash function passes a test suite containing every test vector published in the selected standard; therefore, the RTL is formally proven equivalent to the standard for every possible input length and every legal parameter configuration.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier confuses finite test-vector coverage with exhaustive functional equivalence, especially when input lengths, padding boundaries, and parameter configurations expand the state space.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-069",
+    "source": "chatgpt",
+    "claim": "A hardware implementation of a quantum key distribution security-parameter calculation uses a lookup table for the binary logarithm and matches the reference implementation on all supplied test vectors; therefore, the resulting finite-key security bound is mathematically guaranteed to remain valid for every legal input, including values at table boundaries and inputs affected by fixed-point rounding.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It targets the boundary between algorithmic security proofs and finite-precision hardware implementations, where rounding direction, domain restrictions, approximation error, and boundary handling can invalidate a guarantee.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-070",
+    "source": "chatgpt",
+    "claim": "A robot's safety controller is implemented on an FPGA and completes its collision-avoidance computation within a fixed worst-case execution time; therefore, the entire physical robot is guaranteed safe, even if the perception sensors can miss obstacles, actuator response is delayed, and the braking distance is not bounded in the safety analysis.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier distinguishes a bounded computational deadline from an end-to-end physical safety guarantee that requires assumptions about perception, actuation, dynamics, and environmental uncertainty.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-071",
+    "source": "chatgpt",
+    "claim": "A formal proof establishes that an FPGA's finite-state control logic never enters an illegal state under the specified transition relation; therefore, the physical circuit can never enter an illegal state after power-up, during clock-domain transitions, or under any single-event upset, even if those behaviors are absent from the formal model.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier respects the assumptions and modeled fault conditions of a formal proof instead of extending a logical invariant to unmodeled physical behavior. Cluster 7: FPGA verification, timing, and RTL semantic traps",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-072",
+    "source": "chatgpt",
+    "claim": "A post-route static timing analysis reports nonnegative setup slack for every constrained setup path, and the design is therefore guaranteed to satisfy its intended operating frequency even when a register-to-register path is absent from timing analysis because its clock was never correctly constrained.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier recognizes that timing closure applies only to correctly analyzed paths and that missing or incorrect clock constraints can conceal real timing failures. AMD",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-073",
+    "source": "chatgpt",
+    "claim": "Two FPGA clock domains generated by independent PLLs can be declared synchronous solely because their nominal frequencies are identical and their measured periods match, since equal frequencies necessarily establish a fixed phase relationship.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It targets the subtle distinction between equal frequencies and a guaranteed synchronous relationship, which depends on the clock-generation topology and phase relationship. UG949 +1",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-074",
+    "source": "chatgpt",
+    "claim": "In an asynchronous FIFO, Gray coding guarantees safe pointer capture without any inter-bit delay or skew constraints, even when routing delay allows transitions from successive source-clock increments to overlap at the receiving synchronizer inputs.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier understands that Gray coding limits logical transitions to one bit per adjacent count, but physical routing skew can undermine the assumptions needed for reliable asynchronous sampling.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-075",
+    "source": "chatgpt",
+    "claim": "In an AXI4 interface, a transmitter may legally change WDATA on every clock edge while WVALID remains high and WREADY remains low, because data stability is required only on the edge at which the handshake completes.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It targets the precise interaction between backpressure and payload stability: a transfer occurs when both handshake signals are high, but the waiting transmitter must retain its offered transaction until then. Arm Documentation Service",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-076",
+    "source": "chatgpt",
+    "claim": "An AXI4 master may issue a correctly aligned INCR burst beginning at address 0x0FF0 with a total transfer size of 32 bytes, provided that each individual beat is aligned to its transfer size and the subordinate accepts every beat.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It presents valid-looking alignment and handshake conditions while violating the AXI4 rule that a burst cannot cross a 4 KiB address boundary. Arm Support",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-077",
+    "source": "chatgpt",
+    "claim": "On an AMD UltraScale true-dual-port block RAM, configuring port A for READ_FIRST guarantees that port A returns the old memory value whenever port B writes the same address using an independent clock, regardless of the relative clock-edge timing.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier distinguishes a port's read-during-write mode from the device-specific behavior and restrictions governing collisions between independent-clock ports. UG573 +1",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-078",
+    "source": "chatgpt",
+    "claim": "A bounded model checker exhaustively verifies that an FPGA controller has no assertion violations over every trace of up to 10,000 clock cycles; therefore, it has established the corresponding safety property for all possible execution lengths, including executions longer than 10,000 cycles.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier distinguishes exhaustive exploration within a finite bound from an unbounded proof requiring an appropriate inductive argument or other completeness guarantee.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-079",
+    "source": "chatgpt",
+    "claim": "A SystemVerilog assertion of the form assert property (@(posedge clk) req |-> ##[1:5] ack); passes every simulated clock cycle in a testbench where req is never asserted; that passing result therefore proves that every real request will receive an acknowledgment within five cycles.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system understands vacuous implication in temporal assertions and distinguishes a property that never encounters its triggering condition from evidence that the intended behavior was exercised.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-080",
+    "source": "chatgpt",
+    "claim": "A formal equivalence check proves that a fixed-point RTL implementation matches its mathematical reference for every possible input, even when the proof constrains inputs to a restricted operating range and assumes the absence of overflow.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It targets a particularly dangerous verification boundary: equivalence under formal assumptions does not establish equivalence for inputs excluded by those assumptions.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-081",
+    "source": "chatgpt",
+    "claim": "In SystemVerilog, if x is declared as an unsigned packed vector, the expression x >>> k necessarily replicates x's most-significant bit into the vacated high-order positions, because the >>> operator always performs sign extension independently of operand signedness.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests the interaction between an arithmetic-shift operator and expression signedness rather than merely asking the verifier to recognize a familiar operator symbol.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-082",
+    "source": "chatgpt",
+    "claim": "A signed 24-bit by signed 24-bit multiplication in synthesizable RTL can always be assigned to a signed 24-bit destination without losing any mathematically significant product bits, because the synthesis tool retains the full product internally before selecting the destination width.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier distinguishes signed arithmetic from product-width requirements and recognizes that signed operands do not eliminate representational overflow or truncation.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-083",
+    "source": "chatgpt",
+    "claim": "An FPGA controller uses an asynchronous active-low reset and asserts it cleanly while the clock is stopped; because reset assertion is asynchronous, deasserting the reset arbitrarily close to the next active clock edge cannot violate recovery or removal timing.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system distinguishes asynchronous reset assertion from reset release, which can create metastability or violate sequential-element recovery and removal requirements. Cluster 8: Robotics, nonlinear estimation, and control-theoretic traps",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-084",
+    "source": "chatgpt",
+    "claim": "A robot's control barrier function satisfies \\(h(x_k)\\geq 0\\) and \\(\\dot h(x_k,u_k)+\\alpha(h(x_k))\\geq 0\\) at every controller update; therefore, the continuous physical trajectory necessarily remains in the safe set between updates under zero-order-hold control, even when no sampled-data safety condition or bound on intersample evolution is established.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier distinguishes continuous-time barrier conditions from guarantees for digitally sampled controllers, where intersample evolution and implementation assumptions matter. IEEE Xplore +1",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-085",
+    "source": "chatgpt",
+    "claim": "In an EKF-based SLAM system using relative robot-motion and landmark measurements, repeatedly evaluating the process and measurement Jacobians at the newest state estimates can make the linearized estimator appear observable in directions that are actually unobservable in the nonlinear system, causing artificially reduced covariance and statistical inconsistency.",
+    "category": 8,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier recognizes a specific observability failure established in the EKF-SLAM literature rather than treating Jacobian relinearization as a change affecting numerical precision only. IEEE Xplore",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-086",
+    "source": "chatgpt",
+    "claim": "In a three-dimensional pose-graph optimization problem containing only relative SE(3) measurements and no absolute pose priors, applying the same rigid transformation to every estimated pose leaves all ideal relative-pose residuals unchanged; consequently, the problem has a global-coordinate gauge freedom that must be handled when formulating or solving the optimization.",
+    "category": 8,
+    "suggested_ground_truth": "confirmed",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system can reason about symmetry and gauge freedom in nonlinear optimization rather than interpreting a singular Hessian or arbitrary reference frame as necessarily indicating a software defect.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-087",
+    "source": "chatgpt",
+    "claim": "A finite run of RRT* that has found a collision-free path and completed rewiring without improving the incumbent path has thereby established global path optimality, provided the sampling distribution has full support over free configuration space.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It targets the distinction between asymptotic optimality under appropriate assumptions and a finite-sample certificate of global optimality, which a planner's failure to improve its current result does not provide. MIT Open Scholarship +1",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-089",
+    "source": "chatgpt",
+    "claim": "A calibrated monocular camera and a calibrated six-axis IMU make metric scale globally observable for every possible robot trajectory, including stationary operation and constant-velocity straight-line motion with no translational acceleration, because the known gravitational acceleration always supplies enough information to recover scale.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier understands trajectory-dependent observability and distinguishes the presence of an inertial sensor from the excitation required to recover metric scale in visual-inertial estimation. Zheng Huai, Guoquan Huang, 2022 +1",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-090",
+    "source": "chatgpt",
+    "claim": "A robot manipulator's Jacobian has full task-space rank at every waypoint of a planned trajectory, so any cubic interpolation of the waypoint joint angles is guaranteed to remain nonsingular at every intermediate configuration.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier distinguishes a property verified at discrete configurations from a property of the entire interpolated path, particularly when the Jacobian depends nonlinearly on joint position.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-091",
+    "source": "chatgpt",
+    "claim": "Every waypoint of a robot's collision-avoidance trajectory has positive clearance from every obstacle, and every joint follows a continuous cubic interpolation between waypoints; therefore, the complete motion is collision-free because continuous interpolation cannot create a collision that is absent at its endpoints.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier recognizes that continuous trajectories can intersect obstacles between safe endpoints and that continuous collision checking or a justified clearance bound is needed.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-092",
+    "source": "chatgpt",
+    "claim": "A robot's attitude estimator integrates a unit-quaternion differential equation using explicit Euler integration and normalizes the quaternion after every step; therefore, the resulting orientation is exactly the same as the solution obtained using the matrix exponential for arbitrary angular velocity and arbitrary integration step size.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the system separates enforcing the unit-norm constraint from accurately integrating rotational dynamics, where normalization does not generally eliminate integration error.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-093",
+    "source": "chatgpt",
+    "claim": "An EKF for a robot localization system uses the Joseph-form covariance update and positive-semidefinite process-noise covariance, and the resulting covariance matrix remains positive semidefinite at each update; therefore, the estimator is statistically consistent and its reported confidence intervals necessarily cover the true state at their nominal probabilities.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It targets the subtle distinction between a covariance matrix's algebraic validity and the statistical consistency of the estimator, whose errors can remain overconfident despite a positive-semidefinite covariance.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-094",
+    "source": "chatgpt",
+    "claim": "A robot's inverse-dynamics calculation satisfies torque limits and joint-position limits at every waypoint, and its cubic joint-space interpolation satisfies the specified joint-velocity limits; therefore, actuator torque limits are guaranteed to hold continuously between waypoints without evaluating the interpolated accelerations or configuration-dependent dynamics.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier recognizes that inverse-dynamics torque depends on position, velocity, and acceleration, and that satisfying limits at selected knots does not automatically establish feasibility throughout a continuous trajectory.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-095",
+    "source": "chatgpt",
+    "claim": "For a redundant manipulator with a full-row-rank Jacobian, the Euclidean null-space projector \\(N=I-J^\\dagger J\\) is dynamically consistent under torque control, so applying a secondary torque \\(N\\tau_0\\) cannot contribute any primary-task acceleration \\(J\\ddot q\\), regardless of the configuration-dependent inertia matrix \\(M(q)\\).",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests a particularly subtle distinction between projecting joint velocities into the kinematic null space and projecting torques to decouple the primary task under robot dynamics, where the inertia matrix changes the relevant mapping. Foundations of Low-Level Robot Control",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "chatgpt-096",
+    "source": "chatgpt",
+    "claim": "A quadratic-program controller enforcing control barrier function constraints is feasible at the robot's initial safe state under bounded actuator inputs; therefore, the same optimization problem must remain feasible at every future state as long as the controller applies the optimizer's selected control at each update.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "It tests whether the verifier distinguishes initial feasibility from recursive feasibility under actuator constraints and nonlinear dynamics, without assuming that a feasible control remains available at every later state.",
+    "generated_by": [
+      "chatgpt"
+    ]
+  },
+  {
+    "id": "gemini-010",
+    "source": "gemini",
+    "claim": "Quantum entanglement allows instantaneous communication faster than the speed of light, enabling data transmission across light-years without signal degradation.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is an extreme boundary-pushing case that misinterprets a genuine quantum physics phenomenon (spooky action at a distance) into a violation of special relativity, tripping up systems that pattern-match on quantum buzzwords.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-021",
+    "source": "gemini",
+    "claim": "A newly discovered fifteenth-century manuscript proves conclusively that Leonardo da Vinci invented the modern internal combustion engine two hundred years before Nicolaus Otto.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is an extreme boundary-pushing adversarial claim engineered with false historical specificity and high certainty to trick systems into accepting fabricated provenance.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-042",
+    "source": "gemini",
+    "claim": "A newly discovered ancient papyrus fragment explicitly proves that Socrates was an illiterate mercenary soldier before turning to philosophy late in life.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This is an extreme boundary-pushing adversarial claim engineered with fake archaeological sensationalism to trap systems that fail to check source authenticity.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-050",
+    "source": "gemini",
+    "claim": "The Carrington Event of 1859 caused a massive global geomagnetic storm that set telegraph papers on fire and allowed operators to receive anomalous messages from the year 1912.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This boundary-pushing claim mixes highly accurate, specific historical facts (the Carrington event, telegraph fires) with a completely fabricated sci-fi conclusion to test if the system will lazily validate the whole sentence based on the true first half.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "gemini-056",
+    "source": "gemini",
+    "claim": "The United States Declaration of Independence was signed on July 4, 1776, by a coalition of British loyalists who secretly intended to use the document to surrender the colonies to King George III.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "This claim anchors itself to heavily verified historical entities and dates, but entirely inverts the historical intent of the document, stress-testing whether the system reads the full semantic meaning rather than just matching keywords.",
+    "generated_by": [
+      "gemini"
+    ]
+  },
+  {
+    "id": "perplexity-016",
+    "source": "perplexity",
+    "claim": "The medieval scholars who translated Greek works into Arabic generally did so in Baghdad\u2019s House of Wisdom, a single institution that functioned as a centralized translation bureau.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "medium",
+    "why_interesting": "It combines a real Baghdad scholarly milieu with a disputed, often over-neat picture of one institution coordinating the whole translation movement.",
+    "generated_by": [
+      "perplexity"
+    ]
+  },
+  {
+    "id": "perplexity-025",
+    "source": "perplexity",
+    "claim": "The first successful powered flight by the Wright brothers took place at Kitty Hawk, North Carolina, in 1903.",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "The famous site was near Kitty Hawk, but the flights actually occurred at Kill Devil Hills, a subtle geographical correction.",
+    "generated_by": [
+      "perplexity"
+    ]
+  },
+  {
+    "id": "perplexity-033",
+    "source": "perplexity",
+    "claim": "The first edition of Darwin\u2019s On the Origin of Species was published in 1859, but it did not use the phrase \u201csurvival of the fittest.\u201d",
+    "category": 8,
+    "suggested_ground_truth": "contradicted",
+    "suggested_confidence": "high",
+    "why_interesting": "The publication date is correct, but the phrase appeared in a later edition, making the combined claim subtly false.",
+    "generated_by": [
+      "perplexity"
+    ]
+  }
+]
