@@ -154,7 +154,7 @@ async def test_pool_no_bm25_match_across_any_document_is_an_honest_gap():
     evidence = await adapter.gather_evidence(claim)
     assert evidence == []
     gaps = adapter.describe_partial_gaps(claim)
-    assert any("BM25 found no passage" in g for g in gaps)
+    assert any("methods tried" in g for g in gaps)
 
 
 async def test_pool_stance_unrelated_is_not_counted_as_evidence():

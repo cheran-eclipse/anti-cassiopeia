@@ -130,7 +130,7 @@ import httpx
 from anticassiopeia.core.domain import DomainAdapter
 from anticassiopeia.core.verdict import Claim, Evidence
 from anticassiopeia.llm.nebius_client import NebiusClientError, NebiusTokenFactoryClient
-from anticassiopeia.retrieval import BM25Index, Proposal, ScoredChunk, chunk_document, judge_stance, verify_proposal
+from anticassiopeia.retrieval import BM25Index, HybridIndex, Proposal, ScoredChunk, chunk_document, judge_stance, verify_proposal
 from anticassiopeia.retrieval.extract import propose
 
 _CORPUS_DIR = Path(__file__).parent.parent / "corpus"
@@ -546,13 +546,22 @@ class RoboticsAdapter(DomainAdapter):
 
         chunks = chunk_document("uploaded", document_text, chunk_size=300, overlap=50)
         chunks_by_id = {c.chunk_id: c for c in chunks}
-        index = BM25Index(chunks)
-        hits = index.search(claim.text, top_k=_BYOE_TOP_K)
+        # Hybrid (BM25 + vector) as of the hybrid-retrieval build -- see
+        # retrieval/hybrid.py's own docstring for why (closes a real,
+        # measured gap: a claim phrased in different words than the
+        # document's own wording finds nothing via keyword search alone).
+        # embed() is best-effort and degrades silently to BM25-only on ANY
+        # failure (no client, a live failure, ...) -- the `not hits` branch
+        # below fires exactly as it always did either way.
+        index = HybridIndex(chunks)
+        await index.embed(self._client)
+        result = await index.search(claim.text, top_k=_BYOE_TOP_K, client=self._client)
+        hits = result.scored
         if not hits:
             partial_gaps.append(
-                f"'{filename}': BM25 found no passage matching this claim's terms at all "
-                "(zero keyword overlap) — the document may still be relevant, phrased in a "
-                "way this search didn't surface."
+                f"'{filename}': neither BM25 nor vector search (methods tried: {result.methods}) "
+                "found a passage matching this claim at all — the document may still be relevant, "
+                "phrased in a way this search didn't surface."
             )
             _partial_gaps_var.set(partial_gaps)
             return []
@@ -681,14 +690,22 @@ class RoboticsAdapter(DomainAdapter):
             all_chunks.extend(doc_chunks)
             chunks_by_id.update({c.chunk_id: c for c in doc_chunks})
 
-        index = BM25Index(all_chunks)
-        hits = index.search(claim.text, top_k=_BYOE_TOP_K)
+        # Hybrid (BM25 + vector), same as _gather_byoe above -- one combined
+        # embedding batch across every pooled document's chunks, still ONE
+        # embed() call for the whole pool (not one per document), same
+        # "no extra live-LLM-call-COUNT cost" discipline this pool path
+        # already held itself to for propose()/judge_stance().
+        index = HybridIndex(all_chunks)
+        await index.embed(self._client)
+        result = await index.search(claim.text, top_k=_BYOE_TOP_K, client=self._client)
+        hits = result.scored
         if not hits:
             names = ", ".join(f"'{f}'" for f in doc_tag_to_filename.values())
             partial_gaps.append(
-                f"document pool ({names}): BM25 found no passage matching this claim's terms at "
-                "all (zero keyword overlap) across any pooled document -- a pooled document may "
-                "still be relevant, phrased in a way this search didn't surface."
+                f"document pool ({names}): neither BM25 nor vector search (methods tried: "
+                f"{result.methods}) found a passage matching this claim at all across any pooled "
+                "document -- a pooled document may still be relevant, phrased in a way this "
+                "search didn't surface."
             )
             _partial_gaps_var.set(partial_gaps)
             return []

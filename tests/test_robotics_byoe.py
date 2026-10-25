@@ -148,9 +148,9 @@ async def test_byoe_no_bm25_match_is_an_honest_named_gap_not_a_crash():
     evidence = await adapter.gather_evidence(claim)
     assert evidence == []
     gaps = adapter.describe_partial_gaps(claim)
-    assert any("BM25 found no passage" in g for g in gaps)
+    assert any("methods tried" in g for g in gaps)
     gap = adapter.describe_gap(claim, evidence)
-    assert any("BM25 found no passage" in g for g in gap)
+    assert any("methods tried" in g for g in gap)
 
 
 async def test_byoe_model_honestly_reports_fact_absent():

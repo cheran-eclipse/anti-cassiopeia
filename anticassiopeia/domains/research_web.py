@@ -15,10 +15,14 @@ TWO modes, selected by `Claim.context`:
    optionally with "quote" for a more specific search anchor): finds out
    whether ANY real source confirms the claim, not one pre-selected page.
    Runs the SAME real retrieve->propose->verify pipeline robotics.py uses:
-       _search_candidate_urls() -> chunk_document() -> BM25Index.search()
+       _search_candidate_urls() -> chunk_document() -> HybridIndex.search()
        -> extract.propose() -> verify.verify_proposal()
+   (HybridIndex is BM25 + best-effort vector rerank as of the hybrid-
+   retrieval build -- see retrieval/hybrid.py's own docstring; degrades
+   to pure BM25 ranking, unchanged from before that build, on any
+   embedding failure.)
    Chunks from ALL successfully fetched candidate pages are pooled into one
-   combined BM25 index (there's no "the right doc" to pick ahead of time
+   combined index (there's no "the right doc" to pick ahead of time
    here, unlike robotics' per-part corpus), but the resulting hits are then
    GROUPED BY SOURCE PAGE — propose()/verify()/judge_stance() run once per
    distinct source (up to `_MAX_SOURCES_TO_CHECK`), so a claim can collect
@@ -177,7 +181,7 @@ import httpx
 from anticassiopeia.core.domain import DomainAdapter
 from anticassiopeia.core.verdict import Claim, Evidence
 from anticassiopeia.llm.nebius_client import NebiusClientError, NebiusTokenFactoryClient
-from anticassiopeia.retrieval import BM25Index, Chunk, ScoredChunk, chunk_document, verify_proposal
+from anticassiopeia.retrieval import Chunk, HybridIndex, ScoredChunk, chunk_document, verify_proposal
 from anticassiopeia.retrieval.bm25 import tokenize
 from anticassiopeia.retrieval.extract import propose
 from anticassiopeia.retrieval.stance import RECOMMENDED_STANCE_MODEL, judge_stance
@@ -775,12 +779,25 @@ class ResearchWebAdapter(DomainAdapter):
             ))
             return []
 
-        index = BM25Index(all_chunks)
-        hits = index.search(question, top_k=10)
+        # Hybrid (BM25 + vector) rerank, per the hybrid-retrieval build --
+        # unlike robotics.py's BYOE/pooled paths, there's no persistent
+        # corpus here: the freshly-fetched passages from THIS claim's live
+        # search are embedded once, RRF-fused against the same BM25
+        # ranking already happening over those same passages, then
+        # discarded (no index survives past this one call). embed() is
+        # best-effort, same honest degrade-to-BM25-only contract as every
+        # other HybridIndex use -- a client with no embed() (every
+        # existing offline test fake in this file) or a live failure just
+        # means `hits` is the exact same BM25-only ranking this already
+        # produced before this module existed.
+        index = HybridIndex(all_chunks)
+        await index.embed(self._client)
+        result = await index.search(question, top_k=10, client=self._client)
+        hits = result.scored
         if not hits:
             _web_gap_var.set((
                 f"Fetched {len(chunks_by_id)} chunk(s) across {len(candidate_urls)} live candidate page(s), "
-                "but none matched this claim's search terms at all (BM25 found zero overlap)."
+                f"but none matched this claim's search terms at all (methods tried: {result.methods})."
             ))
             return []
 
