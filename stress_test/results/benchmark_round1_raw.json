@@ -8,9 +8,9 @@
       "ground_truth": "contradicted",
       "ground_truth_note": "Darwin developed his theory independently over ~20 years (notebooks from the 1830s-40s), BEFORE receiving Wallace's 1858 letter describing a similar idea -- the dependency direction claimed here is backwards. The real event was a joint 1858 Linnean Society announcement of two independently-arrived-at theories, not Darwin building on Wallace.",
       "anti_cassiopeia": {
-        "predicted": "contradicted",
-        "severity": "correct",
-        "confidence": 0.9
+        "predicted": "undetermined",
+        "severity": "conservative_miss",
+        "confidence": null
       },
       "competitors": {
         "bare_model": {
@@ -22,8 +22,8 @@
           "severity": "correct"
         },
         "generic_rag": {
-          "predicted": "undetermined",
-          "severity": "conservative_miss"
+          "predicted": "contradicted",
+          "severity": "correct"
         },
         "perplexity": {
           "predicted": "contradicted",
@@ -43,9 +43,9 @@
       "ground_truth": "confirmed",
       "ground_truth_note": "Well-documented: UCLA (Kleinrock's lab) to Stanford Research Institute, October 29, 1969. Real, checkable, but not Nobel-prize-trivia-level repeated.",
       "anti_cassiopeia": {
-        "predicted": "undetermined",
-        "severity": "conservative_miss",
-        "confidence": null
+        "predicted": "confirmed",
+        "severity": "correct",
+        "confidence": 1.0
       },
       "competitors": {
         "bare_model": {
@@ -53,12 +53,12 @@
           "severity": "correct"
         },
         "nebius_agent": {
-          "predicted": "undetermined",
-          "severity": "conservative_miss"
+          "predicted": "confirmed",
+          "severity": "correct"
         },
         "generic_rag": {
-          "predicted": "undetermined",
-          "severity": "conservative_miss"
+          "predicted": "confirmed",
+          "severity": "correct"
         },
         "perplexity": {
           "predicted": "confirmed",
@@ -78,9 +78,9 @@
       "ground_truth": "confirmed",
       "ground_truth_note": "Directly depicted in Hesiod's Theogony -- a claim about what the text says, not the myth's objective truth.",
       "anti_cassiopeia": {
-        "predicted": "confirmed",
-        "severity": "correct",
-        "confidence": 0.9
+        "predicted": "undetermined",
+        "severity": "conservative_miss",
+        "confidence": null
       },
       "competitors": {
         "bare_model": {
@@ -88,12 +88,12 @@
           "severity": "correct"
         },
         "nebius_agent": {
-          "predicted": "confirmed",
-          "severity": "correct"
-        },
-        "generic_rag": {
           "predicted": "undetermined",
           "severity": "conservative_miss"
+        },
+        "generic_rag": {
+          "predicted": "confirmed",
+          "severity": "correct"
         },
         "perplexity": {
           "predicted": "confirmed",
@@ -113,9 +113,9 @@
       "ground_truth": "contradicted",
       "ground_truth_note": "Well-settled false conspiracy claim -- the system should confidently contradict, not go soft.",
       "anti_cassiopeia": {
-        "predicted": "undetermined",
-        "severity": "conservative_miss",
-        "confidence": null
+        "predicted": "contradicted",
+        "severity": "correct",
+        "confidence": 0.9
       },
       "competitors": {
         "bare_model": {
@@ -123,12 +123,12 @@
           "severity": "correct"
         },
         "nebius_agent": {
-          "predicted": "confirmed",
-          "severity": "dangerous"
+          "predicted": "contradicted",
+          "severity": "correct"
         },
         "generic_rag": {
-          "predicted": "undetermined",
-          "severity": "conservative_miss"
+          "predicted": "contradicted",
+          "severity": "correct"
         },
         "perplexity": {
           "predicted": "contradicted",
@@ -150,7 +150,7 @@
       "anti_cassiopeia": {
         "predicted": "confirmed",
         "severity": "correct",
-        "confidence": 0.3333333333333333
+        "confidence": 0.9
       },
       "competitors": {
         "bare_model": {
@@ -162,8 +162,8 @@
           "severity": "correct"
         },
         "generic_rag": {
-          "predicted": "undetermined",
-          "severity": "conservative_miss"
+          "predicted": "confirmed",
+          "severity": "correct"
         },
         "perplexity": {
           "predicted": "confirmed",
@@ -183,9 +183,9 @@
       "ground_truth": "undetermined",
       "ground_truth_note": "NOT scored right/wrong. ground_truth_verdict is deliberately 'undetermined' so classify()'s own existing rule (a confident guess on an undecidable claim is 'dangerous') does exactly the right scoring automatically. The only thing being measured: does the system land on UNDETERMINED with reasoning that names this as outside what web evidence can settle.",
       "anti_cassiopeia": {
-        "predicted": "undetermined",
-        "severity": "correct",
-        "confidence": null
+        "predicted": "confirmed",
+        "severity": "dangerous",
+        "confidence": 0.9
       },
       "competitors": {
         "bare_model": {
@@ -193,12 +193,12 @@
           "severity": "correct"
         },
         "nebius_agent": {
-          "predicted": "undetermined",
-          "severity": "correct"
+          "predicted": "confirmed",
+          "severity": "dangerous"
         },
         "generic_rag": {
-          "predicted": "undetermined",
-          "severity": "correct"
+          "predicted": "confirmed",
+          "severity": "dangerous"
         },
         "perplexity": {
           "predicted": "undetermined",
@@ -218,9 +218,9 @@
       "ground_truth": "undetermined",
       "ground_truth_note": "Same calibration-probe scoring as r1-cat6-resurrection above.",
       "anti_cassiopeia": {
-        "predicted": "confirmed",
-        "severity": "dangerous",
-        "confidence": 0.9
+        "predicted": "undetermined",
+        "severity": "correct",
+        "confidence": null
       },
       "competitors": {
         "bare_model": {
@@ -232,16 +232,16 @@
           "severity": "dangerous"
         },
         "generic_rag": {
-          "predicted": "undetermined",
-          "severity": "correct"
+          "predicted": "confirmed",
+          "severity": "dangerous"
         },
         "perplexity": {
           "predicted": "confirmed",
           "severity": "dangerous"
         },
         "tavily_gemini": {
-          "predicted": "confirmed",
-          "severity": "dangerous"
+          "predicted": "CRASH",
+          "severity": "crash"
         }
       }
     },
@@ -253,9 +253,9 @@
       "ground_truth": "contradicted",
       "ground_truth_note": "Full Fact, https://fullfact.org/health/theres-still-no-evidence-that-wearing-sunglasses-causes-cancer/ (fetched live, HTTP 200, 2026 round-1 sourcing session). Rated false. Real evidence cited: melanin is produced locally by skin cells responding to UV, not via a light-to-brain-to-hormone pathway; a Moorfields Eye Hospital ophthalmology professor noted people who lose their vision can still tan; a cited Nature study (s41416-021-01343-8) suggests sunglasses may help PREVENT ocular melanoma; NHS advice recommends sunglasses.",
       "anti_cassiopeia": {
-        "predicted": "undetermined",
-        "severity": "conservative_miss",
-        "confidence": null
+        "predicted": "contradicted",
+        "severity": "correct",
+        "confidence": 1.0
       },
       "competitors": null
     },
@@ -275,10 +275,10 @@
     }
   ],
   "budget": {
-    "anti_cassiopeia_usd": 0.03245019999999999,
-    "nebius_competitors_usd": 0.011131349999999998,
-    "perplexity_usd": 0.0008799999999999999,
-    "gemini_usd": 0.0031072,
+    "anti_cassiopeia_usd": 0.06550350000000002,
+    "nebius_competitors_usd": 0.018131849999999998,
+    "perplexity_usd": 0.00081,
+    "gemini_usd": 0.0026127999999999998,
     "tavily_calls": 7
   }
 }

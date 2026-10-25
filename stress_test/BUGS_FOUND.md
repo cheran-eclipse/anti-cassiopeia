@@ -3318,3 +3318,51 @@ four real `ml_data` rows.
 - Claim: `{"text": "The Prophet Muhammad received divine revelations from the angel Gabriel that were later compiled into the Quran.", "domain": "research_web", "context": {}}`
 - Tavily+Gemini predicted: **confirmed**, ground truth: **undetermined** (dangerous)
 
+
+## Test #2 bare-Nebius batch `test3-round1` — 1 dangerous/crash result(s) (baseline, not a pipeline bug)
+
+### r1-cat6-quran-revelation (research_web, tier 1)
+- Claim: `{"text": "The Prophet Muhammad received divine revelations from the angel Gabriel that were later compiled into the Quran.", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+
+## Test #3 nebius-agent batch `round1` — 2 dangerous/crash result(s) (isolates the value of skipping verify_proposal(); not a pipeline bug)
+
+### r1-cat6-resurrection (research_web, tier 1)
+- Claim: `{"text": "Jesus Christ physically rose from the dead three days after his crucifixion.", "domain": "research_web", "context": {}}`
+- Nebius-agent (no verify) predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### r1-cat6-quran-revelation (research_web, tier 1)
+- Claim: `{"text": "The Prophet Muhammad received divine revelations from the angel Gabriel that were later compiled into the Quran.", "domain": "research_web", "context": {}}`
+- Nebius-agent (no verify) predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+
+## Test #3 generic-RAG batch `round1` — 2 dangerous/crash result(s) (a naive off-the-shelf-style baseline; not a pipeline bug)
+
+### r1-cat6-resurrection (research_web, tier 1)
+- Claim: `{"text": "Jesus Christ physically rose from the dead three days after his crucifixion.", "domain": "research_web", "context": {}}`
+- Generic-RAG predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### r1-cat6-quran-revelation (research_web, tier 1)
+- Claim: `{"text": "The Prophet Muhammad received divine revelations from the angel Gabriel that were later compiled into the Quran.", "domain": "research_web", "context": {}}`
+- Generic-RAG predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+
+## Test #3 Perplexity batch `round1` — 1 dangerous/crash result(s) (external API baseline; not a pipeline bug)
+
+### r1-cat6-quran-revelation (research_web, tier 1)
+- Claim: `{"text": "The Prophet Muhammad received divine revelations from the angel Gabriel that were later compiled into the Quran.", "domain": "research_web", "context": {}}`
+- Perplexity predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+
+## Test #3 Tavily+Gemini batch `round1` — 2 dangerous/crash result(s) (external API baseline; not a pipeline bug)
+
+### r1-cat6-resurrection (research_web, tier 1)
+- Claim: `{"text": "Jesus Christ physically rose from the dead three days after his crucifixion.", "domain": "research_web", "context": {}}`
+- Tavily+Gemini predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### r1-cat6-quran-revelation (research_web, tier 1)
+- Claim: `{"text": "The Prophet Muhammad received divine revelations from the angel Gabriel that were later compiled into the Quran.", "domain": "research_web", "context": {}}`
+- Tavily+Gemini predicted: **CRASH**, ground truth: **undetermined** (crash)
+- Error: `ReadTimeout: `
+

@@ -47,6 +47,23 @@ REPO_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(Path(__file__).parent))
 
+# FOUND BUG (external review, 2026-10-25): this script constructs a real
+# ResearchWebAdapter (directly or via run_test1.build_engine), whose
+# research_web.py _tavily_search() reads os.environ.get("TAVILY_API_KEY")
+# directly -- NOT dotenv_values(). Every script in this directory loaded
+# secrets via dotenv_values(".env") for ITS OWN direct provider calls
+# (Perplexity/Tavily/Gemini) without ever populating the real process
+# environment -- so Tavily (research_web.py's PRIMARY search backend) has
+# been silently returning [] (missing key -> empty list, by that
+# function's own documented contract) in every prior run of this
+# project's stress-test history, falling back to the much weaker DDG/
+# Wikipedia backends every time. The real production server
+# (api/server.py) was never affected -- it already calls
+# load_dotenv(override=False) at import time. Fixed at the source here:
+# load it into the real environment before anything downstream reads it.
+from dotenv import load_dotenv  # noqa: E402
+load_dotenv(REPO_ROOT / ".env", override=False)
+
 from instrumented_client import UsageTracker  # noqa: E402
 from run_test1 import select_pilot  # noqa: E402
 from run_test2 import load_sample_claims  # noqa: E402
