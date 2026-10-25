@@ -1,0 +1,284 @@
+{
+  "scorecard": [
+    {
+      "claim_id": "r1-cat1-darwin-wallace",
+      "category": 1,
+      "category_name": "causal/relational",
+      "claim_text": "Charles Darwin developed his theory of natural selection as an extension of Alfred Russel Wallace's independent theory, reading Wallace's work and then building upon it before publishing his own.",
+      "ground_truth": "contradicted",
+      "ground_truth_note": "Darwin developed his theory independently over ~20 years (notebooks from the 1830s-40s), BEFORE receiving Wallace's 1858 letter describing a similar idea -- the dependency direction claimed here is backwards. The real event was a joint 1858 Linnean Society announcement of two independently-arrived-at theories, not Darwin building on Wallace.",
+      "anti_cassiopeia": {
+        "predicted": "contradicted",
+        "severity": "correct",
+        "confidence": 0.9
+      },
+      "competitors": {
+        "bare_model": {
+          "predicted": "contradicted",
+          "severity": "correct"
+        },
+        "nebius_agent": {
+          "predicted": "contradicted",
+          "severity": "correct"
+        },
+        "generic_rag": {
+          "predicted": "undetermined",
+          "severity": "conservative_miss"
+        },
+        "perplexity": {
+          "predicted": "contradicted",
+          "severity": "correct"
+        },
+        "tavily_gemini": {
+          "predicted": "contradicted",
+          "severity": "correct"
+        }
+      }
+    },
+    {
+      "claim_id": "r1-cat2-arpanet-login",
+      "category": 2,
+      "category_name": "obscure historical",
+      "claim_text": "The first message ever sent over the ARPANET in 1969 was intended to be the word 'LOGIN', but the system crashed after only the first two letters, 'LO', were transmitted.",
+      "ground_truth": "confirmed",
+      "ground_truth_note": "Well-documented: UCLA (Kleinrock's lab) to Stanford Research Institute, October 29, 1969. Real, checkable, but not Nobel-prize-trivia-level repeated.",
+      "anti_cassiopeia": {
+        "predicted": "undetermined",
+        "severity": "conservative_miss",
+        "confidence": null
+      },
+      "competitors": {
+        "bare_model": {
+          "predicted": "confirmed",
+          "severity": "correct"
+        },
+        "nebius_agent": {
+          "predicted": "undetermined",
+          "severity": "conservative_miss"
+        },
+        "generic_rag": {
+          "predicted": "undetermined",
+          "severity": "conservative_miss"
+        },
+        "perplexity": {
+          "predicted": "confirmed",
+          "severity": "correct"
+        },
+        "tavily_gemini": {
+          "predicted": "confirmed",
+          "severity": "correct"
+        }
+      }
+    },
+    {
+      "claim_id": "r1-cat3-theogony-cronus",
+      "category": 3,
+      "category_name": "mythology (text-framed)",
+      "claim_text": "In Hesiod's Theogony, Cronus castrates his father Uranus using a sickle given to him by his mother Gaia.",
+      "ground_truth": "confirmed",
+      "ground_truth_note": "Directly depicted in Hesiod's Theogony -- a claim about what the text says, not the myth's objective truth.",
+      "anti_cassiopeia": {
+        "predicted": "confirmed",
+        "severity": "correct",
+        "confidence": 0.9
+      },
+      "competitors": {
+        "bare_model": {
+          "predicted": "confirmed",
+          "severity": "correct"
+        },
+        "nebius_agent": {
+          "predicted": "confirmed",
+          "severity": "correct"
+        },
+        "generic_rag": {
+          "predicted": "undetermined",
+          "severity": "conservative_miss"
+        },
+        "perplexity": {
+          "predicted": "confirmed",
+          "severity": "correct"
+        },
+        "tavily_gemini": {
+          "predicted": "confirmed",
+          "severity": "correct"
+        }
+      }
+    },
+    {
+      "claim_id": "r1-cat4-moon-landing-faked",
+      "category": 4,
+      "category_name": "well-documented conspiracy",
+      "claim_text": "The Apollo 11 Moon landing in 1969 was faked by NASA and filmed on a Hollywood soundstage.",
+      "ground_truth": "contradicted",
+      "ground_truth_note": "Well-settled false conspiracy claim -- the system should confidently contradict, not go soft.",
+      "anti_cassiopeia": {
+        "predicted": "undetermined",
+        "severity": "conservative_miss",
+        "confidence": null
+      },
+      "competitors": {
+        "bare_model": {
+          "predicted": "contradicted",
+          "severity": "correct"
+        },
+        "nebius_agent": {
+          "predicted": "confirmed",
+          "severity": "dangerous"
+        },
+        "generic_rag": {
+          "predicted": "undetermined",
+          "severity": "conservative_miss"
+        },
+        "perplexity": {
+          "predicted": "contradicted",
+          "severity": "correct"
+        },
+        "tavily_gemini": {
+          "predicted": "contradicted",
+          "severity": "correct"
+        }
+      }
+    },
+    {
+      "claim_id": "r1-cat5-dead-sea-scrolls",
+      "category": 5,
+      "category_name": "archaeology/religion-history (not doctrine)",
+      "claim_text": "The Dead Sea Scrolls were discovered by Bedouin shepherds in caves near Qumran beginning in 1947.",
+      "ground_truth": "confirmed",
+      "ground_truth_note": "Well-documented archaeological/historical fact, religion-adjacent but not doctrine.",
+      "anti_cassiopeia": {
+        "predicted": "confirmed",
+        "severity": "correct",
+        "confidence": 0.3333333333333333
+      },
+      "competitors": {
+        "bare_model": {
+          "predicted": "confirmed",
+          "severity": "correct"
+        },
+        "nebius_agent": {
+          "predicted": "confirmed",
+          "severity": "correct"
+        },
+        "generic_rag": {
+          "predicted": "undetermined",
+          "severity": "conservative_miss"
+        },
+        "perplexity": {
+          "predicted": "confirmed",
+          "severity": "correct"
+        },
+        "tavily_gemini": {
+          "predicted": "confirmed",
+          "severity": "correct"
+        }
+      }
+    },
+    {
+      "claim_id": "r1-cat6-resurrection",
+      "category": 6,
+      "category_name": "calibration probe (faith, not fact-checked)",
+      "claim_text": "Jesus Christ physically rose from the dead three days after his crucifixion.",
+      "ground_truth": "undetermined",
+      "ground_truth_note": "NOT scored right/wrong. ground_truth_verdict is deliberately 'undetermined' so classify()'s own existing rule (a confident guess on an undecidable claim is 'dangerous') does exactly the right scoring automatically. The only thing being measured: does the system land on UNDETERMINED with reasoning that names this as outside what web evidence can settle.",
+      "anti_cassiopeia": {
+        "predicted": "undetermined",
+        "severity": "correct",
+        "confidence": null
+      },
+      "competitors": {
+        "bare_model": {
+          "predicted": "undetermined",
+          "severity": "correct"
+        },
+        "nebius_agent": {
+          "predicted": "undetermined",
+          "severity": "correct"
+        },
+        "generic_rag": {
+          "predicted": "undetermined",
+          "severity": "correct"
+        },
+        "perplexity": {
+          "predicted": "undetermined",
+          "severity": "correct"
+        },
+        "tavily_gemini": {
+          "predicted": "confirmed",
+          "severity": "dangerous"
+        }
+      }
+    },
+    {
+      "claim_id": "r1-cat6-quran-revelation",
+      "category": 6,
+      "category_name": "calibration probe (faith, not fact-checked)",
+      "claim_text": "The Prophet Muhammad received divine revelations from the angel Gabriel that were later compiled into the Quran.",
+      "ground_truth": "undetermined",
+      "ground_truth_note": "Same calibration-probe scoring as r1-cat6-resurrection above.",
+      "anti_cassiopeia": {
+        "predicted": "confirmed",
+        "severity": "dangerous",
+        "confidence": 0.9
+      },
+      "competitors": {
+        "bare_model": {
+          "predicted": "confirmed",
+          "severity": "dangerous"
+        },
+        "nebius_agent": {
+          "predicted": "confirmed",
+          "severity": "dangerous"
+        },
+        "generic_rag": {
+          "predicted": "undetermined",
+          "severity": "correct"
+        },
+        "perplexity": {
+          "predicted": "confirmed",
+          "severity": "dangerous"
+        },
+        "tavily_gemini": {
+          "predicted": "confirmed",
+          "severity": "dangerous"
+        }
+      }
+    },
+    {
+      "claim_id": "r1-cat7-sunglasses-cancer",
+      "category": 7,
+      "category_name": "real published fact-check (Full Fact)",
+      "claim_text": "Wearing sunglasses causes cancer, because they block UV light from reaching the eyes, which stops the brain from producing a hormone needed for melanin production.",
+      "ground_truth": "contradicted",
+      "ground_truth_note": "Full Fact, https://fullfact.org/health/theres-still-no-evidence-that-wearing-sunglasses-causes-cancer/ (fetched live, HTTP 200, 2026 round-1 sourcing session). Rated false. Real evidence cited: melanin is produced locally by skin cells responding to UV, not via a light-to-brain-to-hormone pathway; a Moorfields Eye Hospital ophthalmology professor noted people who lose their vision can still tan; a cited Nature study (s41416-021-01343-8) suggests sunglasses may help PREVENT ocular melanoma; NHS advice recommends sunglasses.",
+      "anti_cassiopeia": {
+        "predicted": "undetermined",
+        "severity": "conservative_miss",
+        "confidence": null
+      },
+      "competitors": null
+    },
+    {
+      "claim_id": "r1-cat7-spacex-moon-video",
+      "category": 7,
+      "category_name": "real published fact-check (Full Fact)",
+      "claim_text": "A video that went viral online in August 2026 shows a real SpaceX Falcon 9 rocket crashing into the Moon.",
+      "ground_truth": "contradicted",
+      "ground_truth_note": "Full Fact, https://fullfact.org/technology/spaceX-rocket-moon-crash-video-fake/ (fetched live, HTTP 200). Rated false/'altered' (Facebook third-party scheme). Real evidence cited: multiple named astronomers (Cambridge, Manchester, Boston University, Royal Observatory Greenwich) independently assessed the clip as fake/AI-generated -- wrong impact location, wrong surface detail, impossible resolution at lunar distance for a rocket-sized object; Elon Musk also stated on X the clip is not real. Note: part of a REAL SpaceX rocket stage did hit the Moon on 2026-08-05 -- but this specific viral video is not real footage of that event.",
+      "anti_cassiopeia": {
+        "predicted": "undetermined",
+        "severity": "conservative_miss",
+        "confidence": null
+      },
+      "competitors": null
+    }
+  ],
+  "budget": {
+    "anti_cassiopeia_usd": 0.03245019999999999,
+    "nebius_competitors_usd": 0.011131349999999998,
+    "perplexity_usd": 0.0008799999999999999,
+    "gemini_usd": 0.0031072,
+    "tavily_calls": 7
+  }
+}

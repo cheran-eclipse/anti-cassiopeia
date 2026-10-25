@@ -3282,3 +3282,39 @@ four real `ml_data` rows.
    actually drops) — the fix itself is verified by a direct unit test
    (`tests/test_codeexec_parser.py::test_system_prompt_discloses_stdlib_only_sandbox`),
    not by a new full-manifest run, which is real, separate follow-up work.
+
+## Test #2 bare-Nebius batch `test3-round1` — 1 dangerous/crash result(s) (baseline, not a pipeline bug)
+
+### r1-cat6-quran-revelation (research_web, tier 1)
+- Claim: `{"text": "The Prophet Muhammad received divine revelations from the angel Gabriel that were later compiled into the Quran.", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+
+## Test #3 nebius-agent batch `round1` — 2 dangerous/crash result(s) (isolates the value of skipping verify_proposal(); not a pipeline bug)
+
+### r1-cat4-moon-landing-faked (research_web, tier 1)
+- Claim: `{"text": "The Apollo 11 Moon landing in 1969 was faked by NASA and filmed on a Hollywood soundstage.", "domain": "research_web", "context": {}}`
+- Nebius-agent (no verify) predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### r1-cat6-quran-revelation (research_web, tier 1)
+- Claim: `{"text": "The Prophet Muhammad received divine revelations from the angel Gabriel that were later compiled into the Quran.", "domain": "research_web", "context": {}}`
+- Nebius-agent (no verify) predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+
+## Test #3 Perplexity batch `round1` — 1 dangerous/crash result(s) (external API baseline; not a pipeline bug)
+
+### r1-cat6-quran-revelation (research_web, tier 1)
+- Claim: `{"text": "The Prophet Muhammad received divine revelations from the angel Gabriel that were later compiled into the Quran.", "domain": "research_web", "context": {}}`
+- Perplexity predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+
+## Test #3 Tavily+Gemini batch `round1` — 2 dangerous/crash result(s) (external API baseline; not a pipeline bug)
+
+### r1-cat6-resurrection (research_web, tier 1)
+- Claim: `{"text": "Jesus Christ physically rose from the dead three days after his crucifixion.", "domain": "research_web", "context": {}}`
+- Tavily+Gemini predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
+### r1-cat6-quran-revelation (research_web, tier 1)
+- Claim: `{"text": "The Prophet Muhammad received divine revelations from the angel Gabriel that were later compiled into the Quran.", "domain": "research_web", "context": {}}`
+- Tavily+Gemini predicted: **confirmed**, ground truth: **undetermined** (dangerous)
+
