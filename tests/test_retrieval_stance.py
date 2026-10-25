@@ -10,7 +10,7 @@ whether a REAL model reasons correctly from it (that needs a live call,
 see the causal-claim fix's own commit for the one deliberate live
 re-test) -- what IS tested offline: judge_stance()'s own parsing contract
 (any reply not containing "support"/"contradict" is "unrelated", never a
-crash on an unexpected reply), and that both fix paragraphs' guidance
+crash on an unexpected reply), and that all three fix paragraphs' guidance
 text is actually present in STANCE_SYSTEM_PROMPT, locking each fix in
 place against an accidental future removal.
 """
@@ -131,5 +131,51 @@ async def test_plain_factual_claim_is_unaffected_by_the_causal_guidance():
         client,
         "The Widget Mk4 enclosure carries an IP68 rating.",
         "The Widget Mk4 enclosure carries an IP68 rating and is certified for continuous operation when fully submerged.",
+    )
+    assert result == "supports"
+
+
+# --- attributed-belief fix (Quran-revelation calibration probe, new) ---
+
+
+def test_attributed_belief_guidance_is_present_in_the_prompt():
+    assert "HOLDS or BELIEVES" in STANCE_SYSTEM_PROMPT
+    assert "Islamic tradition" in STANCE_SYSTEM_PROMPT
+
+
+async def test_attributed_belief_scripted_as_unrelated_round_trips_correctly():
+    """FOUND BUG (benchmark round 1, 2026-10-25, a calibration probe --
+    see claude/ANTI_CASSIOPEIA_COMPETITIVE_BENCHMARK_PROTOCOL.md's
+    category 6): a real Wikipedia passage -- "According to Islamic
+    tradition, the revelation of the Quran to the Islamic prophet
+    Muhammad began in 610 CE when the angel Gabriel ... appeared to
+    Muhammad" -- was judged "supports" for the FLAT claim "The Prophet
+    Muhammad received divine revelations from the angel Gabriel", giving
+    a confident CONFIRMED on a matter of faith no web source can settle.
+    The source itself hedges with "according to Islamic tradition";
+    judge_stance() didn't carry that hedge through to the verdict. Not a
+    test of real model reasoning -- proves judge_stance() correctly
+    returns "unrelated" for this shape once the model (correctly
+    prompted) says so."""
+    client = _FakeClient("unrelated")
+    result = await judge_stance(
+        client,
+        "The Prophet Muhammad received divine revelations from the angel Gabriel that were later compiled into the Quran.",
+        "According to Islamic tradition, the revelation of the Quran to the Islamic prophet Muhammad began in 610 CE when the angel Gabriel appeared to Muhammad.",
+    )
+    assert result == "unrelated"
+
+
+async def test_claim_explicitly_about_what_a_tradition_believes_is_judged_normally():
+    """The carve-out: when the CLAIM itself is phrased as being about what
+    a tradition holds (not asserting the underlying event as objective
+    fact), the same attributed-belief passage legitimately supports it --
+    judge_stance() must not be made unconditionally "unrelated" to any
+    passage mentioning a tradition/belief, only to a MISMATCHED flat claim."""
+    client = _FakeClient("supports")
+    result = await judge_stance(
+        client,
+        "Islamic tradition holds that the Prophet Muhammad received revelations from the angel Gabriel.",
+        "According to Islamic tradition, the revelation of the Quran to the Islamic prophet Muhammad began in 610 CE when the angel Gabriel appeared to Muhammad.",
     )
     assert result == "supports"

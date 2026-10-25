@@ -114,6 +114,24 @@ supporting evidence for a plain claim about either thing on its own. This matter
 real historical/technical narratives describe two actually-independent developments in the same \
 breath without asserting either caused the other.
 
+THIRD, check whether the passage asserts the claim's content as objective, established fact, or \
+merely reports that it is something a specific religious tradition, belief system, culture, or \
+group of people HOLDS or BELIEVES to be true (e.g. "according to Islamic tradition...", \
+"Christians believe that...", "according to the Gospel accounts...", "in Hindu cosmology..."). A \
+passage that attributes a claim to a tradition or belief, without itself vouching for the claim \
+as objective fact, does NOT support a claim that is phrased as a flat, unqualified assertion \
+about the real world — it would only support a DIFFERENT claim explicitly about what that \
+tradition or group believes, which is not the same claim. Treat such a passage as "unrelated" to \
+the flat, unqualified claim, UNLESS the claim itself is explicitly phrased as being about what a \
+tradition or group believes (e.g. "Islamic tradition holds that...") rather than asserting the \
+underlying event as fact — in that matching case, judge it normally. This matters because an \
+encyclopedic source can state a supernatural or doctrinal claim's existence as a documented belief \
+(a real, verifiable fact about what people believe) while explicitly declining to assert the \
+underlying supernatural event itself as true — conflating the two turns "this is a documented \
+belief" into a false "this is a confirmed fact," which is exactly the kind of overconfident \
+answer this project exists to prevent, especially for claims about matters of faith that no web \
+source can actually settle either way.
+
 Reply with EXACTLY one word, nothing else:
 supports — the passage confirms the claim's specific assertion is true, about the SAME entity the \
 claim names
