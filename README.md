@@ -1,40 +1,57 @@
 # Anti-Cassiopeia
 
-A verification engine. Give it a claim, it gives you back one of exactly
-three things: **confirmed**, **contradicted**, or **undetermined** — never
-a confident-sounding guess standing in for the third one. Displayed in
-the frontend as the three C's — **Confirmed / Contradicted / Clouded**
-(evidence is clouded, not absent) — matching this project's own name;
-the API's actual wire value for the third state stays `"undetermined"`,
-a stable contract already live on the public demo and never broken just
-for branding. See `docs/index.html`'s `displayStateLabel()` for exactly
-where that cosmetic rename happens and nowhere else.
+**A claim checker that is allowed to say "I can't tell."**
 
-Built for the Nebius x NVIDIA Global AI Hackathon, Apps and Agents track:
-an app or agent you'd actually use, not a single demo script. Run it as
-a CLI, call it as an HTTP API, through the hosted web frontend (see
-["Frontend"](#frontend) below), or wire it into another agent's tool-use
-loop as the claim-checking step before that agent commits to an answer —
-all four hit the same `VerificationEngine`. Runs on Nebius Token Factory
-(see `anticassiopeia/llm/nebius_client.py`).
+Give it a claim. It returns one of three verdicts: **confirmed**,
+**contradicted** or **undetermined**, together with the quote, the source
+and the location it relied on. When it can't find the evidence, it says
+what is missing instead of guessing. The frontend shows the three states
+as **Confirmed / Contradicted / Clouded**; the API's wire value stays
+`"undetermined"`.
 
-**Design principle, stated once here and held to everywhere below: no
-single model does everything.** The track's own guidance says it plainly
-— *"Reach for Nemotron 3 Ultra when you need serious reasoning, and let
-Nano or Super handle the fast, everyday calls."* This project doesn't
-just quote that line, it measured where it's actually true for ITS OWN
-tasks and routed accordingly, stage by stage: **NVIDIA Nemotron Ultra**
-for `substrate`'s evidence extraction and for `searchlight`'s hardest
-stance judgments (both earned by a real, reproduced safety record, not
-picked by default); **`gpt-oss-120b`** for `searchlight`'s own evidence
-extraction (the one place Ultra was tested and didn't win); **Tavily**
-as the live search backend standing in front of all of it (proven, not
-assumed — see below); **`Qwen/Qwen3-Embedding-8B`** for the semantic
-half of hybrid retrieval. Every one of those choices is a real,
-dated, falsifiable decision with its own evidence trail — see
-["How the model choice was made"](#how-the-model-choice-was-made) and
-[`stress_test/results/MODEL_SELECTION_FINDINGS.md`](stress_test/results/MODEL_SELECTION_FINDINGS.md)
-for the full ledger, not just the two headline picks.
+Built for the Nebius x NVIDIA Global AI Hackathon, Apps and Agents track.
+Use it as a CLI, an HTTP API, the hosted web frontend (see
+["Frontend"](#frontend)), or as the claim-checking step in another
+agent's tool loop, before that agent commits to an answer. All four go
+through the same `VerificationEngine`. Runs on Nebius Token Factory.
+
+## Where it helps
+
+- **Before an agent answers.** Call it as a tool. If the claim isn't
+  supported, the agent gets "undetermined" and the missing evidence, not a
+  confident invention.
+- **On your own documents.** Upload a datasheet, a CSV or a timing report
+  and check what someone said about it. Statistics and timing figures are
+  recomputed in code, not read off by a model.
+- **On a citation.** Does that page actually say what is claimed? The
+  quote is fetched and matched verbatim.
+
+## How it compares (measured, with the limits)
+
+| | Result | Against |
+|---|---|---|
+| Wrong answers on contested open-web claims (88 scored, independently verified) | **2 wrong of 64 answered** (96.9% precision) | 4 to 8 wrong for each of five competitors |
+| Faith-based claims that must not be confirmed or denied (14 probes, 7 traditions) | **14 / 14 left undetermined** | 3 to 10 of 14 for the competitors |
+| Claims about your files (872 statistics and timing claims) | **100% correct, 0 dangerous**, computed in code | model with a code tool: 99.1% / 0.5% dangerous; generic RAG on the same files: 34% / 19% dangerous |
+
+**Where it does not win.** It answers fewer claims (73.6% of decidable
+open-web claims in round 2), so its raw accuracy there is the lowest of the
+six systems tested (71.6%). On textbook material a model already knows (69
+formal and technical claims), a bare model scores 95.7% against this
+project's 37.7%, because live search can't find a page that discusses the
+claim and the engine stays "undetermined". Its one wrong answer there is
+still 1 of 69. Systems that cannot read your files score poorly on file
+claims by construction, so the comparisons that count are the ones where
+every system gets the same documents. Details, errata and caveats are in
+[Competitive benchmark](#competitive-benchmark).
+
+**Models.** No single model does everything. Nemotron Ultra handles the
+stages where it had a zero-dangerous-miss record (`substrate` extraction,
+`searchlight`'s hardest stance judgments). `gpt-oss-120b` extracts evidence
+for `searchlight`. Tavily provides live search, and `Qwen/Qwen3-Embedding-8B`
+powers hybrid retrieval. Each choice has dated evidence in
+[`MODEL_SELECTION_FINDINGS.md`](stress_test/results/MODEL_SELECTION_FINDINGS.md)
+and ["How the model choice was made"](#how-the-model-choice-was-made).
 
 ## Why "Anti-Cassiopeia"
 
@@ -71,12 +88,12 @@ FEVER, FActScore, SAFE, RARR, and FacTool.
 
 ## Four domains, all real
 
-| Domain | POV | Evidence traces back to | Status |
-|---|---|---|---|
-| `substrate` | physical/datasheet | real parts/datasheet facts, retrieved+verified against manufacturer sources (BlueROV2, Bar30, Bar100XT), via live NVIDIA Nemotron Ultra | 3/4 researched parts sourced; the 4th (QuSpin QZFM Gen-3) has a confirmed real source stating NO rating exists — [extraction provenance](docs/extracted/constellation-robotics-seed.md) |
-| `quant` | ML | an actual re-computed statistic over a real CSV file | real, offline, no external dependency |
-| `silicon` | quantum | a real parsed timing/synthesis report, or a real CMSIS-SVD register-map file | real, offline — timing parser verified against a real Vivado report; register-map parser verified against real ARM/Espressif SVD files, see module docstring |
-| `searchlight` | existence/verification | an actually-fetched URL, verbatim-quote-checked | real, network-dependent — Tavily primary search backend, DDG+Wikipedia fallback |
+| Domain | What it checks | Example claim | Evidence | Status |
+|---|---|---|---|---|
+| `substrate` | Hardware specs against a stated condition | "Bar30 survives 500 m depth" | Datasheet facts retrieved and re-checked against manufacturer sources (BlueROV2, Bar30, Bar100XT) with Nemotron Ultra, or your uploaded document | 3 of 4 researched parts sourced. The 4th (QuSpin QZFM Gen-3) has a confirmed source stating no rating exists, see [extraction provenance](docs/extracted/constellation-robotics-seed.md). Fixed corpus plus uploads, no live web search |
+| `quant` | A statistic in a dataset | "The mean of `voltage` is 5.0 V" | Re-computed from the real CSV | Real, offline, no external dependency |
+| `silicon` | FPGA timing and register maps | "The design meets 100 MHz timing" | Parsed from a Vivado timing or synthesis report, or a CMSIS-SVD register-map file | Real, offline. Timing parser verified against a real Vivado report, register-map parser against real ARM and Espressif SVD files (see module docstring) |
+| `searchlight` | Whether a source says what is claimed | "ARPANET's first message crashed after two letters" | A fetched page, quote matched verbatim | Real, network-dependent. Tavily is the primary search backend, with DDG and Wikipedia as fallback |
 
 Every domain either returns real evidence with a real locator, or an
 honest, specific, named reason it can't yet — never a guess. See
@@ -221,6 +238,39 @@ dedicated test.
 
 ## Competitive benchmark
 
+Claims were generated by ChatGPT, Gemini and Perplexity from a locked
+prompt, then **independently verified against real sources** before any of
+them touched the engine. Six systems were scored on the same claims:
+Anti-Cassiopeia, a bare model, the same pipeline with a single stance model
+("Nebius-agent"), generic RAG, Perplexity, and Tavily+Gemini.
+
+**Round 2, open web, 88 scored claims** (precision = correct among the
+claims a system answered):
+
+| System | Answered | Wrong | Precision | Coverage |
+|---|---|---|---|---|
+| **Anti-Cassiopeia** | 64 | **2** | **96.9%** | 73.6% |
+| Tavily+Gemini | 85 | 4 | 95.3% | 96.6% |
+| Perplexity | 85 | 6 | 92.9% | 97.7% |
+| Generic RAG | 74 | 5 | 93.2% | 86.0% |
+| Same pipeline, single stance model | 68 | 5 | 92.6% | 78.2% |
+| Bare model | 88 | 8 | 90.9% | 100% |
+
+Precision ranges overlap (Anti-Cassiopeia 89.3 to 99.1%, Tavily+Gemini
+88.5 to 98.2%), so this is a lead, not a proof. Anti-Cassiopeia declines
+more often: most of its misses are "undetermined" where an answer existed.
+
+**What the benchmark changed.** It found and fixed real bugs: a
+calibration bug that confirmed a faith claim on a source that said
+"according to tradition", a stance rule that was too strict to contradict
+claims no single source rebuts, a compound-claim path that rewrote a
+sub-claim into its own negation, and a measurement bug that left Tavily
+switched off in every earlier test run. Each is documented with its fix.
+
+<details>
+<summary>Round-by-round log (full narrative)</summary>
+
+
 A separate, repeatable protocol (not a one-off): generate a small,
 hand-picked set of claims across categories chosen specifically to
 probe where a verification system is likely to fail (causal/relational
@@ -266,11 +316,12 @@ caution) reversed completely at this scale — it confidently confirmed
 9 of 14 supernatural claims this round, including the Fátima apparition
 and Muhammad's Night Journey, showing round 1's result was retrieval
 luck on two obscure claims, not real caution about faith specifically.
-Anti-Cassiopeia's **raw accuracy (70.5%) was the lowest of the six
+Anti-Cassiopeia's **raw accuracy (71.6%) was the lowest of the six
 systems tested** on this round's mix — reported honestly, not spun — but
-its error shape is the one this project is built around: only 3
+its error shape is the one this project is built around: only 2
 dangerous (confidently wrong) answers out of 88 scored claims, against
-6-9 for every competitor; the rest of its misses are conservative
+4-8 for every competitor (a ground-truth correction, Erratum 3 in the round 2
+report, moved one miss from dangerous to correct); the rest of its misses are conservative
 (correctly declining rather than guessing). Most of that conservatism
 concentrates in causal/relational claims, the direct, visible cost of
 the stance-judgment fix that made round 1's Darwin/Wallace-style claims
@@ -306,11 +357,13 @@ bug in the compound-claim decomposition path was found and fixed this
 same session: it could silently rewrite a false sub-claim into its own
 negation, verifying a different claim than the one submitted — caught
 with a deterministic fidelity check, regression-tested against the
-exact bad output that triggered it. Full protocol: [`claude/ANTI_CASSIOPEIA_COMPETITIVE_BENCHMARK_PROTOCOL.md`](claude/ANTI_CASSIOPEIA_COMPETITIVE_BENCHMARK_PROTOCOL.md).
+exact bad output that triggered it.
 Full results: [`stress_test/results/BENCHMARK_ROUND1_REPORT.md`](stress_test/results/BENCHMARK_ROUND1_REPORT.md),
 [`stress_test/results/BENCHMARK_ROUND2_REPORT.md`](stress_test/results/BENCHMARK_ROUND2_REPORT.md),
 [`stress_test/results/COMPARATIVE_SYNTHESIS_FIX_NOTE.md`](stress_test/results/COMPARATIVE_SYNTHESIS_FIX_NOTE.md),
 [`stress_test/results/TRACK_B_REPORT.md`](stress_test/results/TRACK_B_REPORT.md).
+
+</details>
 
 ## Bring your own evidence (v2 + v3)
 
@@ -605,8 +658,6 @@ stress_test/   the competitive-benchmark protocol's own harness
                (run_benchmark_round1.py + 5 reusable competitor variants),
                plus this project's full stress-test history — every real
                bug found, every report, indexed in results/INDEX.md
-claude/        verbatim build prompts this project was handed, session to
-               session — kept exactly as written, a real paper trail
 .github/workflows/evals.yml   CI: runs the eval suite on every push/PR
 Dockerfile     build-tested for real (see above)
 ```
