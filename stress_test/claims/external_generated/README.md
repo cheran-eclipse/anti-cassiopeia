@@ -1,152 +1,139 @@
-# Round 2 candidate claims — externally generated, not yet verified
+# Round 2 claims: externally generated, then independently verified
 
 Generated 2026-10-25 by three external AI tools (ChatGPT, Gemini, Perplexity)
-from `claude/CLAIM_GENERATION_PROMPT_FOR_EXTERNAL_AI.md` — ChatGPT and Gemini
-via that prompt pasted into their chat UI alongside the project zip
-(`anti-cassiopeia-for-claim-generation-20261025.zip`), captured here as
-`source_chatgpt_gemini.docx` (both tools' output in one file, split by a
-`Gemini:` header partway through); Perplexity via a direct call to its
-`/v1/responses` API instead, since its chat UI doesn't support file
-uploads — the prompt was adapted inline (no zip reference, project context
-summarized in the prompt text itself) and run once, captured as
-`source_perplexity_raw.txt`.
+from a locked claim-generation prompt. ChatGPT and Gemini received the
+prompt in their chat UIs alongside the project zip
+(`anti-cassiopeia-for-claim-generation-20261025.zip`); their output is in
+`source_chatgpt_gemini.docx` (both tools in one file, split by a `Gemini:`
+header partway through). Perplexity was called directly through its
+`/v1/responses` API, because its chat UI doesn't support file uploads. The
+prompt was adapted inline (no zip reference, project context summarized in
+the text) and run once; the output is `source_perplexity_raw.txt`.
 
 ## What's here
 
-- `source_chatgpt_gemini.docx`, `source_perplexity_raw.txt` — raw outputs,
+- `source_chatgpt_gemini.docx`, `source_perplexity_raw.txt`: raw outputs,
   unedited, kept for provenance.
-- `claims_round2_raw_undeduped.json` — all 185 claims parsed out of the two
-  raw sources (96 ChatGPT + 56 Gemini + 33 Perplexity), before dedup.
-- `claims_round2_candidates.json` — **the dataset to actually use.** 171
-  entries after removing 14 true duplicates (see below). Each entry carries
-  the external AI's own `suggested_ground_truth`/`suggested_confidence` —
-  **these are hypotheses from the generating model, not verified fact**, per
-  the generation prompt's own explicit, non-negotiable condition. Nothing
-  here has been independently checked against primary sources yet.
+- `claims_round2_raw_undeduped.json`: all 185 claims parsed from the two raw
+  sources (96 ChatGPT, 56 Gemini, 33 Perplexity), before dedup.
+- `claims_round2_candidates.json`: 171 entries after removing 14 true
+  duplicates. Each carries the generating AI's `suggested_ground_truth` and
+  `suggested_confidence`. These are the generator's hypotheses, not verified
+  fact; the generation prompt required that.
+- `claims_round2_verified.json`: **the file to use for testing** (see
+  "Independent verification").
 
 ## Parsing
 
-Both `CLAIM:`/`CATEGORY:`/`SUGGESTED_GROUND_TRUTH:`/`CONFIDENCE:`/
-`WHY_INTERESTING:` layouts were used by different generators (ChatGPT: one
-field per line; Gemini: all five fields concatenated on a single line per
-claim) — parsed with one regex keyed on the field labels themselves, not
-line structure, so both layouts parse identically. Verified against a raw
-`grep -c "CLAIM:"` count: 96 ChatGPT + 56 Gemini + 33 Perplexity = 185,
-exact match, nothing lost or double-counted.
+The generators used two layouts for the `CLAIM:` / `CATEGORY:` /
+`SUGGESTED_GROUND_TRUTH:` / `CONFIDENCE:` / `WHY_INTERESTING:` fields
+(ChatGPT: one field per line; Gemini: all five fields on one line per
+claim). One regex keyed on the field labels, not the line structure, parses
+both. It was checked against a raw `grep -c "CLAIM:"` count: 96 + 56 + 33 =
+185, an exact match.
 
-## Dedup — 14 true duplicates removed, by hand, after the fact
+## Dedup: 14 true duplicates removed by hand
 
 An automatic near-duplicate pass (token-Jaccard similarity over the claim
-text) found 17 candidate pairs/groups. Each was read in full and judged
-individually — automatic similarity caught real duplicates (independently
-generated, same core assertion) but also several false positives: claims
-that share vocabulary/topic but assert genuinely different things. Kept
-separate despite high lexical overlap:
+text) found 17 candidate pairs or groups. Each was read in full and judged
+individually. Similarity caught real duplicates (independently generated,
+same core assertion) and also false positives: claims with shared
+vocabulary that assert different things. These were kept separate despite
+high overlap:
 
-- The two 1919-eclipse claims (one states the real, hedged historical fact;
-  the other builds a false overreach — "general relativity has never
-  received independent confirmation" — on top of the same premise).
-- The two Gilgamesh flood claims (one names the correct god who warns
-  Utnapishtim privately; the other plants a specific wrong-god detail —
-  a deliberate factual trap, not the same claim restated).
-- The Jesus/Osiris resurrection pair — this is an intentional cross-tradition
-  calibration probe pair per the generation prompt's own category-6
-  instruction ("generate from MULTIPLE different traditions... testing
-  whether the system is EVENLY uncertain about all of them"), not a
-  duplicate. (Jesus-resurrection *was* merged across chatgpt+perplexity,
-  since those two really are the same claim restated.)
-- Several category-8 robotics/FPGA pairs that share dense technical
+- The two 1919-eclipse claims. One states the hedged historical fact; the
+  other adds a false overreach ("general relativity has never received
+  independent confirmation") to the same premise.
+- The two Gilgamesh flood claims. One names the correct god who warns
+  Utnapishtim privately; the other plants a wrong-god detail as a factual
+  trap.
+- The Jesus and Osiris resurrection pair. It is a deliberate cross-tradition
+  calibration pair, per the generation prompt's category 6 instruction
+  (generate from several traditions to test whether the system is equally
+  uncertain about all of them). The Jesus-resurrection claim was merged
+  across ChatGPT and Perplexity, since those two are the same claim.
+- Several category 8 robotics and FPGA pairs that share dense technical
   vocabulary (Jacobians, fixed-point bits, inverse dynamics) but assert
-  different specific false inferences.
+  different false inferences.
 
-Actually merged (same core assertion, independently produced by 2-3
-generators — itself a useful signal: when three unrelated AIs independently
-converge on the same test claim, that's evidence it's a genuinely
-well-known/well-covered case, not cherry-picked): Apollo staging, vaccines/
-autism, 5G/COVID, Great Wall visibility (3-way), 10%-of-brain myth, goldfish
-memory (3-way), Einstein's math, Antikythera mechanism, Newton/Leibniz
-calculus, Shroud of Turin dating, the redundant-manipulator null-space
-claim, and the Jesus-resurrection probe. Merged entries carry `generated_by`
-(which sources produced it) and `duplicate_ids`. The Antikythera pair was
-independently categorized as category 2 by ChatGPT and category 5 by
-Gemini — flagged as `category_disagreement`, not resolved by merging; that
-disagreement is itself informative about how fuzzy the category boundary
-is in practice.
+Merged, because 2 or 3 generators independently produced the same core
+assertion (when unrelated AIs converge on a test claim, it is a well-known
+case, not a cherry-picked one): Apollo staging, vaccines and autism,
+5G and COVID, Great Wall visibility (3-way), the 10%-of-brain myth, goldfish
+memory (3-way), Einstein's math, the Antikythera mechanism, Newton and
+Leibniz calculus, Shroud of Turin dating, the redundant-manipulator
+null-space claim, and the Jesus-resurrection probe. Merged entries carry
+`generated_by` and `duplicate_ids`. The Antikythera pair was categorized as
+category 2 by ChatGPT and category 5 by Gemini. It is flagged as
+`category_disagreement` and not resolved by merging, since the disagreement
+shows how fuzzy the category boundary is.
 
-## Dataset shape — read before planning any test run
+## Dataset shape
 
-171 claims. By category: 1→20, 2→17, 3→14, 4→11, 5→14, 6→14, 7→12, **8→69**.
+171 claims. By category: 1 has 20, 2 has 17, 3 has 14, 4 has 11, 5 has 14, 6
+has 14, 7 has 12, **8 has 69**.
 
-Category 8 is 40% of the whole set — almost entirely dense control-theory/
-FPGA formal claims from ChatGPT (Jacobian null-spaces, fixed-point
-bit-exactness, inverse-kinematics/dynamics limit propagation, formal
-equivalence-check scope). These are a **different kind of verification
-problem** from categories 1-7: they're closed-form mathematical/engineering
-truths, checkable by formal reasoning, not claims a web search resolves.
-They'd route to the `substrate` domain (robotics), whose adaptive-depth
-search port is still deferred — and it's an open question whether
-`searchlight`-style web search finds anything useful on them at all, versus
-correctly/uselessly defaulting to "undetermined" on all of them. Worth
-running as its own distinct track, not folded into the categories 1-7
-web-verifiable set.
+Category 8 is 40% of the set. It is mostly dense control-theory and FPGA
+formal claims from ChatGPT (Jacobian null-spaces, fixed-point bit-exactness,
+inverse kinematics and dynamics limit propagation, formal equivalence-check
+scope). They are a different kind of verification problem from categories
+1 to 7: closed-form mathematical and engineering truths, checkable by formal
+reasoning, which a web search does not resolve. They would route to
+`substrate`, whose adaptive-depth search port is deferred, and it is open
+whether `searchlight`-style web search finds anything useful on them or
+returns "undetermined" for all of them. They are a separate track, not part
+of the web-verifiable categories 1 to 7.
 
-## Independent verification — done, 2026-10-25
+## Independent verification (2026-10-25)
 
-Split into two tracks per the round-2 scoping decision:
+Two tracks, per the round 2 scoping decision:
 
-- **Track A** (`track_a_web_verifiable.json`, 102 claims, categories 1-7) —
-  web-searchable facts. Independently verified claim-by-claim via four
-  parallel research passes (one per category group: cat 1 / cat 2+3 /
-  cat 4+7 / cat 5), each checking real primary/secondary sources, plus
-  category 6 (14 calibration probes) set directly to `undetermined` by
-  project convention, no research needed since that's the correct verdict
-  regardless of which tradition the claim is about. Merged result:
-  **`claims_round2_verified.json`** — the file to actually use for testing.
-  Per-category raw verification output (sources checked, notes) kept in
-  `verified_category1.json`, `verified_category2_3.json`,
-  `verified_category4_7.json`, `verified_category5.json`,
-  `verified_category6.json`.
+- **Track A** (`track_a_web_verifiable.json`, 102 claims, categories 1 to 7):
+  web-searchable facts. Each claim was verified through four parallel
+  research passes (category 1, categories 2 and 3, categories 4 and 7,
+  category 5), checking primary and secondary sources. Category 6 (14
+  calibration probes) is set to `undetermined` by project convention: that
+  is the correct verdict whatever the tradition. The merged result is
+  **`claims_round2_verified.json`**. Per-category verification output
+  (sources checked, notes) is in `verified_category1.json`,
+  `verified_category2_3.json`, `verified_category4_7.json`,
+  `verified_category5.json` and `verified_category6.json`.
+- **Track B** (`track_b_category8_formal.json`, 69 claims, category 8):
+  formal control-theory, FPGA and math claims. Verified and run in a later
+  step; see `stress_test/results/TRACK_B_REPORT.md`.
 
-- **Track B** (`track_b_category8_formal.json`, 69 claims, category 8) —
-  parked. These are closed-form control-theory/FPGA/math claims, not
-  web-verifiable facts; see the section above. Not yet verified or run.
+### Result: 100 of 102 generator suggestions held up at verification time
 
-### Verification result: 100/102 of the generators' own suggestions held up at verification time
+Two corrections at initial verification, both confirmed to contradicted:
 
-**2 corrections** at initial verification, both confirmed→contradicted:
+- `chatgpt-011`: Hesiod's *Theogony* claim that Athena emerges "fully armed"
+  from Zeus's head. The head-birth is real (Theogony line 924), but "fully
+  armed" appears only in a line modern editors flag as probably spurious.
+  That detail belongs to the Homeric Hymn to Athena, not the secure
+  Theogony text.
+- `gemini-027`: the Voynich Manuscript claim combines a solid 2009 Arizona
+  radiocarbon result (1404 to 1438 CE) with a much weaker "northern Italy"
+  origin inference (one castle illustration), as if both rested on the same
+  evidence.
 
-- `chatgpt-011` — Hesiod's *Theogony* claim that Athena emerges "fully
-  armed" from Zeus's head. The head-birth itself is real (Theogony line
-  924), but "fully armed" only appears in a line modern editors flag as
-  probably spurious — that specific detail belongs to the Homeric Hymn to
-  Athena, not the secure Theogony text.
-- `gemini-027` — the Voynich Manuscript claim bundles a solid, real 2009
-  Arizona radiocarbon result (1404-1438 CE) with a much weaker "northern
-  Italy" origin inference (one castle illustration) as if both rested on
-  the same evidence.
+One claim (`gemini-031`, the 1918 flu's Kansas origin) was confirmed to be
+unresolved in the historical literature. The generator already said so, and
+verification agrees `undetermined` is the right answer.
 
-One claim (`gemini-031`, the 1918 flu's Kansas origin) was independently
-confirmed as genuinely unresolved in the historical literature — the
-generator already said so; verification agrees undetermined is the honest
-answer, not a guess either way.
+**A third correction came later**, during round 2's benchmark review.
+`gemini-012` (Newton and Leibniz, "exact same time") was first kept
+`confirmed` on the reasoning that "most popular accounts use similarly loose
+framing". It was overridden after all six systems tested in round 2
+independently predicted `contradicted`. See Erratum 3 in
+`stress_test/results/BENCHMARK_ROUND2_REPORT.md`. The rule it set for ground
+truth in later rounds: when a claim's core relationship is true but a
+specific qualifier it adds is false, score it `contradicted`. Initial
+verification can be too lenient on exactly that shape.
 
-**A third correction was found later**, during round 2's own benchmark
-review, not at initial verification: `gemini-012` (Newton/Leibniz "exact
-same time") was originally kept `confirmed` on the reasoning that "most
-popular accounts use similarly loose framing" — overridden after all six
-systems tested in round 2 independently predicted `contradicted` against
-that ground truth. See `stress_test/results/BENCHMARK_ROUND2_REPORT.md`'s
-Erratum 3 and `claude/ANTI_CASSIOPEIA_COMPETITIVE_BENCHMARK_PROTOCOL.md`
-§3's qualifier rule this prompted — a real lesson that initial
-verification can still be too lenient on a claim whose core relationship
-is true but whose specific added qualifier isn't, even when applying
-real scrutiny the first time around.
+Final verdict distribution across the 102: confirmed 33, contradicted 54,
+undetermined 15 (14 calibration probes plus the open historical question
+above). The original pass gave confirmed 34 and contradicted 53, before the
+`gemini-012` correction.
 
-Final verdict distribution across all 102 (as of the original
-verification pass, before the later `gemini-012` correction): confirmed
-34, contradicted 53, undetermined 15 (14 calibration probes + the one
-genuinely open historical question above) — now confirmed 33,
-contradicted 54 after the correction above.
-
-Run through the real engine and all 5 competitors: see
+The claims were run through the engine and all 5 competitors; see
 `stress_test/results/BENCHMARK_ROUND2_REPORT.md`.

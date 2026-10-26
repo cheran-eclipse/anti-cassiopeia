@@ -70,6 +70,24 @@ Nothing in `anticassiopeia/` was touched — variants 3/4 import it read-only (v
 > 6 as describing `ml_data`/`fpga_embedded` claims only, not the full
 > domain mix the other six rows cover.**
 
+> **Correction (2026-10-26): 25 stale `air_quality.csv` labels.** Ground truth
+> for `air_quality.csv` claims was generated with the dataset's `-200`
+> missing-value marker counted as data, before the `quant` adapter was changed
+> to skip it. Recomputing with the independent oracle, 25 of the 872 file
+> claims in this sample change from confirmed to contradicted. The pipeline
+> run in this report used the old adapter and scores 100% against the old
+> labels and 97.1% against the corrected ones. Re-run with the current engine
+> against the corrected labels, it scores 100%. Code-exec drops from 99.1% to
+> 96.2% (it read the file literally), generic RAG moves from 34.3% to 34.7%,
+> and Tavily+Gemini from 11.0% to 11.4%. Bare Nebius and Perplexity are
+> unchanged. The tables below are left as originally run. Full old and
+> corrected numbers, the overlay of corrected labels and the method:
+> [`DOC_FED_CONTROL_REPORT.md`](DOC_FED_CONTROL_REPORT.md),
+> `corrected_labels_rescore.md`, and
+> `stress_test/claims/corrected_labels_overlay.jsonl`. The corrected labels
+> rest on the UCI convention that `-200` means missing; the claim text doesn't
+> state it.
+
 ## The comparison table
 
 Accuracy/dangerous/conservative are against the exact same ground truth as every other test in this project. Cost and latency are real, measured, per-claim figures — not estimated.

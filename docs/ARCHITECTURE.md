@@ -1,11 +1,11 @@
 # Architecture
 
-## The mechanism, in one sentence
+## The mechanism
 
-Take a narrow, checkable `Claim`, route it to the one `DomainAdapter` that
-knows how to gather real `Evidence` for it, and let one shared, centralized
-scoring rule in `VerificationEngine` decide the `Verdict` — `CONFIRMED`,
-`CONTRADICTED`, or `UNDETERMINED` — never anything smoother than that.
+A narrow, checkable `Claim` is routed to the one `DomainAdapter` that can
+gather `Evidence` for it. One shared scoring rule in `VerificationEngine`
+turns that evidence into a `Verdict`: `CONFIRMED`, `CONTRADICTED` or
+`UNDETERMINED`.
 
 ```
 Claim ──▶ VerificationEngine.verify()
@@ -22,1405 +22,1121 @@ Claim ──▶ VerificationEngine.verify()
 
 ## Why the domain split
 
-Four domains, one contract. Each domain's adapter is the only place that
-knows what "evidence" even means for that domain — a datasheet locator for
-substrate, a timing report for FPGA/embedded, a fetched source for
-web/research, a re-run computation for ML/data. None of that
-domain-specific knowledge leaks into the engine. The engine only ever sees
-`Evidence` objects with a `stance` and a `trust` weight already assigned —
-it doesn't know or care what a "datasheet" is.
-
-This is what makes the engine genuinely reusable as infrastructure: a
-fifth domain is a new `DomainAdapter` subclass, not a fork of the engine.
+Four domains share one contract. Each adapter is the only place that knows
+what "evidence" means for its domain: a datasheet locator for `substrate`,
+a timing report for `silicon`, a fetched source for `searchlight`, a re-run
+computation for `quant`. The engine only sees `Evidence` objects with a
+`stance` and a `trust` weight already assigned. A fifth domain is a new
+`DomainAdapter` subclass, not a fork of the engine.
 
 ## Why three states, not a probability
 
-A single confidence score invites exactly the failure mode the project is
-named against — a fabricated-but-fluent answer wearing a number that makes
-it look measured. Three discrete states, with `UNDETERMINED` as a first-
-class, frequently-correct answer (not a fallback for engine bugs), forces
-every integration built on top of this to actually handle "I don't know"
-rather than silently rounding it up to a guess.
+A single confidence score lets a fluent but fabricated answer carry a
+number that makes it look measured. Three discrete states, with
+`UNDETERMINED` as a normal and frequently correct answer rather than an
+error fallback, force every integration to handle "I don't know" instead of
+rounding it up to a guess.
 
-`Verdict.missing` exists so `UNDETERMINED` is never a dead end — it names,
-concretely, what evidence would resolve the claim, the same way a domain
-adapter should (see each adapter's `describe_gap()`).
+`Verdict.missing` names what evidence would resolve an `UNDETERMINED`
+claim. Each adapter's `describe_gap()` supplies it.
 
-**Display-only rename (v3):** the frontend shows `UNDETERMINED` as
-**CLOUDED** instead — purely cosmetic, so the three displayed states all
-start with C, matching this project's own name. The real
-`VerdictState.UNDETERMINED` enum value and the API's wire value
-(`"state": "undetermined"`) are UNCHANGED — this is a stable contract
-already live on the public demo, and breaking it just for branding would
-be exactly the kind of unstated, surprising change this project's own
-conventions exist to prevent. `docs/index.html`'s `displayStateLabel()`
-is the one place this translation happens; every other reference to
-`"undetermined"` in this codebase (the enum, every domain adapter, every
-test, CSS class names) is deliberately untouched.
+**Display rename (v3).** The frontend shows `UNDETERMINED` as **CLOUDED**
+so the three displayed states all start with C. The enum value and the API
+wire value (`"state": "undetermined"`) are unchanged, because the public
+demo depends on them. `docs/index.html`'s `displayStateLabel()` is the only
+place the translation happens.
 
-## Current status (bone framework)
+## Current status
 
 | Piece | Status |
 |---|---|
 | `core/verdict.py` | done |
 | `core/domain.py` | done |
-| `core/engine.py` | done — simple scoring, now redundancy-aware and confidence-capped |
-| `domains/substrate.py` | real, live-verified · 3/4 parts sourced, 4th confirmed-unratable · runs on Nemotron Ultra |
-| `domains/quant.py` | real, offline, tested · known gaps disclosed below |
-| `domains/silicon.py` | real, offline, tested · timing-summary + real SVD register-map |
-| `domains/searchlight.py` | real, two modes · Tavily primary search, DDG+Wikipedia fallback |
+| `core/engine.py` | done: simple scoring, redundancy-aware and confidence-capped |
+| `domains/substrate.py` | live-verified. 3 of 4 parts sourced (BlueROV2, Bar30, Bar100XT); QuSpin confirmed to have no rating. Runs on Nemotron Ultra |
+| `domains/quant.py` | offline, tested. Known gaps listed below |
+| `domains/silicon.py` | offline, tested. Timing summary and SVD register map |
+| `domains/searchlight.py` | two modes. Tavily primary search, DDG and Wikipedia fallback |
 | `llm/nebius_client.py` | live-verified Nebius Token Factory client |
-| `api/server.py` | done — auth + rate-limited |
-| `scripts/demo.py` | real end-to-end demo, 6 claims, all 4 domains |
-| `Dockerfile` | build-tested for real |
-| `.github/workflows/evals.yml` | written; CI run itself not observed |
-| `evals/` | 31 cases, all 4 domains, all passing (13 skip cleanly without a live key — see detail below) |
+| `api/server.py` | auth and rate limiting |
+| `scripts/demo.py` | end-to-end demo, 6 claims, all 4 domains |
+| `Dockerfile` | build-tested |
+| `.github/workflows/evals.yml` | written; no CI run observed |
+| `evals/` | 31 cases, all 4 domains, all passing (14 skip without a live key) |
 
-(Rewritten to short cells after an external review noted the table was
-unreadable at a skim — paragraph-length history per cell. Nothing above
-claims to be more finished than this table says; the full history behind
-each status, not shortened or dropped, moved to the per-piece sections
-below.)
+Each piece's history is in its section below.
 
-### `core/engine.py` detail
+### `core/engine.py`
 
-Deliberately simple trust-weighted sum against a fixed threshold
-(`DECISION_THRESHOLD`) — a bone, not a finished spine; see
-docs/DESIGN.md §3. Handles `contested` evidence (excluded from scoring,
-surfaced in reasoning). **Four fixes from an external review of this
-exact scoring rule:** (1) confidence reached a full 1.00 off a SINGLE
-piece of evidence regardless of that source's own `trust` value —
-`SINGLE_SOURCE_CONFIDENCE_CAP` now caps confidence below full certainty
-when only one source contributes; two or more independent sources are
-unaffected (genuine corroboration still reaches 1.00). (2) two
-near-identical pieces of evidence from the SAME source used to sum like
-two independent confirmations — `_redundancy_collapsed_weight()` now
-takes the single highest-trust piece per source before summing across
-distinct sources. (3) a source that returned an unusable (not
-`None`) answer used to vanish with no trace once another source alone
-was enough for a confident verdict — `DomainAdapter.describe_partial_gaps()`
-is now called unconditionally and appended to `Verdict.reasoning`
-regardless of final confidence (see `domains/substrate.py` for the first
-real override).
+Trust-weighted sum against a fixed threshold (`DECISION_THRESHOLD`). It is
+a simple first version; see `docs/DESIGN.md` §3. `contested` evidence is
+excluded from scoring and shown in the reasoning.
 
-**Item 19, time-decay (external review) — PARTIALLY implemented, not
-faked.** `Evidence.timestamp: datetime | None` plus `engine.py`'s
-`_decayed_trust()`/`_decay_all()` decay a piece of evidence's trust by
-its real age once it carries a real date, with a floor
-(`MIN_DECAY_FACTOR = 0.7`) chosen specifically so decay can never flip an
-existing single-source verdict from CONFIRMED/CONTRADICTED to
-UNDETERMINED purely from age (every current adapter's single-source
-trust is 0.9; `0.9 * 0.7 = 0.63 >= DECISION_THRESHOLD = 0.5`) — checked
-directly by `tests/test_engine.py::test_min_decay_factor_can_never_flip_an_existing_single_source_verdict`,
-and separately by re-running all 385 `silicon` claims in the full
-3,383-claim stress-test manifest against their recorded ground truth
-with decay now live: zero verdict flips. Wired into exactly ONE domain:
-`silicon.py`'s Vivado-report path, via a real, reliably-extractable
-`| Date : ...` header line present in all 9 real committed Vivado
-reports (absent from the two pre-existing synthetic fixtures, which
-correctly never decay; a third, newly-added synthetic fixture,
-`evals/fixtures/vivado_timing_report_dated_2016.rpt`, deliberately adds
-a date line specifically to exercise this mechanism in tests). NOT wired
-into: the SVD register path (CMSIS-SVD has no comparable real date
-field), `quant.py` (a re-computed statistic is always fresh at verify
-time — there is nothing to decay), or `substrate.py`/`searchlight.py`
-(no real, trustworthy per-evidence date source identified for either in
-this round) — left open and stated as such, not guessed at.
+**Three fixes from an external review of the scoring rule:**
+1. Confidence reached 1.00 from a single piece of evidence regardless of
+   its `trust`. `SINGLE_SOURCE_CONFIDENCE_CAP` now caps confidence below
+   full certainty when only one source contributes. Two or more independent
+   sources still reach 1.00.
+2. Two near-identical pieces of evidence from the same source summed like
+   two independent confirmations. `_redundancy_collapsed_weight()` now takes
+   the highest-trust piece per source before summing across sources.
+3. A source that returned an unusable (not `None`) answer vanished from the
+   verdict when another source alone was enough.
+   `DomainAdapter.describe_partial_gaps()` is now called unconditionally and
+   appended to `Verdict.reasoning` (first override in `domains/substrate.py`).
 
-### `domains/substrate.py` detail
+**Item 19, time decay: partially implemented.** `Evidence.timestamp` plus
+`_decayed_trust()` / `_decay_all()` in `engine.py` decay trust by evidence
+age when the evidence carries a date. The floor `MIN_DECAY_FACTOR = 0.7`
+keeps decay from flipping a single-source verdict to `UNDETERMINED` on age
+alone: every current adapter's single-source trust is 0.9, and
+`0.9 * 0.7 = 0.63 >= DECISION_THRESHOLD = 0.5`. This is checked by
+`tests/test_engine.py::test_min_decay_factor_can_never_flip_an_existing_single_source_verdict`
+and by re-running all 385 `silicon` claims in the 3,383-claim stress-test
+manifest with decay on: zero verdict flips.
 
-**Real retrieve + propose + verify, end to end, LIVE ROUND TRIP
-CONFIRMED** — chunking, BM25, a real `extract.propose()` call against
-`NebiusTokenFactoryClient`, and `verify_proposal()` all run for real over
-a partial corpus of Constellation-sourced excerpts; nothing hand-authored
-stands in for the model's answer anymore. Verified two ways: offline
-against a scripted fake client (17 tests) that reproduces the real
-`propose()`→`verify_proposal()` code path without a network call, AND
-against the genuine live API — both `test_live_*` tests in
-`tests/test_domains_substrate.py` PASS for real (confirmed evidence
-accepted for a corpus fact; honest "not found" for a fact genuinely
-absent from the shown passages, not a hallucination).
+Decay is wired into one domain: `silicon.py`'s Vivado-report path, using the
+`| Date : ...` header line present in all 9 committed Vivado reports. The
+two older synthetic fixtures have no date and never decay; a third,
+`evals/fixtures/vivado_timing_report_dated_2016.rpt`, has a date so tests
+can exercise decay. It is not wired into the SVD register path (CMSIS-SVD
+has no comparable date field), `quant.py` (a re-computed statistic is always
+fresh), or `substrate.py` / `searchlight.py` (no reliable per-evidence date
+source was found).
 
-**Earlier non-determinism (found, diagnosed, fixed, not papered over):**
-an early live run showed the structured `kind` field ("rated"/"tested"/
-null) coming back inconsistent across repeated identical calls (~4/8).
-Root cause was `retrieval/extract.py`'s prompt, not the model: it named
-the three allowed values with no explanation of what they mean, so a
-model correctly refused to assert a classification it was never told how
-to make. Fixed by naming the distinction in the prompt itself —
-re-verified at 8/8 and 6/6 across two different models. `kind == "rated"`
-was never loosened to force this green. Stance is **derived per claim**
-(depth + survives/fails polarity from `Claim.context` or a narrow text
-grammar; spec re-parsed from the verified quote; bar→depth conversion
-with a 5% too-close-to-call margin). Bar100XT/QuSpin return an honest
-gap, both unsourced in Constellation itself.
+### `domains/substrate.py`
 
-**Two more bugs found (by `stress_test/` Test #1, 2026-10-18) and fixed —
-see `stress_test/BUGS_FOUND.md` for full detail:** (1) a genuine-absence
-"not found" from `propose()` was accepted on the first try with no
-retry, so a transient/ambiguous miss could read as a real evidence gap;
-`_propose_with_retry()` now retries up to 3 attempts total but only on an
-actual `None` return, never on a real (even low-confidence) proposal —
-re-verified live, 30/30 reruns of the previously-dangerous "BlueROV2
-survives 200 m depth" claim resolve UNDETERMINED. (2) the dominant cause,
-found only after that first fix still failed a live rerun:
-`_RETRIEVAL_QUERIES["bluerov2"]["DOC1_BlueROV2"]` asked about "aluminum
-acrylic housing" at once, and DOC1 genuinely contains two different
-rated-depth lines (Acrylic: 100 m, Aluminum: 300 m) that a live model
-picked between near-randomly (~40% wrong-line rate over 20 trials) —
-retrying does not fix a wrong-but-real answer. Fixed by dropping
-"acrylic" from the query to disambiguate; re-verified live, 25/25 reruns
-retrieve the Aluminum/300 m line every time.
+Chunking, BM25, a live `extract.propose()` call against
+`NebiusTokenFactoryClient`, and `verify_proposal()` all run over a partial
+corpus of Constellation-sourced excerpts. Verified offline against a
+scripted fake client (17 tests) and against the live API: both `test_live_*`
+tests in `tests/test_domains_substrate.py` pass (evidence accepted for a
+corpus fact, and "not found" for a fact absent from the shown passages).
 
-**Phase B addendum (personal manual review, 2026-10-19): a real,
-live-caught fabrication, not just a scripted one.** Every prior
-"fabricated quote/value is rejected" test used a scripted fake client
-told to lie — proving the logic works, never that a real model has ever
-actually tried it. Found a live, reproducible case: asking `propose()` an
-adversarial unit-conversion question against DOC1's real (meters-only)
-text makes the model sometimes attach a `value`/`unit` (e.g. 984.25 ft)
-that its own verbatim quote (300 m) does not state — confirmed at ~7.5%
-across two independent 20-sample live batches. `_spec_depth_m()`
-discards every one observed; proven by a new test,
+**Non-determinism, fixed.** An early live run returned the `kind` field
+("rated" / "tested" / null) inconsistently across identical calls (about
+4/8). The cause was `retrieval/extract.py`'s prompt, which named the three
+values without saying what they mean. After the prompt was changed to
+explain the distinction, runs were consistent at 8/8 and 6/6 on two
+models. `kind == "rated"` was not loosened to get there.
+
+Stance is derived per claim: depth and survives/fails polarity come from
+`Claim.context` or a narrow text grammar, the spec is re-parsed from the
+verified quote, and bar is converted to depth with a 5% too-close-to-call
+margin. Bar100XT and QuSpin have their own sources, described below.
+
+**Two bugs found by `stress_test/` Test #1 (2026-10-18)**, detailed in
+`stress_test/BUGS_FOUND.md`:
+1. A "not found" from `propose()` was accepted on the first try with no
+   retry, so a transient miss could read as a real evidence gap.
+   `_propose_with_retry()` now makes up to 3 attempts, only on an actual
+   `None` return. 30/30 reruns of the previously dangerous "BlueROV2
+   survives 200 m depth" claim now resolve `UNDETERMINED`.
+2. The dominant cause, found after the first fix still failed a live rerun:
+   `_RETRIEVAL_QUERIES["bluerov2"]["DOC1_BlueROV2"]` asked about "aluminum
+   acrylic housing" at once, and DOC1 contains two rated-depth lines
+   (Acrylic: 100 m, Aluminum: 300 m) that a live model picked between
+   near-randomly (about 40% wrong-line rate over 20 trials). Retrying does
+   not fix a wrong but real answer. Dropping "acrylic" from the query fixed
+   it: 25/25 reruns retrieve the Aluminum / 300 m line.
+
+**Live fabrication caught (2026-10-19).** The earlier "fabricated quote or
+value is rejected" tests used a scripted fake client. A live, reproducible
+case exists: asking `propose()` an adversarial unit-conversion question
+against DOC1's meters-only text makes the model sometimes attach a
+`value`/`unit` (for example 984.25 ft) that its own verbatim quote (300 m)
+does not state. This occurred in about 7.5% of calls across two 20-sample
+batches. `_spec_depth_m()` discards every one observed, tested by
 `test_live_adversarial_unit_conversion_fabrication_is_caught_not_trusted`
-(50 live samples, skips rather than fails if a given run observes zero —
-this is probabilistic live behavior, not a deterministic contract).
+(50 live samples; it skips if a run observes none, since this is
+probabilistic).
 
-**Fourth-round fixes (external review — fails-open bug, and rated-vs-
-survives conflation):** (1) a source that returned something (an
-incomplete, ambiguous, or verification-rejected answer, not a clean
-`None`) used to `continue` with no trace at all — once another source
-alone was enough for a confident verdict, that source's failure
-vanished completely. `gather_evidence()` now records WHY every such case
-was skipped in `partial_gaps`, returned via the new
-`describe_partial_gaps()` override and surfaced in every verdict's
-reasoning regardless of confidence (see `core/engine.py`'s detail
-above). (2) the sourced facts here are manufacturer RATINGS, never an
-observed destructive test, regardless of whether a claim's verb is
-"survives"/"fails" or "is rated for" — this was documented in this
-module's own docstring but never stated in the verdict a caller actually
-reads. Every accepted piece of evidence's snippet now says so explicitly
-("checked against the manufacturer's RATED limit (not an observed
-destructive test)"), so a verdict can't be misread as a destructive-test
-result just because the claim's wording implied one. A real claim-type
-split (survives vs. is-rated-for as genuinely different checks) is not
-implemented: there is no destructive-test data in this project's corpus
-to check a "survives" claim against even if the two were split, so
-splitting them would only turn every "survives"-phrased claim into an
-UNDETERMINED with the same underlying rating evidence — stating the
-conflation plainly in every verdict is the honest fix available without
-new source data.
+**Fourth-round fixes (external review):**
+1. A source that returned something other than a clean `None` (incomplete,
+   ambiguous, or rejected by verification) used to `continue` silently, so
+   once another source was enough, the failure vanished.
+   `gather_evidence()` now records why each was skipped in `partial_gaps`,
+   returned through `describe_partial_gaps()` and shown in every verdict's
+   reasoning.
+2. The sourced facts are manufacturer ratings, not destructive tests,
+   whether the claim says "survives", "fails" or "is rated for". That was in
+   the module docstring but not in the verdict a caller reads. Every
+   accepted snippet now says "checked against the manufacturer's RATED limit
+   (not an observed destructive test)". Splitting "survives" from "is rated
+   for" would only turn every "survives" claim into `UNDETERMINED`, since
+   the corpus has no destructive-test data, so the fix is the explicit
+   statement.
 
-**Fifth-round addition (this session, 2026-10-24): Bar100XT sourced,
-QuSpin's absence confirmed, not assumed.** Fetched Blue Robotics' real,
-live BarXT product page (https://bluerobotics.com/?p=219055) — no
-separate PDF exists for this part; the page itself is the manufacturer's
-spec sheet. Real stated rating: 0-100 bar operating range (~995 m
-depth-equivalent via this project's existing seawater-density
-conversion). Now sourced as `DOC4_Bar100XT` in `_SOURCES`/
-`_RETRIEVAL_QUERIES`, same trust tier (0.85) as Bar30's chip datasheet,
-through the identical retrieve→propose→verify pipeline — live-verified
-the same way Bar30 was (`test_bar100xt_claim_produces_real_evidence_with_a_real_locator`,
-offline-fake-client; the project's standing live tests exercise the real
-API path the same way they already do for Bar30/BlueROV2). The
-destructive-limit figure the same page states (400 bar, under an
-explicit "highest pressure before permanent damage" footnote) is
-deliberately excluded from the corpus excerpt, same reasoning as Bar30's
-own exclusion — see `docs/extracted/constellation-robotics-seed.md` §3.
-Separately, also fetched QuSpin's real official QZFM Gen-3 page
-(https://quspin.com/qzfm-gen-3, confirmed: a blog post, not a formal
-datasheet, no PDF linked) and read the WHOLE page checking for any
-pressure/depth/submersion/waterproof/IP-rating wording — there is none
-at all. This CONFIRMS the previously-assumed hypothesis
-("QZFM Gen-3 has no submersion rating") as true, via a real checked
-source, but it's still not a number to compare a depth against, so a
-QuSpin depth claim correctly stays UNDETERMINED — `describe_gap()`'s
-QuSpin branch was rewritten to cite this real source and date instead of
-saying a datasheet still needs pulling. No corpus file was added for
-QuSpin: there's no numeric fact for the retrieve→propose→verify pipeline
-to route. See `docs/extracted/constellation-robotics-seed.md` §4.
+**Fifth round (2026-10-24): Bar100XT sourced, QuSpin's absence confirmed.**
+Blue Robotics' BarXT product page (https://bluerobotics.com/?p=219055) is
+the manufacturer's spec sheet; no separate PDF exists. It states a 0 to 100
+bar operating range (about 995 m depth-equivalent with the project's
+seawater-density conversion). It is sourced as `DOC4_Bar100XT` in
+`_SOURCES` / `_RETRIEVAL_QUERIES` at trust 0.85, the same as Bar30's chip
+datasheet, through the same retrieve, propose, verify pipeline
+(`test_bar100xt_claim_produces_real_evidence_with_a_real_locator`, with a
+fake client). The page also states a 400 bar figure under a "highest
+pressure before permanent damage" footnote; that is left out of the corpus
+excerpt, as with Bar30 (see `docs/extracted/constellation-robotics-seed.md` §3).
 
-### `domains/quant.py` detail
+QuSpin's official QZFM Gen-3 page (https://quspin.com/qzfm-gen-3) is a blog
+post with no datasheet. Reading the whole page for any pressure, depth,
+submersion, waterproof or IP-rating wording found none, which confirms the
+earlier assumption that QZFM Gen-3 has no submersion rating. It still gives
+no number to compare a depth against, so a QuSpin depth claim stays
+`UNDETERMINED`. The QuSpin branch of `describe_gap()` now cites this source
+and date. No corpus file was added because there is no numeric fact to
+route (see `docs/extracted/constellation-robotics-seed.md` §4).
 
-**Real, offline, tested, grown** — re-computes the claimed statistic
-from actual CSV(s) via stdlib `csv`+`statistics` only (no new dependency:
-`median()`/`quantiles()`/`correlation()` are all stdlib, `correlation`
-since Python 3.10, this project already requires >=3.11). Now:
-`median`/`p25`/`p75`/`correlation` alongside `mean`/`min`/`max`/`stdev`;
-multi-file datasets (`dataset_path` as a list, rows concatenated, a
-column missing from any one shard is a named mismatch); real
-AND-semantics compound claims (`"checks": [...]`) — CONFIRMED only if
-every sub-check holds, one genuine failure CONTRADICTS the whole claim
-(not averaged against the parts that held), a sub-check this adapter
-can't even evaluate makes it UNDETERMINED with that specific reason.
+### `domains/quant.py`
 
-**Bug fixed:** `stdev` (and now `p25`/`p75`/`correlation`) used to crash
-with an uncaught `StatisticsError` on too few data points —
-`_check_single()` now validates each stat's real minimum sample size.
-Confirmed via docs/DESIGN.md §5 that this adapter correctly stays outside
-`retrieval/` — there's no passage to search for, just a computation to
-run.
+Re-computes the claimed statistic from the CSV(s) using only stdlib `csv`
+and `statistics` (`median()`, `quantiles()` and `correlation()`; the project
+requires Python 3.11 or later). It supports `median`, `p25`, `p75` and
+`correlation` alongside `mean`, `min`, `max` and `stdev`. It reads
+multi-file datasets (`dataset_path` as a list, rows concatenated; a column
+missing from one shard is a named mismatch). Compound claims
+(`"checks": [...]`) use AND semantics: `CONFIRMED` only if every sub-check
+holds, one failure `CONTRADICTS` the whole claim, and a sub-check the
+adapter can't evaluate makes it `UNDETERMINED` with that reason. The
+adapter stays outside `retrieval/` (`docs/DESIGN.md` §5): there is no
+passage to search, only a computation to run.
 
-**Another bug found (by `stress_test/` Test #1, 2026-10-18) and fixed —
-see `stress_test/BUGS_FOUND.md`:** a real UCI dataset (`auto_mpg.csv`)
-spells a missing value as the literal string `"NaN"`, which `float("NaN")`
-parses successfully (it doesn't raise) instead of failing like a
-genuinely malformed cell — silently corrupting `mean`/`median`/`p25`/
-`p75`/`correlation` and crashing `stdev` outright. `_read_column()`/
-`_read_column_pair()` now also require `math.isfinite(value)` after the
-parse, treating non-finite the same as unparseable; re-verified against
-the real file (mean/median/p25/p75/stdev/correlation on `horsepower` all
-correct, no crash) plus a regression test proving clean data is
-unaffected.
+**Bug: too few data points.** `stdev`, `p25`, `p75` and `correlation`
+crashed with an uncaught `StatisticsError`. `_check_single()` now validates
+each statistic's minimum sample size.
 
-**Security fix (external review, 2026-10-19, two review passes): path
-traversal / arbitrary file read.** `dataset_path` went straight into
-`Path(...).open()` with no containment check — since `Claim.context` is
-caller-supplied verbatim from a POST /verify body, this was an arbitrary
-local file read (`/etc/passwd`, `.env`, source code — not just a
-wrong-CSV bug). Fixed: every path is resolved (defeats both `..`
-traversal AND symlink escapes — checked on the real resolved path, not
-the literal string) and must land inside `allowed_base_dirs` (default:
-`evals/fixtures/`, `stress_test/data/`; constructor-injectable, same DI
-pattern as `SubstrateAdapter(client=...)`). **Follow-up review fixes:**
-(1) a null byte in a path made `Path.resolve()` raise `ValueError`, not
-`OSError` — only the latter was caught, so this 500'd instead of a clean
-rejection; both are now caught in `_path_safety.py`. (2) a `dataset_path`
-list's elements weren't checked to actually be strings — `Path(123)`
-crashed; now validated explicitly. (3) the rejection message used to
-print the server's real, absolute allowed-directory paths — an
-information-disclosure leak of filesystem layout; the message now only
-ever echoes the caller's own (unresolved) input, never the server's real
-paths. All proven by dedicated regression tests, not just manual checks.
+**Bug found by Test #1 (2026-10-18)**, see `stress_test/BUGS_FOUND.md`. The
+UCI `auto_mpg.csv` spells a missing value as the string `"NaN"`.
+`float("NaN")` parses without raising, so it silently corrupted `mean`,
+`median`, `p25`, `p75` and `correlation`, and crashed `stdev`.
+`_read_column()` and `_read_column_pair()` now also require
+`math.isfinite(value)`. Re-verified on the real file (mean, median, p25,
+p75, stdev and correlation of `horsepower` all correct), plus a regression
+test showing clean data is unaffected.
 
-**Phase B addendum (personal manual review, 2026-10-19): percentile
-convention, stated explicitly.** `p25`/`p75` use
-`statistics.quantiles(..., method="exclusive")` (the default), which
-genuinely disagrees with numpy/pandas/Excel's own default (a
-linear-interpolation method) — a real product-trust risk affecting 300
-of 2,504 `quant` manifest claims, never stated anywhere a user would
-see it before. Now documented in this module's own docstring and in the
-manifest's own p25/p75 claim text. **Also found (same review): a
-display-precision bug in `stress_test/claims/generate_manifest.py`** —
-claim text rounded `expected_value` to a fixed 6 significant figures
-while the structured value kept full precision; for 41 of 2,185
-single-stat claims (30 labeled "confirmed") with very tight tolerances —
-not 2,504, a wording error caught on a second manual review (2026-10-21):
-the other ~320 quant claims (compound multi-check claims, two-shard
-combined-mean claims) use different text-generation code paths this
-specific bug never touched — the rounding error exceeded the tolerance,
-so the human-readable claim literally stated a different number than
-what was being verified — invisible to the real adapter (which never
-reads display text) but silently unfair to every baseline that only sees
-it. Fixed with a tolerance-aware formatter; verified zero remaining
-inconsistencies across the full manifest.
+**Security fix: path traversal and arbitrary file read (external review,
+2026-10-19, two passes).** `dataset_path` went straight to
+`Path(...).open()` with no containment check, and `Claim.context` comes
+verbatim from a `POST /verify` body. Every path is now resolved, which
+defeats both `..` traversal and symlink escapes (checked on the resolved
+path), and must land inside `allowed_base_dirs` (default `evals/fixtures/`
+and `stress_test/data/`; injectable in the constructor, like
+`SubstrateAdapter(client=...)`). Follow-up fixes:
+1. A null byte in a path made `Path.resolve()` raise `ValueError`, which was
+   not caught (only `OSError` was), producing a 500. `_path_safety.py` now
+   catches both.
+2. Elements of a `dataset_path` list weren't checked to be strings, so
+   `Path(123)` crashed. They are now validated.
+3. The rejection message printed the server's absolute allowed-directory
+   paths. It now only echoes the caller's own unresolved input.
 
-**FIXED (was "disclosed, not fixed" as of the second manual review,
-2026-10-21; actually fixed this pass): the `-200` missing-value
-sentinel.** `air_quality.csv`'s own UCI documentation defines `-200` as
-that dataset's missing-value marker across all its measurement columns;
-neither this adapter nor `stress_test/oracles/ml_data_oracle.py`
-implemented that convention — both treated `-200` as a literal real
-reading. Fixed in both (kept independent on purpose — the oracle
-duplicates the lookup table rather than importing it, since sharing code
-with the thing it's checking would defeat the point of an independent
-oracle) via a per-FILENAME sentinel lookup populated only from a real,
-cited source (`_DATASET_SENTINELS` in `quant.py`) — deliberately NOT a
-blanket "-200 is always missing" rule, confirmed by its own test
-(`test_minus_200_in_a_differently_named_file_is_not_treated_as_a_sentinel`):
-a `-200` in a file never documented to use that convention is still
-counted as a real, literal value.
+Each has a regression test.
 
-**Known follow-up, stated plainly, not silently left stale:** the
-stress-test manifest's ~212 `air_quality.csv` claims had their
-`expected_value`/ground truth generated BEFORE this fix (with the
-literal `-200` included in the computation). Regenerating those 212
-claims against the now-fixed oracle is real, separate work — not done
-in this pass — so running the full manifest against this adapter will
-show new mismatches on those specific claims that are the GROUND TRUTH
-being stale, not this adapter being wrong; see `stress_test/BUGS_FOUND.md`
-for the original finding this fixes.
+**Percentile convention (2026-10-19).** `p25` / `p75` use
+`statistics.quantiles(..., method="exclusive")`, the default, which differs
+from numpy, pandas and Excel's default (linear interpolation). This affects
+300 of 2,504 `quant` manifest claims and was not stated where a user would
+see it. It is now documented in the module docstring and in the manifest's
+p25/p75 claim text.
 
-### `domains/silicon.py` detail
+**Display-precision bug in `stress_test/claims/generate_manifest.py`.**
+Claim text rounded `expected_value` to 6 significant figures while the
+structured value kept full precision. For 41 of 2,185 single-stat claims
+(30 labeled "confirmed") with very tight tolerances, the rounding error
+exceeded the tolerance, so the claim text stated a different number from
+the one verified. The adapter never reads display text, so it was
+unaffected; baselines that see only the text were treated unfairly. (The
+count was first misreported as 2,504; corrected on a second review,
+2026-10-21, since the other ~320 claims use different text paths.) Fixed
+with a tolerance-aware formatter, and the full manifest was checked for
+remaining inconsistencies: zero.
 
-**Real, offline, tested, now against a REAL EDA tool format** — parses
-Xilinx/AMD Vivado's actual `report_timing_summary` output (Design Timing
-Summary: WNS/TNS/WHS/THS/WPWS/TPWS in Vivado's own fixed column order;
-Clock Summary: per-clock period/frequency, generated clocks indented
-under their source clock) instead of this adapter's previous invented
-`key: value` format. **Verified, not assumed:** the real column
-headers/table structure were copied from a real, fetched, open-source
-project's actual Vivado report (Elphel x393 — URL and fetch details in
-the module docstring), not guessed from memory. Now handles multi-corner
-reports via a `Corner: <NAME>` label line — stated explicitly as THIS
-ADAPTER'S OWN convention for concatenating several real per-corner
-blocks into one file, not itself copied from one official multi-corner
-sample (a real multi-corner `.sta.rpt` was found but sat behind a login
-wall that couldn't be gotten past).
+**Fixed: the `-200` missing-value sentinel.** UCI's documentation for
+`air_quality.csv` defines `-200` as the missing-value marker. Neither this
+adapter nor `stress_test/oracles/ml_data_oracle.py` handled it, so both
+treated `-200` as a reading. Both now apply a per-filename lookup
+(`_DATASET_SENTINELS` in `quant.py`) populated only from a cited source.
+The oracle keeps its own copy of the table, since sharing code with the
+thing it checks would defeat the point of an independent oracle. It is not
+a blanket rule: `test_minus_200_in_a_differently_named_file_is_not_treated_as_a_sentinel`
+confirms a `-200` in an undocumented file is still a value.
 
-**Register-map support landed this session (2026-10-24) — via a SECOND
-real file format, not forced into the first.** `report_timing_summary`
-still genuinely carries no register/address data at all (unchanged fact
-— `register_map_claim_undetermined.json` still proves that specific
-honest gap holds for a Vivado file). Register-map claims are instead
-routed to CMSIS-SVD (System View Description), a real, vendor-neutral
-XML register-map schema used across the embedded-systems industry —
-picked over a Xilinx/Vivado-specific export because no real Xilinx
-register-map sample was ever actually found/fetched (checked this
-session: searched for Xilinx IP-XACT `component.xml` examples, found
-only tooling docs and MathWorks material, nothing real and fetchable —
-see `silicon.py`'s module docstring), and SVD is the honestly
-generic choice for a domain meant to cover arbitrary submissions, not
-one vendor's toolchain. **Verified against two independently-sourced
-real files, not invented:** ARM's own CMSIS_5 `ARMCM4.svd` example
-(confirmed real but header-only, no peripherals — not usable as a
-register-data sample) and Espressif's officially published
-`svd/esp32c2.svd` (Apache-2.0, real peripherals with real addresses/
-offsets/bit layouts) — `evals/fixtures/esp32c2_register_map_excerpt.svd`
-keeps two complete, real, verbatim peripheral blocks (RNG, BB) from the
-latter, copied byte-for-byte, same "partial excerpt, real, not invented"
-convention `doc3_bar30_excerpt.txt` already uses. `_parse_svd_register_map()`
-scans the real one-tag-per-line SVD structure by nesting (peripheral→
-register→field), the same "known real format, position-based, not a
-generic XML tree walk" convention `_parse_report()` already uses for
-Vivado's tables — and tracks the exact source line number for every
-value it reads, so every register-map `Evidence.locator` points at a
-real, re-checkable line, not just a filename. New metrics:
-`peripheral_base_address`, `register_offset`, `register_size_bits`,
-`field_bit_offset`, `field_bit_width` — all STATIC facts an SVD actually
-states (never a runtime register's live contents, which no static file
-could honestly claim to know). Routed through entirely separate
-`_check_register`/`_gather_register_evidence` code paths from the
-Vivado timing logic (register claims have no "corner" concept at all);
-the SAME path-containment check (`is_path_within_allowed_dirs`) guards
-both. 15 new offline tests, all passing; see
-`evals/cases/silicon/svd_register_offset_confirmed.json` for a
-real end-to-end case.
+**Known follow-up.** About 212 `air_quality.csv` claims in the stress-test
+manifest had their `expected_value` and ground truth generated before this
+fix, with `-200` included. Running the full manifest now shows mismatches
+on those claims that come from stale ground truth, not from the adapter.
+The 25 such claims in the 1,000-claim Test #2 and #3 sample were relabelled on
+2026-10-26 with the independent oracle, in
+`stress_test/claims/corrected_labels_overlay.jsonl` (the manifest is not
+edited); see `stress_test/results/DOC_FED_CONTROL_REPORT.md`. The other
+air-quality claims in the full manifest are still stale. See
+`stress_test/BUGS_FOUND.md`.
 
-**Second manual review (2026-10-21): the same `:.6g` display-precision
-bug fixed in `quant.py`'s section above was never actually fixed here.**
-`stress_test/claims/generate_manifest.py`'s `_fpga_single()` displayed
-`expected_value` at a flat 6 significant figures, so its two
+### `domains/silicon.py`
+
+Parses Xilinx/AMD Vivado's `report_timing_summary` output: Design Timing
+Summary (WNS/TNS/WHS/THS/WPWS/TPWS in Vivado's fixed column order) and
+Clock Summary (per-clock period and frequency, generated clocks indented
+under their source). This replaced an earlier invented `key: value`
+format. The column headers and table structure were copied from a fetched
+open-source project's actual Vivado report (Elphel x393; URL and fetch
+details are in the module docstring), not written from memory.
+Multi-corner reports use a `Corner: <NAME>` label line. That is this
+adapter's own convention for concatenating per-corner blocks into one
+file; it was not copied from an official sample, because the one real
+multi-corner `.sta.rpt` found sat behind a login.
+
+**Register-map support (2026-10-24), via a second file format.**
+`report_timing_summary` carries no register or address data, and
+`register_map_claim_undetermined.json` still covers that gap for Vivado
+files. Register-map claims go to CMSIS-SVD (System View Description), a
+vendor-neutral XML register-map schema used across embedded systems. SVD
+was chosen over a Xilinx export because no Xilinx register-map sample could
+be found (a search for IP-XACT `component.xml` examples returned only
+tooling docs and MathWorks material; see `silicon.py`'s module docstring),
+and SVD suits a domain meant to cover arbitrary submissions.
+
+It was checked against two independently sourced files: ARM's CMSIS_5
+`ARMCM4.svd` (header only, no peripherals, so not usable as register data)
+and Espressif's published `svd/esp32c2.svd` (Apache-2.0, with real
+peripherals, addresses, offsets and bit layouts).
+`evals/fixtures/esp32c2_register_map_excerpt.svd` holds two complete
+peripheral blocks (RNG, BB) copied byte for byte from the latter, the same
+partial-excerpt convention `doc3_bar30_excerpt.txt` uses.
+
+`_parse_svd_register_map()` scans the one-tag-per-line SVD structure by
+nesting (peripheral, register, field), position-based like
+`_parse_report()` for Vivado's tables, and records the source line number of
+every value so each register-map `Evidence.locator` points at a checkable
+line. New metrics: `peripheral_base_address`, `register_offset`,
+`register_size_bits`, `field_bit_offset`, `field_bit_width`. These are
+static facts an SVD states, never a runtime register's contents. They go
+through `_check_register` / `_gather_register_evidence`, separate from the
+Vivado timing logic (register claims have no corner), and the same
+path-containment check (`is_path_within_allowed_dirs`) guards both. 15 new
+offline tests pass; `evals/cases/silicon/svd_register_offset_confirmed.json`
+is an end-to-end case.
+
+**Display-precision bug (second manual review, 2026-10-21).** The `:.6g`
+bug described under `quant.py` was still present here.
+`_fpga_single()` in `stress_test/claims/generate_manifest.py` displayed
+`expected_value` at 6 significant figures, so its two
 boundary-adversarial claims per metric per file (`== real+1e-6`,
-`>= real+1e-6`, both "contradicted") rounded right back to text that
-looked identical to the real, confirmed value — 28 claims stating the
-file's exact true value in text while being graded "contradicted" over
-an invisible 1e-6 offset. Fixed with the same tolerance-aware formatter,
-scoped to just these two call sites; regenerated and diffed: 0
-verdict/context diffs, 62 text diffs (28 confirmed genuinely fixed, 34 a
-harmless cosmetic sci-notation change).
+`>= real+1e-6`, both "contradicted") rounded to text identical to the true
+value. 28 claims stated the file's exact value while being graded
+"contradicted" over an invisible 1e-6 offset. The tolerance-aware formatter
+now covers these two call sites. Regenerated and diffed: 0 verdict or
+context diffs, 62 text diffs (28 fixed, 34 cosmetic scientific-notation
+changes).
 
-**Security fix (external review, 2026-10-19, two review passes): path
-traversal / arbitrary file read.** Same vulnerability and same fix as
-`quant.py`'s `dataset_path` above, including the follow-up null-byte
-and absolute-path-leak fixes — `report_path` now requires the resolved
-real path to land inside `allowed_base_dirs`, defeating `..` traversal
-and symlink escapes, with its own dedicated tests.
+**Security fix: path traversal and arbitrary file read (external review,
+2026-10-19, two passes).** Same issue and same fix as `quant.py`'s
+`dataset_path`, including the null-byte and path-leak follow-ups.
+`report_path` must resolve inside `allowed_base_dirs`, defeating `..`
+traversal and symlink escapes, with its own tests.
 
-### `domains/searchlight.py` detail
+### `domains/searchlight.py`
 
-**TWO modes, both real.** Mode 1 (unchanged): a pre-selected URL, fetched
-live, verbatim quote check. Evals/demo use a local fixture server
-(`evals/fixture_server.py`) so those verdicts can't rot; one separate
-live case against example.com (`live_example_com_drift`) accepts
-`contradicted` as a "page drifted" outcome. Mode 2 (**new**): genuine
-multi-candidate live research — no pre-selected URL, just a claim. Real
-keyless search (Wikipedia's API, confirmed working live; DuckDuckGo
-HTML, confirmed anti-bot-blocked from this dev sandbox — tried anyway,
-best-effort) finds candidate pages, which are fetched, chunked
-(`retrieval/chunking.py`), BM25-searched (one combined index, then
-grouped by source page so up to 3 distinct real sources are each
-independently checked — not just the single best-ranked chunk), run
-through the same live `extract.propose()` (`openai/gpt-oss-120b`)
-substrate.py uses, and independently `verify_proposal()`-checked. A real
-CONFIRMED, a real CONTRADICTED, and two differently-shaped real
-UNDETERMINED outcomes (no candidates found at all vs. candidates found
-but the fact genuinely absent) were each confirmed live, repeatedly, not
-assumed — see `evals/cases/searchlight/live_multi_candidate_*.json`.
-The stance (supports/contradicts) for mode 2 is a bounded LLM judgment on
-an ALREADY-mechanically-verified quote, not a new source of fabrication
-risk — two purely mechanical approaches (strict substring, token-overlap
-ratio) were tried first and both failed on real live tests (see module
-docstring).
+**Two modes.**
 
-**Near-duplicate guard:** checking multiple sources means two of them can
-be the same source in disguise (a mirror, a copy-pasted sentence) —
-`_is_near_duplicate_evidence()` (Jaccard token overlap >= 0.8) drops a
-second near-verbatim match before it ever reaches `core/engine.py`'s
-scoring, so a mirror can't be double-counted as independent confirmation;
-a genuinely differently-worded second source confirming the same fact
-still counts, proven by two offline tests against real local fixture
-pages (`test_multi_candidate_mirror_sources_count_as_one_not_two`,
-`test_multi_candidate_genuinely_different_sources_both_count`) —
-`core/engine.py` itself was not touched (its own, separate same-SOURCE
-redundancy fix is in the `core/engine.py` section above).
+Mode 1: a pre-selected URL is fetched and the quote is checked verbatim.
+Evals and the demo use a local fixture server (`evals/fixture_server.py`)
+so the verdicts can't change when a third-party page does. One live case
+against example.com (`live_example_com_drift`) accepts `contradicted` as a
+"page drifted" outcome.
 
-**Security fix (external review, 2026-10-19, two review passes): SSRF.**
-Both fetch sites previously fetched any url with zero validation — a
-claim could point this at cloud metadata (169.254.169.254) or an
-internal service. `_is_safe_to_fetch()` resolves the hostname and
-rejects it unless every resolved address is `ip.is_global` (fail-closed
-on resolution failure) before any network call; on by default.
-**Follow-up review fixes:** (1) the first version enumerated specific
-ranges to block and MISSED carrier-grade NAT (100.64.0.0/10) — replaced
-with `not ip.is_global`, strict-by-default rather than
-enumerate-what-to-block. (2) the first version checked only the ORIGINAL
-url and then fetched with `follow_redirects=True` — a real
-SSRF-via-redirect bypass, not hypothetical; `_safe_fetch()` now sets
-`follow_redirects=False` and manually re-checks `_is_safe_to_fetch()` on
-EVERY redirect hop, up to 3, before following it. (3) no response-size
-cap — `_safe_fetch()` now streams and truncates at 5 MiB. Proven by 7
-tests including one that simulates a real redirect-to-metadata-endpoint
-bypass attempt and one that proves the size cap actually truncates.
-**Third review pass, 4 more fixes:** (a) a malformed `Location` header
-(e.g. `"http://[::1"`) made `httpx.URL.join()` raise `httpx.InvalidURL`,
-which on httpx 0.28.1 is NOT an `httpx.HTTPError` subclass — neither
-caller caught it, an unhandled 500; now wrapped and converted to
-`_FetchRefused`. (b) a page truncated at the 5 MiB cap whose quote fell
-past the cut used to read as "not found" → a confident CONTRADICTS —
-mode 1 now downgrades this to an honest UNDETERMINED via a `truncated`
-flag threaded through `httpx.Response.extensions` (mode 2 was never
-affected — it never treats "not found in this chunk" as a contradiction
-at all). (c) httpx's own `timeout=` bounds only the gap between
-individual reads, not TOTAL time — a slow-trickle server could hold a
-connection open indefinitely while technically staying under that
-per-read limit; `_safe_fetch()` now wraps the whole multi-hop fetch in
-`asyncio.timeout()`, converted to `httpx.ReadTimeout` (already an
-`HTTPError` subclass) so neither caller needed a new except clause. All
-proven by tests, now 27 in this file. **Known, accepted gap, documented
-not fixed:** DNS rebinding — the hostname is resolved once for the
-safety check and again (independently) by httpx to connect; a rebinding
-attack could answer differently between the two. The real fix (connect
-directly to the validated IP, bypassing httpx's own resolution) is
-substantially more invasive; stated plainly in the module docstring as
-accepted risk, not silently handled. Only this project's own
-local-fixture tests opt out of the guard via `block_private_networks=False`,
-explicitly.
+Mode 2: multi-candidate research from a claim alone. Keyless search
+(Wikipedia's API, working; DuckDuckGo HTML, blocked as anti-bot from the dev
+sandbox but tried best-effort) finds candidate pages. These are fetched,
+chunked (`retrieval/chunking.py`) and BM25-searched with one combined index,
+then grouped by source page so up to 3 distinct sources are each checked,
+not just the top chunk. They go through the same live `extract.propose()`
+(`openai/gpt-oss-120b`) that `substrate.py` uses, then `verify_proposal()`.
+A `CONFIRMED`, a `CONTRADICTED`, and two kinds of `UNDETERMINED` (no
+candidates, and candidates found but the fact absent) were each confirmed
+live, repeatedly; see `evals/cases/searchlight/live_multi_candidate_*.json`.
+Stance (supports or contradicts) in mode 2 is a bounded LLM judgment on a
+quote that was already verified mechanically. Two purely mechanical
+approaches (strict substring, token-overlap ratio) were tried first and both
+failed on live tests (see the module docstring).
 
-**Phase B addendum (personal manual review, 2026-10-19): test
-hermeticity.** 7 of these tests used `https://example.com/...` as a
-stand-in "safe-looking" URL while testing something else entirely
-(block-page detection, the redirect/size-cap/InvalidURL/timeout fixes
-above) — but never stubbed DNS, so each one did a REAL network lookup of
-example.com before reaching its own mock. Fixed by faking DNS resolution
-for "example.com" specifically (to a real, fixed, globally-routable
-address, so `ip.is_global` still runs for real) rather than stubbing the
-safety check itself, which would have also defeated the redirect test's
-own real check of its unsafe second hop. Verified hermetic by running
-these 7 with real DNS resolution globally disabled (raises immediately
-if ever invoked) — all 7 still pass, in under a second.
+**Near-duplicate guard.** With several sources, two can be the same source
+(a mirror, a copied sentence). `_is_near_duplicate_evidence()` (Jaccard token
+overlap >= 0.8) drops a second near-verbatim match before scoring, so a
+mirror isn't counted as independent confirmation. A differently worded
+second source still counts. Both are tested against local fixture pages
+(`test_multi_candidate_mirror_sources_count_as_one_not_two`,
+`test_multi_candidate_genuinely_different_sources_both_count`).
+`core/engine.py` was not changed; its same-source redundancy fix is
+described above.
 
-**Tavily landed this session (2026-10-24) as the PRIMARY search backend**
-(resolves the "effectively Wikipedia-only" critique above) —
-`_tavily_search()` calls Tavily's real `/search` API (`TAVILY_API_KEY`
-in `.env`), a keyed search API built for feeding LLM pipelines, not a
-scraped HTML results page. DDG+Wikipedia are now a FALLBACK, tried only
-when Tavily returns zero URLs (missing key, a live failure, or a genuine
-zero-result query) — kept exactly as before so cloning this repo
-without a Tavily key still gets some real coverage. **Confirmed live to
-materially change real outcomes, not just added inertly:** the eval case
-for "BlueROV2 has a maximum operating time of 14 hours" used to resolve
-UNDETERMINED (no candidates at all — DDG blocked, no Wikipedia runtime
-figure) and now resolves CONTRADICTED, because Tavily surfaces a real
-Blue Robotics distributor page (sepcotech.com) stating a real run-time
-figure (~2-4 hours) that genuinely contradicts the claim — see
+**Security fix: SSRF (external review, 2026-10-19, three passes).** Both
+fetch sites fetched any URL without validation, so a claim could point at
+cloud metadata (169.254.169.254) or an internal service.
+`_is_safe_to_fetch()` resolves the hostname and rejects it unless every
+resolved address is `ip.is_global`, failing closed if resolution fails,
+before any network call. It is on by default.
+
+Second pass:
+1. The first version listed ranges to block and missed carrier-grade NAT
+   (100.64.0.0/10). It now uses `not ip.is_global`: strict by default
+   instead of listing what to block.
+2. The first version checked only the original URL and then fetched with
+   `follow_redirects=True`, which allowed SSRF through a redirect.
+   `_safe_fetch()` now sets `follow_redirects=False` and re-checks
+   `_is_safe_to_fetch()` on every redirect hop, up to 3.
+3. There was no response-size cap. `_safe_fetch()` now streams and truncates
+   at 5 MiB.
+
+Seven tests cover these, including one that simulates a redirect to the
+metadata endpoint and one that shows the size cap truncating.
+
+Third pass:
+1. A malformed `Location` header (for example `"http://[::1"`) made
+   `httpx.URL.join()` raise `httpx.InvalidURL`, which on httpx 0.28.1 is not
+   an `httpx.HTTPError` subclass. Neither caller caught it, giving a 500. It
+   is now wrapped and converted to `_FetchRefused`.
+2. When a page was truncated at the 5 MiB cap and the quote sat past the
+   cut, "not found" became a confident `CONTRADICTS`. Mode 1 now returns
+   `UNDETERMINED` through a `truncated` flag carried in
+   `httpx.Response.extensions`. Mode 2 was never affected, since it never
+   treats "not found in this chunk" as a contradiction.
+3. httpx's `timeout=` bounds the gap between reads, not total time, so a
+   slow-trickle server could hold a connection open. `_safe_fetch()` now
+   wraps the whole multi-hop fetch in `asyncio.timeout()` and converts it to
+   `httpx.ReadTimeout` (already an `HTTPError`), so neither caller needed a
+   new except clause.
+
+The file now has 27 tests.
+
+**Known and accepted gap: DNS rebinding.** The hostname is resolved once for
+the safety check and again by httpx to connect, so a rebinding attack could
+answer differently between the two. Connecting directly to the validated IP
+would fix it but is more invasive; the module docstring records it as an
+accepted risk. Only local-fixture tests turn the guard off, with
+`block_private_networks=False`.
+
+**Test hermeticity (personal manual review, 2026-10-19).** Seven tests used
+`https://example.com/...` as a stand-in safe-looking URL while testing
+something else (block-page detection, redirect, size cap, `InvalidURL`,
+timeout), but did not stub DNS, so each did a real lookup before reaching
+its mock. DNS for "example.com" is now faked to a fixed, globally routable
+address, so `ip.is_global` still runs. Stubbing the safety check itself
+would have defeated the redirect test's check of its unsafe second hop. All
+7 pass in under a second with real DNS resolution disabled.
+
+**Tavily as the primary search backend (2026-10-24).** `_tavily_search()`
+calls Tavily's `/search` API (`TAVILY_API_KEY` in `.env`), a keyed search
+API built for LLM pipelines. DDG and Wikipedia are a fallback, tried only
+when Tavily returns no URLs (missing key, a failure, or a query with no
+results), so a clone without a Tavily key still gets some coverage.
+
+It changed outcomes: the eval case "BlueROV2 has a maximum operating time of
+14 hours" used to resolve `UNDETERMINED` (DDG blocked, no Wikipedia run-time
+figure) and now resolves `CONTRADICTED`, because Tavily finds a Blue
+Robotics distributor page (sepcotech.com) stating a run time of about 2 to
+4 hours; see
 `evals/cases/searchlight/live_multi_candidate_contradicted_via_tavily_distributor_page.json`.
 A second case moved from "zero candidates" to "candidates found, fact
-absent" for the same reason (Tavily simply finds more than DDG+Wikipedia
-did) — both eval cases' notes were rewritten honestly rather than left
-stating a now-false "both backends return nothing" claim. 5 new offline
-tests (`_tavily_search`'s key-missing/success/non-200 paths, and the
-fallback-ordering logic) — all passing, no network call.
+absent". Both cases' notes were rewritten so they no longer say both
+backends return nothing. Five new offline tests cover `_tavily_search`'s
+missing-key, success and non-200 paths and the fallback ordering.
 
-### `llm/nebius_client.py` detail
+### `llm/nebius_client.py`
 
-**Fully live-verified.** Base URL **corrected**: was
-`https://api.studio.nebius.ai/v1` (wrong domain and TLD), now
-`https://api.tokenfactory.nebius.com/v1` — confirmed with a real
-`GET /v1/models` call (200, 28 models). Model **set to
-`openai/gpt-oss-120b`** on measured benchmark data (a related project's
-Nebius model-selection benchmark: 100% strict-JSON extraction, 100%
-JSON-valid, 100% overall on a 27x3 run, 0.95s latency, for an equivalent
-"extract structured values" stage) — not the original guess
-(`meta-llama/Meta-Llama-3.1-70B-Instruct`, which isn't in the live
-catalog at all) and not picked for branding fit. Confirmed for this
-account/endpoint specifically: live in the catalog, a real
-chat-completions round trip works, and repeated real `propose()` calls
-against this project's own corpus returned correct `chunk_id`+verbatim
-`quote` every time (8/8, then 6/6 on a second doc pair).
+**Base URL corrected.** It was `https://api.studio.nebius.ai/v1` (wrong
+domain and TLD) and is now `https://api.tokenfactory.nebius.com/v1`,
+confirmed by a `GET /v1/models` call (200, 28 models).
 
-**Three bugs found and fixed:** (1) `python-dotenv` was a declared
-dependency but `load_dotenv()` was never called anywhere, so a
-`.env`-only setup (the README's own documented flow) silently never
-loaded the key; (2) the first fix used `load_dotenv()`'s default
-`override=False`, which kept a stale already-exported shell value even
-after `.env` was edited with a freshly rotated key — switched to
-`override=True`; (3) `retrieval/extract.py`'s prompt named
-`"kind": "rated" or "tested" or null` with no explanation of what those
-values mean — see `domains/substrate.py`'s section for what that caused
-and how it was found. Now used for real by `domains/substrate.py`.
+**Model set to `openai/gpt-oss-120b`**, based on a related project's Nebius
+model-selection benchmark for an equivalent "extract structured values"
+stage: 100% strict-JSON extraction, 100% JSON-valid, 100% overall on a 27x3
+run, 0.95 s latency. The original guess,
+`meta-llama/Meta-Llama-3.1-70B-Instruct`, is not in the live catalog. For
+this account and endpoint, the model is in the catalog, a chat-completions
+round trip works, and repeated `propose()` calls on this project's corpus
+returned the correct `chunk_id` and verbatim `quote` every time (8/8, then
+6/6 on a second document pair).
 
-**Nemotron swap DONE** (Apps and Agents track requirement — at least one
-NVIDIA open model called in the real request path, not just mentioned):
-`domains/substrate.py` now explicitly requests `nvidia/Nemotron-3-Ultra-550b-a55b`
-(`SUBSTRATE_MODEL`, overriding `NEBIUS_MODEL`/.env) for every live
-`propose()` call — a real, live model in the request path, not a comment.
-`searchlight.py` is unchanged, still `openai/gpt-oss-120b`. This wasn't a
-blanket swap: it's the outcome of an honest before/after comparison
-across all three Nemotron tiers (Ultra/Super/Nano) plus a one-pilot look
-at a fourth (3.5 Lightning), on both domains, at two sample sizes, that
-found and fixed three real pipeline bugs along the way (no `max_tokens`
-cap, no quote-length guidance, no entity-matching check in the stance
-prompt) before trusting the comparison that produced them. Full
-methodology, every pilot's real numbers, the bugs found, and why
-`searchlight` deliberately stayed on the current default:
-[`stress_test/results/NEMOTRON_PIVOT_REPORT.md`](../stress_test/results/NEMOTRON_PIVOT_REPORT.md) —
-summarized in the README's own "How the model choice was made" section.
+**Three bugs fixed:**
+1. `python-dotenv` was a declared dependency but `load_dotenv()` was never
+   called, so a `.env`-only setup (the README's documented flow) never
+   loaded the key.
+2. The first fix used `load_dotenv()`'s default `override=False`, which kept
+   a stale exported shell value after `.env` was edited with a rotated key.
+   It now uses `override=True`.
+3. `retrieval/extract.py`'s prompt named `"kind": "rated" or "tested" or
+   null` without explaining the values; see `domains/substrate.py` for the
+   effect and how it was found.
 
-### `api/server.py` detail
+**Nemotron in the request path.** The Apps and Agents track requires at
+least one NVIDIA open model in the real request path. `domains/substrate.py`
+requests `nvidia/Nemotron-3-Ultra-550b-a55b` (`SUBSTRATE_MODEL`, overriding
+`NEBIUS_MODEL` and `.env`) for every live `propose()` call. `searchlight.py`
+stays on `openai/gpt-oss-120b`. The choice came from comparing three
+Nemotron tiers (Ultra, Super, Nano) and a one-pilot look at a fourth (3.5
+Lightning), on both domains at two sample sizes. That comparison found and
+fixed three pipeline bugs (no `max_tokens` cap, no quote-length guidance, no
+entity-matching check in the stance prompt) before its results were trusted.
+Methodology, pilot numbers and why `searchlight` stayed on the default:
+[`stress_test/results/NEMOTRON_PIVOT_REPORT.md`](../stress_test/results/NEMOTRON_PIVOT_REPORT.md),
+summarized in the README's "Models" section.
 
-Done, routes straight to the engine above. **Security fix (external
-review, 2026-10-19, two review passes):** `/verify` had no auth and no
-rate limiting at all despite being the Nebius-budget-burning endpoint.
-Fixed: a required `X-API-Key` header checked with
-`secrets.compare_digest` on bytes (constant-time), fail-closed (no
-`ANTICASSIOPEIA_API_KEY` configured means EVERY request is rejected, not
-"auth disabled"); a dependency-free in-memory token-bucket rate limit on
-`/verify`, plus a separate, stricter failed-auth throttle. `/health`/
-`/domains` stay open on purpose. **Follow-up review fixes:** (1)
-`secrets.compare_digest(str, str)` raises `TypeError` (a 500) for a
-non-ASCII header value — fixed by encoding both sides to bytes first.
-(2) the main rate limit was keyed on `request.client.host`, which
-collapses every caller behind a shared reverse-proxy IP into one bucket —
-rekeyed on the validated API key instead (honest caveat: with only one
-key currently supported, this is close to one global bucket today; the
-design pays off once/if multiple keys exist). (3) added a SEPARATE token
-bucket keyed by client IP specifically for failed auth attempts, so
-repeated wrong-key guesses get throttled (429) independently of the main
-limit. (4) `load_dotenv(override=True)` would let a stray `.env`
-silently out-rank a real platform-injected secret — switched to
-`override=False` for this file specifically (`nebius_client.py`'s own
-`override=True` is unchanged, a different deliberate fix for a different
-dev-workflow problem explained in its own docstring). A `.dockerignore`
-was also added (defense-in-depth — the current Dockerfile never `COPY`s
-`.env` anyway). **Third review pass, 1 more fix:** the bucket dicts added
-one entry per distinct API key / client IP forever with no eviction — a
-real memory-exhaustion DoS, cycling through many distinct keys/spoofed
-IPs. Fixed with a hard cap (`_MAX_TRACKED_BUCKETS`) plus idle-first
-eviction (`_BUCKET_IDLE_TTL_SECONDS`), checked right before a new entry
-would be added — proven to keep the dict bounded under a (monkeypatched,
-for the test) tiny cap, not just that the constants exist. All proven by
-10 tests. Honest limitation: both bucket types are per-process state, not
-shared across multiple uvicorn workers — documented, not silently
-assumed away.
+### `api/server.py`
 
-**Track/UI framing (external review, item 26): a confirmed, deliberate
-decision, not an implicit default.** This project deliberately ships no
-dedicated UI. The Apps and Agents track asks for "an app or agent you'd
-actually use," not a web frontend specifically — so the CLI
-(`scripts/demo.py`), the HTTP API above, and direct use as another
-agent's tool-use step are treated as three equally real surfaces over
-one shared engine, and effort went into making all three genuinely work
-rather than into a UI none of them need. See `README.md`'s opening
-paragraph for where this is stated to a reader first.
+Routes to the engine above. **Security fix (external review, 2026-10-19,
+three passes).** `/verify` had no auth or rate limiting, although it is the
+endpoint that spends Nebius budget. It now requires an `X-API-Key` header
+checked with `secrets.compare_digest` on bytes. It fails closed: with no
+`ANTICASSIOPEIA_API_KEY` configured, every request is rejected. There is an
+in-memory token-bucket rate limit on `/verify` with no dependencies, plus a
+separate, stricter failed-auth throttle. `/health` and `/domains` stay
+open.
 
-### `scripts/demo.py`, `Dockerfile`, CI, `evals/` detail
+Second pass:
+1. `secrets.compare_digest(str, str)` raises `TypeError` (a 500) for a
+   non-ASCII header value. Both sides are now encoded to bytes first.
+2. The main rate limit was keyed on `request.client.host`, which merges
+   every caller behind a shared reverse-proxy IP into one bucket. It is now
+   keyed on the validated API key. With only one key supported today, this
+   is close to one global bucket; it pays off once several keys exist.
+3. A separate token bucket keyed by client IP now throttles failed auth
+   attempts (429), independent of the main limit.
+4. `load_dotenv(override=True)` would let a stray `.env` outrank a
+   platform-injected secret, so this file uses `override=False`.
+   `nebius_client.py`'s `override=True` is unchanged, for a different
+   dev-workflow reason in its own docstring. A `.dockerignore` was also
+   added; the Dockerfile never copies `.env` anyway.
 
-`scripts/demo.py`: real end-to-end demo, 6 claims across all 4 domains,
-no mocked output. `Dockerfile`: **build-tested for real, just now, with
-the current code** — `docker build --no-cache` succeeds, the resulting
-container's `/health`, `/domains`, and a real `POST /verify` round trip
-(quant, a genuine `confirmed` verdict with real evidence) all verified
-against a running container, right before this line was written, not
-inherited from an earlier session's claim.
+Third pass: the bucket dicts added one entry per distinct API key or client
+IP forever, so cycling through many keys or spoofed IPs could exhaust
+memory. A hard cap (`_MAX_TRACKED_BUCKETS`) and idle-first eviction
+(`_BUCKET_IDLE_TTL_SECONDS`) are applied before a new entry is added. A test
+with a monkeypatched tiny cap shows the dict stays bounded. 10 tests cover
+all of this. Both bucket types are per-process state and are not shared
+across uvicorn workers.
 
-**FOUND BUG in the process of re-verifying this** (external review):
-the in-build `evals/run_evals.py` step had NO way to pass
-`NEBIUS_API_KEY`/`TAVILY_API_KEY` into the build (`.env` is deliberately
-not copied into the image — secrets don't belong baked into a layer),
-so every substrate case (always needs a live LLM call, no offline path
-exists) and every searchlight mode-2 case (`live_multi_candidate_*`)
-was silently resolving to the wrong verdict and FAILING the build, not
-skipping it — 9 failures, confirmed by actually running it. This
-pre-dated this session's Nemotron/Tavily work; it just took that work
-making those calls newly load-bearing to surface it. Fixed:
-`run_evals.py`'s `_needs_live_key()` now skips (not fails) any case that
-genuinely needs a live key when `NEBIUS_API_KEY` isn't set, the same
-distinction the pytest suite's own `_requires_live_key` marker already
-draws — re-verified: `docker build --no-cache` now reports
-`17 passed, 0 failed, 13 skipped (no NEBIUS_API_KEY), 30 total` and
-exits 0.
+**Surfaces and UI (external review, item 26).** The project originally
+shipped no dedicated UI. The Apps and Agents track asks for "an app or
+agent you'd actually use", so the CLI (`scripts/demo.py`), the HTTP API and
+use as another agent's tool-use step were treated as three surfaces over one
+engine. A static frontend was added in v2 (below); the other three remain.
 
-`.github/workflows/evals.yml`: written, mirrors the exact
-local commands already verified to work (`pip install -e .` +
-`python evals/run_evals.py`) — CI run itself not observed. `evals/`: 31
-cases across all 4 domains, all passing with a real key present
-(`PYTHONPATH=. python evals/run_evals.py`), live LLM/network calls
-included — substrate' live round trip confirmed stable after the
-`retrieval/extract.py` prompt fix; quant (+3: multi-file, compound
-confirmed, compound one-part-false contradicted) and silicon (+4:
-real-format confirmed/contradicted, two real multi-corner cases, one
-register-map honest gap) grew an earlier pass, both fully offline and
-deterministic; a later session added +1 substrate (Bar100XT confirmed +
-contradicted, replacing the old undetermined case — net +1 since one
-case was repurposed), +1 silicon (a real SVD register-map
-confirmed case, alongside the pre-existing honest-gap case), +1
-searchlight net (one case moved
-shape, one new contradicted-via-Tavily case added), and +1 substrate
-(QuSpin QZFM Gen-3's confirmed-no-rating finding, previously described
-only in `docs/extracted/constellation-robotics-seed.md` §4 and not
-locked in by a test) — see each adapter's own detail section above for
-what changed and why.
+### `scripts/demo.py`, `Dockerfile`, CI, `evals/`
 
-## Item 20: claim decomposition (external review, 2-hour-budgeted round)
+`scripts/demo.py` runs 6 claims across all 4 domains with no mocked output.
+For the `Dockerfile`, `docker build --no-cache` succeeds, and the resulting
+container's `/health`, `/domains` and a `POST /verify` round trip (`quant`,
+a `confirmed` verdict with evidence) were checked against the running
+container with the current code.
 
-**Built, real, tested:** `anticassiopeia/core/compound.py` —
-`decompose_claim()` (one LLM call splitting "A and B" into independent
-parts, each classified `substrate`/`searchlight`/`unsupported`;
-`unsupported` covers anything needing `quant`/`silicon`'s real
-file-path context, which decomposition explicitly refuses to fabricate),
-`rollup()` (pure AND-semantics: all-`CONFIRMED` parts → `CONFIRMED` at
-the MINIMUM confidence among them — the AND is only as sure as its
-weakest part; any `CONTRADICTED` part → `CONTRADICTED` at the MAXIMUM
-confidence among the contradicting parts — only one needs to be false;
-anything else → `UNDETERMINED`), and `verify_compound()` orchestrating
-both through the real, completely unmodified `VerificationEngine` and
-its real adapters — no engine/adapter code changed for this feature.
-19 tests in `tests/test_compound.py`: JSON-shape validation (well-formed,
-code-fenced, malformed, missing/empty fields), `rollup()`'s math against
-every state combination including the empty/all-unsupported edge cases,
-and `verify_compound()` end-to-end against a fake LLM client + a real
-`VerificationEngine` — confirms-all, contradicts-on-one-part, the
-`quant`-sub-claim-never-fabricated case, a non-compound single-part
-claim, and a dead decomposition call resolving `UNDETERMINED` rather
-than crashing.
+**Bug found while re-verifying (external review).** The in-build
+`evals/run_evals.py` step had no way to receive `NEBIUS_API_KEY` or
+`TAVILY_API_KEY` (`.env` is deliberately not copied into the image, so
+secrets aren't baked into a layer). Every `substrate` case (always needs a
+live LLM call) and every `searchlight` mode-2 case
+(`live_multi_candidate_*`) resolved to the wrong verdict and failed the
+build instead of skipping: 9 failures, confirmed by running it. It predated
+the Nemotron and Tavily work, which made those calls load-bearing.
+`run_evals.py`'s `_needs_live_key()` now skips any case that needs a live
+key when `NEBIUS_API_KEY` isn't set, the same distinction the pytest suite's
+`_requires_live_key` marker draws. `docker build --no-cache` now reports
+`17 passed, 0 failed, 13 skipped (no NEBIUS_API_KEY), 30 total` and exits 0.
 
-**Deliberately NOT built this round:** no `/verify/compound` HTTP
-endpoint — `server.py` does not import this module at all, so it is
-real, reachable Python (`from anticassiopeia.core.compound import
-verify_compound`) but not reachable over the network in this build. Per
-the task's own instruction (partial-but-reachable is worse than
-honestly-incomplete-and-documented): the core decompose→verify→rollup
-logic was finished and tested cleanly within budget; the endpoint itself
-— its own request/response schema, auth/rate-limit wiring consistent
-with `/verify` (a compound request is MORE expensive than a plain one:
-one decomposition call plus N sub-verifies, each potentially its own
-LLM call — the existing per-key bucket sizes were never evaluated against
-that), and its own endpoint-level tests — was left for a later round
-rather than wired in half-finished. `docs/DESIGN.md` §2 has the original
-design reasoning this followed.
+`.github/workflows/evals.yml` mirrors the local commands that were
+verified (`pip install -e .` and `python evals/run_evals.py`). No CI run has
+been observed.
 
-## v2: "bring your own evidence" — upload, substrate BYOE, project verify, frontend
+`evals/` has 31 cases across all 4 domains, all passing with a live key
+(`PYTHONPATH=. python evals/run_evals.py`), including live LLM and network
+calls. Growth by pass: `quant` +3 (multi-file, compound confirmed, compound
+one-part-false contradicted) and `silicon` +4 (real-format confirmed and
+contradicted, two multi-corner cases, one register-map gap), both offline
+and deterministic. A later session added `substrate` +1 (Bar100XT confirmed
+and contradicted replacing the old undetermined case, net +1), `silicon` +1
+(an SVD register-map confirmed case beside the existing gap case),
+`searchlight` +1 net (one case reshaped, one new contradicted-via-Tavily
+case), and `substrate` +1 (QuSpin QZFM Gen-3's confirmed no-rating finding,
+previously described only in `docs/extracted/constellation-robotics-seed.md`
+§4 and not covered by a test). Each adapter's section above says what
+changed and why.
 
-Built in three phases (2026-10-25), each committed and CI-green before
-the next started; full detail, including every test file and both
-deliberate live-call confirmations, is in each phase's own commit
-message (`git log --grep "v2 Phase"`).
+## Item 20: claim decomposition (external review, 2-hour round)
 
-**Phase 1 — `POST /upload` + `substrate.py`'s free-text BYOE path.**
-`anticassiopeia/retrieval/document_ingest.py` (`extract_text()`,
-format-dispatched: `.txt/.md/.csv/.rpt/.svd/.xml` as UTF-8, `.pdf` via
-`pypdf`, `.docx` via `python-docx`; a `DocumentIngestError` — never a
-silent empty string — on an unsupported extension or no extractable
-text, e.g. a scanned PDF with no text layer) and
-`anticassiopeia/api/upload_store.py` (a thread-safe, capped, 24h-TTL
-in-memory `UploadStore` keyed by an opaque `secrets.token_urlsafe`
-`document_id`) were present but UNTESTED and missing real dependency
-declarations going into this phase (see that commit's own "WIP, stopped
-mid-Phase-1" message) — fixed for real: `pypdf`/`python-docx`/
-`python-multipart` added to `pyproject.toml` pinned to the exact
-versions actually installed and tested (`python-docx`/`python-multipart`
-were missing from the environment entirely; the multipart one meant
-`/upload`'s own form-parsing would have failed at runtime).
-`anticassiopeia/retrieval/stance.py` was extracted out of
-`searchlight.py` (pure refactor, zero behavior change, proven by the
-existing searchlight suite staying green) so `substrate.py`'s new BYOE
-path and `searchlight.py`'s multi-candidate mode share one stance-
-judgment implementation instead of two that could drift.
-`substrate.py`'s `gather_evidence()`: when `Claim.context["document_text"]`
-is present (resolved from a caller's `document_id` by `server.py`'s
-`/verify` handler — `substrate.py` itself never imports the upload store,
-keeping the domain/api layering clean), it takes over ENTIRELY — real
-chunk → BM25 → propose → independently-reverify → judge-stance, the
-SAME shape `searchlight.py`'s multi-candidate mode already uses, minus
-the web-search step. Deliberately does NOT route through the depth-
-specific regex/bar-conversion parser even when `depth_m`/`polarity` are
-also present in context — an uploaded document can be about anything,
-not just a rated depth. No `document_text` → byte-for-byte the pre-v2
-fixed-corpus behavior (proven by the pre-existing 229-test baseline
-staying green throughout). 49 new offline tests (real `pypdf`-built
-PDFs and `python-docx`-built DOCX files, not mocks, for the ingestion
-module; `UploadStore`'s TTL/cap eviction; the BYOE path via a fake LLM
-client; `/upload`'s auth/rate-limit/size-cap/extension-allowlist and
-`/verify`'s `document_id` resolution/expiry) plus two deliberate live
-calls against the real Nebius API confirming the full pipeline in both
-directions (a true depth claim against an uploaded datasheet →
-CONFIRMED; a false one → CONTRADICTED).
+`anticassiopeia/core/compound.py` has three parts:
+- `decompose_claim()`: one LLM call that splits "A and B" into independent
+  parts, each classified `substrate`, `searchlight` or `unsupported`.
+  `unsupported` covers anything that would need `quant` or `silicon`'s
+  file-path context, which decomposition won't invent.
+- `rollup()`: pure AND semantics. All parts `CONFIRMED` gives `CONFIRMED`
+  at the minimum confidence among them (the AND is only as sure as its
+  weakest part). Any part `CONTRADICTED` gives `CONTRADICTED` at the
+  maximum confidence among the contradicting parts (one false part is
+  enough). Anything else gives `UNDETERMINED`.
+- `verify_compound()`: runs both through the unmodified
+  `VerificationEngine` and its adapters. No engine or adapter code changed.
 
-**Phase 2 — `POST /verify/project`.** A batch of claims, each optionally
-tied to a prior upload's `document_id`, deterministically routed to the
-right domain (`server.py`'s `_sniff_domain_for_document()`: extension
-first, `.xml`/`.rpt` cross-checked against real content markers already
-defined in `silicon.py` — `_SVD_DEVICE_TAG_RE`,
-`_DESIGN_TIMING_SUMMARY_HEADER_RE`, imported and reused, never
-reimplemented — so the one genuinely ambiguous extension isn't trusted
-blind; never an LLM guess about a format code can already determine).
-`quant.py`/`silicon.py` themselves are UNCHANGED — rather than
-teach their already-hardened, heavily-tested file-reading/line-locator
-code a second, raw-text code path, `server.py` writes a resolved
-document's real extracted text to a real file under a new, fixed,
-server-owned scratch directory (`var/project_scratch/`, gitignored),
-added to just those two adapters' `allowed_base_dirs` via
-`domains/__init__.py`'s new `default_domains(extra_allowed_base_dirs=...)`
-param (default `None` — zero behavior change for every other caller).
-Scoped to one request via a per-call `tempfile.mkdtemp()` subdirectory,
-deleted in a `finally` block right after — proven empirically (not just
-assumed) by a dedicated test asserting the scratch directory is empty
-again after the call. The endpoint fabricates nothing: the caller still
-supplies every structured field `quant`/`silicon` actually need
-(column/stat/expected_value, or peripheral/metric/comparator/
-expected_value) — this only ever auto-fills which real file a
-`document_id` corresponds to. One claim's own failure (bad/expired
-`document_id`, a domain with no defined way to consume a document) is a
-named per-claim `error`, never a whole-batch failure; the real per-claim
-`Verdict`s are rolled up via `core/compound.py`'s EXISTING `rollup()` —
-this endpoint never calls `decompose_claim()` at all (see that section
-above for why `DECOMPOSABLE_DOMAINS` is deliberately NOT loosened just
-because this endpoint exists). Its own rate-limit bucket (stricter than
-`/verify`'s — a project call can fan out into several live LLM calls)
-and a hard cap of 20 claims/call. 18 new offline tests (real CSV/SVD/
-Vivado-report fixture content through real `quant.py`/`silicon.py`
-computation against real scratch files; sniffing correctness including
-caller override; per-claim-vs-batch error isolation; scratch cleanup)
-plus one deliberate live end-to-end confirmation through the real app
-and the real Nebius API: a real CSV mean recomputation + a real Nemotron
-Ultra substrate BYOE verification, rolled up to a real `CONFIRMED`.
+19 tests in `tests/test_compound.py` cover JSON-shape validation
+(well-formed, code-fenced, malformed, missing or empty fields), `rollup()`
+for every state combination including empty and all-unsupported, and
+`verify_compound()` against a fake LLM client and a real
+`VerificationEngine`: confirms-all, contradicts-on-one-part, a `quant`
+sub-claim never invented, a single-part claim, and a failed decomposition
+call resolving `UNDETERMINED` instead of crashing.
 
-**Phase 3 — frontend rebuild.** `docs/index.html`'s visual theme was
-fully rewritten (clean Inter sans-serif chrome, monospace reserved for
-precision/data content only, a near-black navy background with two
-sparse neon accents — lime for CONFIRMED/highlights, cyan for primary
-actions — replacing the single blue-violet terminal theme a direct
-screenshot-comparison correction rejected) and extended with a Documents
-upload card and a Project-verify card (dynamic claim rows, each
-optionally tied to an uploaded document) wired to Phases 1-2's new
-endpoints, reusing the same error-handling conventions (401 fixed
-message, 429 real server detail + retry, network failure + retry) the
-single-claim flow already had. No browser tool was available to verify
-this visually in-session; verification used what was available instead
-of being skipped: `node --check` on the extracted script, and two real
-`jsdom` dry runs of the ACTUAL shipped file (real DOM, real event
-dispatch, a mocked `fetch()` returning the exact response shapes Phases
-1-2's own backend tests already proved correct) covering the success
-path (presets, single verify, project verify, mixed success/error
-per-claim rendering) and the error path (401/429+retry/network-failure+
-retry/a real `missing[]` payload) end to end. This process also caught a
-real gap by actually POSTing rather than trusting a CORS preflight's
-200: the LIVE Cloud Run deployment this frontend points at by default is
-still running the OLD `server.py` (`/verify/project` is a real 404
-there right now) — stated plainly in the README's "Frontend" section,
-not hidden. Redeploying is a real, billed action on the live GCP
-project, not something any CI step in this repo does automatically, and
-this session had no `gcloud` CLI available to do it even if that were
-appropriate to do unprompted.
+In this round there was no `/verify/compound` endpoint: `server.py` did not
+import the module, so `verify_compound` was reachable as Python
+(`from anticassiopeia.core.compound import verify_compound`) but not over
+HTTP. The endpoint needed its own request schema, auth and rate-limit
+wiring (a compound request costs more: one decomposition call plus N
+sub-verifies, and the existing bucket sizes had not been evaluated against
+that) and endpoint tests, so it was left for a later round. It shipped in
+v3 §1.2 below. `docs/DESIGN.md` §2 has the original design reasoning.
 
-## v3: closing the v2 gaps + multi-document pooled search
+## v2: bring your own evidence (upload, substrate BYOE, project verify, frontend)
 
-Built following `claude/ANTI_CASSIOPEIA_V2_MASTER_BUILD_PROMPT.md`'s
-successor spec (same verbatim-handoff convention), in the build order
-that spec itself locked, each step committed and offline-suite-green
-before the next started (`git log --grep "v3 §"`). All of §1.1/§2.1/
-§2.2/§2.3/§2.4/§1.3/§2.5/§1.2 shipped in this round — §1.2
-(`POST /verify/compound`) was built last, exactly as the spec's own
-build order placed it (the least-requested of the original gaps, the
-most expensive in live-LLM-call terms, and the one that benefited most
-from everything above being stable first), but nothing was actually
-dropped from this round's scope.
+Built in three phases (2026-10-25), each committed and CI-green before the
+next. Per-phase detail is in the commit messages (`git log --grep "v2 Phase"`).
 
-**§1.1 — plain `/verify` no longer silently no-ops on `quant`/
-`silicon` uploads.** Before this fix, `_resolve_document_context()`
-only ever injected `document_text`/`document_filename` — fields neither
-`quant.py` nor `silicon.py` ever reads — so uploading a CSV and
-then calling plain `/verify` with `domain=quant` and that `document_id`
-silently ignored the upload (an honest `UNDETERMINED` gap, never a wrong
-confident answer, but a real usability gap: the document picker did
-nothing for 2 of the 4 domains). Fixed by generalizing the same real-
-scratch-file translation `/verify/project` already did: the function
-gained a `domain` parameter and now branches three ways (`substrate` →
-inject text directly; `quant`/`silicon` → write a real scratch
-file under the SAME `_PROJECT_SCRATCH_DIR` `/verify/project` already
-uses, now shared rather than duplicated; anything else, most notably
-`searchlight` → a clean named 400, not a silent no-op). Lifecycle is
-different from the batch endpoint's per-request subdirectory: a single
-`/verify` call writes and deletes its own one file in a `finally` block
-right around `engine.verify()`. 6 new offline tests, including one
-proving cleanup happens even when the claim itself resolves to an honest
-gap, not just on the happy path.
+**Phase 1: `POST /upload` and `substrate.py`'s free-text BYOE path.**
+- `anticassiopeia/retrieval/document_ingest.py`: `extract_text()` dispatches
+  by format (`.txt`, `.md`, `.csv`, `.rpt`, `.svd`, `.xml` as UTF-8; `.pdf`
+  via `pypdf`; `.docx` via `python-docx`). An unsupported extension or no
+  extractable text (for example a scanned PDF) raises `DocumentIngestError`,
+  never an empty string.
+- `anticassiopeia/api/upload_store.py`: a thread-safe, capped, 24-hour-TTL
+  in-memory `UploadStore`, keyed by an opaque `secrets.token_urlsafe`
+  `document_id`.
+- Both modules were present but untested going into this phase, and
+  the dependencies were not declared (commit message: "WIP, stopped
+  mid-Phase-1"). `pypdf`, `python-docx` and `python-multipart` were added to
+  `pyproject.toml`, pinned to the versions tested. `python-docx` and
+  `python-multipart` were missing from the environment entirely; without the
+  latter, `/upload`'s form parsing would have failed at runtime.
+- `anticassiopeia/retrieval/stance.py` was extracted from `searchlight.py`
+  (a refactor with no behavior change, shown by the searchlight suite
+  staying green) so `substrate.py`'s BYOE path and `searchlight.py`'s
+  multi-candidate mode share one stance-judgment implementation.
+- `substrate.py`'s `gather_evidence()`: when `Claim.context["document_text"]`
+  is present (resolved from a `document_id` by `server.py`'s `/verify`
+  handler, so `substrate.py` never imports the upload store), it takes over
+  entirely: chunk, BM25, propose, re-verify, judge stance. This is the same
+  shape as `searchlight.py`'s multi-candidate mode without the web search.
+  It does not use the depth-specific regex and bar-conversion parser even
+  when `depth_m` or `polarity` are in context, because an uploaded document
+  can be about anything. With no `document_text`, behavior is identical to
+  the pre-v2 fixed corpus (the 229-test baseline stayed green throughout).
+- 49 new offline tests: `pypdf`-built PDFs and `python-docx`-built DOCX
+  files (not mocks) for ingestion, `UploadStore` TTL and cap eviction, the
+  BYOE path through a fake LLM client, and `/upload`'s auth, rate limit,
+  size cap and extension allowlist plus `/verify`'s `document_id`
+  resolution and expiry. Two live Nebius calls confirmed the pipeline in
+  both directions (a true depth claim against an uploaded datasheet gave
+  `CONFIRMED`, a false one `CONTRADICTED`).
 
-**§2.1 — ownership added to `UploadStore`.** Foundational for pooled
-search: without an owner concept, "search across my documents" would
-mean "search across every caller's documents" — a real scope violation
-the moment more than one caller shares this server, which the public
-demo key already risks (anyone who visits the hosted frontend shares
-it). `StoredDocument` gained a frozen `owner_key_hash: str` field (a
-SHA-256 hash of the uploading API key, never the raw key — defense in
-depth even though this never leaves process memory); `put()` takes it as
-a new required param; a new `list_for_owner()` returns one owner's own
-currently-valid uploads, most-recent first. `get()` by `document_id` is
-DELIBERATELY UNCHANGED in signature and behavior — every existing
-single-document flow (`substrate` BYOE, `/verify/project`'s per-claim
-`document_id`) keeps working exactly as before, regardless of who
-uploaded the document a valid id happens to reference. Honest limitation
-stated in the module docstring: under the shared public demo key
-specifically, "your pool" really means "every demo-key visitor's
-uploads, pooled together" — expected for a shared sandbox, not real
-per-caller isolation; a caller's own real key gets genuine isolation. 5
-new ownership-isolation tests (including: key A's list never contains
-key B's documents; expired documents are excluded; direct `get()` is
-unaffected).
+**Phase 2: `POST /verify/project`.** A batch of claims, each optionally
+tied to an earlier upload's `document_id`, routed to a domain by
+`server.py`'s `_sniff_domain_for_document()`: extension first, with `.xml`
+and `.rpt` cross-checked against content markers from `silicon.py`
+(`_SVD_DEVICE_TAG_RE`, `_DESIGN_TIMING_SUMMARY_HEADER_RE`, imported and not
+reimplemented). Code determines the format, never an LLM.
 
-**§2.2 — `GET /documents`.** Lists the calling key's own currently-valid
-uploads (id, filename, size_bytes, and `seconds_until_expiry` — NOT a raw
-`uploaded_at`, because `StoredDocument.uploaded_at` is
-`time.monotonic()`-based with no wall-clock meaning on its own; handing
-it back verbatim would be a meaningless number, so this endpoint returns
-the actually-useful derived quantity instead). Reuses `/verify`'s own
-rate-limit bucket rather than getting a dedicated one like `/upload`/
-`/verify/project`/pooled search's resolution did — this is a cheap
-in-memory dict scan, not real disk I/O or live-LLM fan-out, so it didn't
-earn the stricter, separate-bucket treatment those did. 6 new tests,
-including one proving the bucket-sharing itself (hammering `/documents`
-trips the same budget `/verify` uses).
+`quant.py` and `silicon.py` are unchanged. Rather than add a raw-text path
+to their tested file-reading and line-locator code, `server.py` writes the
+document's extracted text to a file in a fixed, server-owned scratch
+directory (`var/project_scratch/`, gitignored), added to those two
+adapters' `allowed_base_dirs` through `default_domains(extra_allowed_base_dirs=...)`
+(default `None`, so no change for other callers). Each request uses its own
+`tempfile.mkdtemp()` subdirectory, deleted in a `finally` block; a test
+asserts the directory is empty after the call.
 
-**§2.3 — multi-document pooled search, the core new feature.** New
-`context.document_pool = true` (mutually exclusive with `document_id`;
-substrate-only — `quant`/`silicon` need one exact structured file
-per claim, "which of several CSVs has this column" is a different,
-harder, out-of-scope feature; `searchlight` has no document-consuming
-mode at all). `server.py` resolves the pool via
-`upload_store.list_for_owner()`, caps it at `_MAX_POOL_DOCUMENTS` (10,
-most recent), and hands `substrate.py` the already-resolved `(filename,
-text)` pairs plus the real total-available count via two context
-fields — `substrate.py` itself still never imports `UploadStore` (same
-clean domain/api layering `document_text` already established).
-`substrate.py`'s new `_gather_byoe_pool()` builds ONE combined BM25 index
-across every pooled document's chunks, namespaced by POOL INDEX
-(`doc0`, `doc1`, ...) rather than filename — two of a caller's uploads
-can share a filename (e.g. two different uploads both named
-`spec.txt`), and a shared chunk-id prefix would silently collide entries
-in the combined `chunks_by_id` dict; a parallel `doc_tag -> filename`
-map is kept so the final `Evidence.source` still names the REAL
-originating document, never a generic "pool" placeholder. Still exactly
-ONE `propose()` call and ONE `judge_stance()` call per claim, same as
-single-document BYOE — confirmed in testing, and stated here per this
-project's own budget-discipline convention: only the local (free) BM25
-corpus grows, never the live-call count. When a caller has more uploads
-than fit under the cap, that truncation is named in the verdict's own
-`reasoning` UNCONDITIONALLY — even on an otherwise-confirmed claim — via
-the same `describe_partial_gaps()`/`reasoning` mechanism the rest of
-`substrate.py` already uses for "a source was expected but something
-about it didn't pan out." 11 new offline adapter tests (including the
-filename-disambiguation case, the truncation-is-always-named case, and
-the same ODrive-heading entity-ambiguity fix from the v2 stress test,
-re-applied here since pooled search shares the same risk) plus 6 new
-server-layer tests proving the ownership scoping actually holds end to
-end over real HTTP.
+The endpoint invents nothing: the caller still supplies every structured
+field `quant` and `silicon` need (column, stat and expected value, or
+peripheral, metric, comparator and expected value); it only fills in which
+file a `document_id` refers to. One claim's failure (a bad or expired
+`document_id`, a domain that can't consume a document) is a per-claim
+`error`, not a whole-batch failure. Verdicts are rolled up with the existing
+`rollup()`; the endpoint never calls `decompose_claim()` (see Item 20 for why
+`DECOMPOSABLE_DOMAINS` is not widened). It has its own rate-limit bucket,
+stricter than `/verify`'s since one call can fan out into several live LLM
+calls, and a cap of 20 claims per call. 18 new offline tests use CSV, SVD
+and Vivado fixtures through the real `quant.py` and `silicon.py` against
+real scratch files, and cover sniffing (including caller override),
+per-claim versus batch error isolation, and scratch cleanup. One live
+end-to-end run through the real app and Nebius API recomputed a CSV mean and
+ran a Nemotron Ultra substrate BYOE check, and the two rolled up to
+`CONFIRMED`.
 
-**§2.4 — `/verify/project` gets the same `document_pool` option.** A
-`ProjectClaimRequest` entry can set `document_pool: true` instead of
-`document_id`, using the identical resolution §2.3 added — so one
-project batch can mix claims pinned to a specific document with claims
-that search the caller's whole pool. One deliberate deviation from the
-spec's literal wording, stated here rather than silently done: a
-`document_id`+`document_pool` conflict on one claim inside a batch is a
-PER-CLAIM error, not the whole-request 400 plain `/verify` uses for the
-identical conflict — plain `/verify` has only one claim, so request-
-level and claim-level are the same thing there, but a batch's own
-established principle ("one bad claim must not abort every other claim
-in the same batch," stated in `_run_one_project_claim`'s own docstring
-since v2) takes precedence for a multi-claim call. An omitted `domain`
-on a pool claim defaults directly to `"substrate"` (no document to sniff
-a domain FROM, and pooled search is substrate-only anyway, so that
-default is never wrong). 6 new tests, including the actual point of this
-section: one project call mixing a `document_id`-pinned `quant` claim
-with a `document_pool` substrate claim in the same batch, both resolving
-correctly.
+**Phase 3: frontend rebuild.** `docs/index.html`'s theme was rewritten:
+Inter sans-serif for the interface, monospace only for data, a near-black
+navy background with two accents (lime for `CONFIRMED` and highlights, cyan
+for primary actions). This replaced a single blue-violet terminal theme that
+a screenshot comparison rejected. It gained a Documents upload card and a
+Project-verify card (claim rows, each optionally tied to an uploaded
+document) wired to the Phase 1 and 2 endpoints, with the same error
+handling as the single-claim flow (a fixed message on 401, the server's
+detail plus retry on 429, retry on network failure).
 
-**§1.3 — multi-instance deployment caveat (docs only, no code).** The
-README's "Running the live API" section now states plainly that every
-piece of this project's own in-memory state (rate-limit buckets,
-`UploadStore`, pooled-search ownership lookups) is per-process, and
-recommends `gcloud run deploy --max-instances=1` for exactly that reason
-— naming the concrete failure mode (a document uploaded to instance A,
-referenced from a later call routed to instance B, giving a false
-"unknown or expired" or an emptier-than-real pool) rather than leaving it
-implicit. A real shared-state fix (Redis, Firestore, etc.) stays out of
-scope for this project's timeline and budget, same as it was when v2
-first stated this limitation — restated here because pooled search adds
-a second, related failure mode (an incomplete-looking pool) on top of
-v2's original one (a falsely-expired `document_id`).
+No browser tool was available, so verification used `node --check` on the
+extracted script and two `jsdom` runs of the shipped file (real DOM and
+events, a mocked `fetch()` returning the response shapes the backend tests
+had proven), covering the success path (presets, single verify, project
+verify, mixed success and error rows) and the error path (401, 429 with
+retry, network failure with retry, a `missing[]` payload). That process also
+found a gap that a CORS preflight's 200 had hidden: the live Cloud Run
+deployment was still running the old `server.py`, so `/verify/project` was a
+404 there (noted in the README's Frontend section at the time). Redeploying
+is a billed action on the live GCP project that no CI step performs, and
+the session had no `gcloud` CLI.
 
-**§2.5 — frontend: 3-way document choice.** Both the single-claim
-panel's document dropdown and each project-verify claim row's document
-dropdown gained a 3rd option, "🔍 Search all uploaded documents (substrate
-only)", alongside the existing "none" / "one specific document" choices.
-Selecting it sends `context.document_pool = true` instead of
-`document_id` — a sentinel `<select>` value (`__search_all__`, distinct
-from any real `document_id`, which are `secrets.token_urlsafe(32)` and
-far longer) drives this in `runVerification()`/`runProjectVerification()`.
-The evidence card's existing source display needed no change — it
-already renders `Evidence.source` generically, which
-`_gather_byoe_pool()` already resolves to the real originating filename,
-never a placeholder. Verified with `node --check` on the extracted
-script plus a real `jsdom` dry run of the actual shipped file (mocked
-`fetch()`, real DOM/event dispatch) proving both panels send
-`document_pool: true` with no `document_id` present when the new option
-is selected — same verification standard v2's own frontend rebuild used,
-no browser tool being available in-session either time.
+## v3: closing the v2 gaps and multi-document pooled search
 
-**§1.2 — `POST /verify/compound`, built LAST as the spec's own build
-order required** (the least-requested of the three original gaps, the
-most expensive in live-LLM-call terms — one decompose call plus up to
-`_MAX_SUBCLAIMS` verify calls from a single request — and the one that
-benefited most from everything above being proven first). Makes
-`core/compound.py`'s `decompose_claim()`/`rollup()` (item 20, library-
-only until now) reachable over HTTP by calling those real pieces
-directly against the module-level `engine`, rather than through
-`verify_compound()` as one atomic call — `verify_compound()` has no cap
-on decomposed sub-claim count, and verifying every part before checking
-a cap would waste exactly the live calls the cap exists to bound, so the
-cap (`_MAX_SUBCLAIMS = 8`, a clear `422` above it, never a silent
-truncation) is checked between decompose and verify instead. Its own
-request model, `CompoundVerifyRequest`, deliberately has NO `domain`
-field at all — `decompose_claim()` classifies each sub-claim into its
-own domain itself, so a top-level domain would be meaningless and always
-ignored, and this project's own convention is to never accept a field
-that would just be silently ignored. Rejects (400) any request whose
-`context` contains `document_id` OR `document_pool` — broader than the
-spec's own literal text, which named only `document_id`; `document_pool`
-(§2.3) didn't change the underlying reason at all (an LLM-invented
-sub-claim has no way to know which uploaded document, or pool, it would
-even correspond to), so both are rejected for the same stated reason.
-Its own rate-limit bucket, stricter than `/verify/project`'s (one call
-every 20s, burst of 2) given the larger potential fan-out. Its own LLM
-client (`_compound_client`), constructed eagerly but safely at import
-time — `NebiusTokenFactoryClient()` only reads env vars, no network
-call, same "error surfaces per-call, not at construction time" pattern
-`substrate.py`'s own `__init__` already established, giving a clean `503`
-rather than an import-time crash when `NEBIUS_API_KEY` isn't set. 11 new
-offline tests, all against a fake decompose client and fixed-evidence
-fake domain adapters — no live Nebius call needed, including one that
-proves the cap-before-verify ordering directly (a capturing adapter
-asserting zero calls when decomposition blows past the cap).
+Built in the order the v3 spec set, each step committed and
+offline-suite-green before the next (`git log --grep "v3 §"`). §1.1, §2.1,
+§2.2, §2.3, §2.4, §1.3, §2.5 and §1.2 all shipped. §1.2
+(`POST /verify/compound`) was built last: it was the least requested, the
+most expensive in live LLM calls, and the one that gained most from
+everything else being stable.
 
-## Post-v3: opt-in per-verdict summary + the "three C's" display rename
+**§1.1: plain `/verify` no longer silently ignores `quant` and `silicon`
+uploads.** `_resolve_document_context()` only injected
+`document_text` and `document_filename`, which neither `quant.py` nor
+`silicon.py` reads. Uploading a CSV and calling `/verify` with
+`domain=quant` and its `document_id` therefore ignored the upload: an
+`UNDETERMINED` gap, never a wrong confident answer, but the document picker
+did nothing for 2 of the 4 domains. The function now takes a `domain`
+parameter and branches three ways: `substrate` injects text directly;
+`quant` and `silicon` write a scratch file under the same
+`_PROJECT_SCRATCH_DIR` that `/verify/project` uses (now shared); anything
+else, notably `searchlight`, returns a named 400. A single `/verify` call
+writes and deletes its own file in a `finally` block around
+`engine.verify()`, unlike the batch endpoint's per-request subdirectory. 6
+new offline tests, including one showing cleanup happens when the claim
+resolves to a gap.
 
-Two small additions requested directly by the project owner after the
-v3 round above shipped, each resolved as a deliberate scope/identity
-decision (both confirmed with the project owner before implementation,
-not assumed):
+**§2.1: ownership in `UploadStore`.** Pooled search needs an owner concept.
+Without one, "search across my documents" would search every caller's
+documents, which matters once callers share a server (the public demo key
+already does). `StoredDocument` gained a frozen `owner_key_hash: str` (a
+SHA-256 hash of the uploading API key, never the raw key); `put()` takes it
+as a new required parameter, and `list_for_owner()` returns one owner's
+valid uploads, most recent first. `get()` by `document_id` is unchanged, so
+single-document flows (`substrate` BYOE, `/verify/project`'s per-claim
+`document_id`) work as before whoever uploaded the document. Limitation
+stated in the module docstring: under the shared demo key, "your pool"
+means every demo-key visitor's uploads. A caller's own key gets real
+isolation. 5 new tests: key A's list never contains key B's documents,
+expired documents are excluded, and direct `get()` is unaffected.
 
-**Display-only rename, not a wire-format change.** The project owner
-asked why the third state doesn't also start with C (to match
-CONFIRMED/CONTRADICTED and this project's own name). Confirmed scope:
-the actual `VerdictState.UNDETERMINED` enum value and the API's wire
-value stay exactly `"undetermined"` — a stable public contract already
-live on the Cloud Run demo, never broken just for branding (the full
-breaking-rename alternative was offered and declined). `docs/index.html`
-gained one function, `displayStateLabel()`, that maps `"undetermined"` →
-`"clouded"` for display text ONLY — CSS classes (`.state-badge.undetermined`,
-`.verdict-card.undetermined`) stay keyed on the real state string, so
-styling needed zero changes. Confirmed via a real `jsdom` dry run of the
-shipped file: the badge's CSS class is still `undetermined`, its visible
-text is `clouded`.
+**§2.2: `GET /documents`.** Lists the calling key's valid uploads: id,
+filename, size_bytes and `seconds_until_expiry`. It returns the derived
+expiry instead of `uploaded_at` because `StoredDocument.uploaded_at` is
+`time.monotonic()`-based and meaningless as a raw value. It shares
+`/verify`'s rate-limit bucket instead of getting its own, since it is an
+in-memory scan with no disk I/O or live LLM calls. 6 new tests, including
+one showing the shared budget (hammering `/documents` trips the `/verify`
+limit).
 
-**Opt-in per-verdict summary (`context.include_summary=true`).** The
-project owner asked for a small generated insight/summary after a
-verify call. The real trade-off, surfaced and confirmed before writing
-any code: an always-on summary would add a brand-new, additional live
-LLM call to `quant`/`silicon`, which today make ZERO live calls
-— a real, new budget line this project's own $20-cap discipline has
-tracked carefully throughout. Confirmed scope: opt-in via a context
-flag, off by default everywhere, applying uniformly across all four
-domains when a caller does opt in (the caller is explicitly accepting
-that one call's cost, so no domain-specific carve-out is needed once
-asked for). Implementation: a new `_summary_client` (same safe,
-import-time-but-never-crashing construction as `_compound_client`
-above) and `_generate_summary()`, called in `/verify`'s handler AFTER
-the real verdict is already fully computed — a summary failure (client
-unavailable, a dead live call) is caught and reported as a separate,
-named `summary_error` field, and NEVER affects the real verdict already
-being returned regardless. The system prompt explicitly instructs the
-model that it is commentary on an already-made decision, not a new
-source of evidence: it must never introduce a fact/number/claim absent
-from the real evidence/reasoning it's given, and never soften or
-contradict the given state. 5 new offline tests (a fake summary client,
-monkeypatched in) covering: absent by default, present when opted in,
-a generation failure never failing the real verdict, an unavailable
-client producing a named error rather than a crash, and the specific
-point of the design — `quant` (otherwise LLM-free) successfully
-getting a summary when asked.
+**§2.3: multi-document pooled search.** New `context.document_pool = true`,
+exclusive with `document_id` and `substrate` only (`quant` and `silicon`
+need one exact structured file per claim, and "which of several CSVs has
+this column" is a different problem; `searchlight` has no document mode).
+`server.py` resolves the pool with `upload_store.list_for_owner()`, caps it
+at `_MAX_POOL_DOCUMENTS` (10, most recent), and gives `substrate.py` the
+resolved `(filename, text)` pairs plus the true available count in two
+context fields. `substrate.py` still never imports `UploadStore`.
+
+`_gather_byoe_pool()` builds one combined BM25 index across every pooled
+document's chunks, namespaced by pool index (`doc0`, `doc1`, ...) and not
+by filename, because two of a caller's uploads can share a filename (such
+as two files named `spec.txt`) and a shared prefix would collide in the
+combined `chunks_by_id` dict. A `doc_tag -> filename` map keeps
+`Evidence.source` naming the real originating document. It still makes one
+`propose()` call and one `judge_stance()` call per claim, as in
+single-document BYOE; only the local BM25 corpus grows. When a caller has
+more uploads than the cap, the truncation is named in the verdict's
+`reasoning` every time, even on a confirmed claim, through the existing
+`describe_partial_gaps()` mechanism. 11 new adapter tests (the
+filename-disambiguation case, truncation always named, and the ODrive
+heading entity-ambiguity fix from the v2 stress test, reapplied because
+pooled search has the same risk) plus 6 server tests showing ownership
+scoping holds over HTTP.
+
+**§2.4: `/verify/project` accepts `document_pool`.** A `ProjectClaimRequest`
+entry can set `document_pool: true` instead of `document_id`, using the
+same resolution as §2.3, so one batch can mix claims pinned to a document
+with claims that search the whole pool. One deviation from the spec's
+wording: a `document_id` plus `document_pool` conflict on a claim inside a
+batch is a per-claim error, not the whole-request 400 that plain `/verify`
+returns. Plain `/verify` has one claim, so the two coincide there, but the
+batch's own rule ("one bad claim must not abort every other claim",
+`_run_one_project_claim`'s docstring since v2) applies to a multi-claim
+call. An omitted `domain` on a pool claim defaults to `"substrate"`, since
+there is no document to sniff a domain from and pooled search is
+`substrate`-only. 6 new tests, including one batch that mixes a
+`document_id`-pinned `quant` claim with a `document_pool` `substrate` claim.
+
+**§1.3: multi-instance deployment caveat (docs only).** The README's
+"Run it" section states that rate-limit buckets, `UploadStore` and
+pooled-search ownership lookups are per-process, and recommends
+`gcloud run deploy --max-instances=1`. The failure mode is a document
+uploaded to instance A and referenced from a call routed to instance B,
+giving a false "unknown or expired" or an emptier pool than exists. A shared
+store (Redis, Firestore) stays out of scope. Pooled search adds a second
+symptom (an incomplete-looking pool) to v2's falsely expired `document_id`.
+
+**§2.5: frontend three-way document choice.** The single-claim document
+dropdown and each project claim row's dropdown gained a third option,
+"🔍 Search all uploaded documents (substrate only)", beside "none" and "one
+specific document". It sends `context.document_pool = true` instead of
+`document_id`, driven by a sentinel `<select>` value (`__search_all__`,
+distinct from real `document_id`s, which are 32-byte
+`secrets.token_urlsafe` strings) in `runVerification()` and
+`runProjectVerification()`. The evidence card needed no change, since it
+already renders `Evidence.source`, which `_gather_byoe_pool()` sets to the
+real filename. Verified with `node --check` and a `jsdom` run of the
+shipped file (mocked `fetch()`) showing both panels send `document_pool: true`
+with no `document_id`, the same standard as v2's rebuild.
+
+**§1.2: `POST /verify/compound`.** Makes `core/compound.py`'s
+`decompose_claim()` and `rollup()` reachable over HTTP. It calls them
+directly against the module-level `engine` instead of `verify_compound()`,
+because `verify_compound()` has no cap on sub-claims, and verifying every
+part before checking a cap would spend the live calls the cap exists to
+limit. The cap (`_MAX_SUBCLAIMS = 8`, a `422` above it, never silent
+truncation) is checked between decompose and verify.
+
+`CompoundVerifyRequest` has no `domain` field: `decompose_claim()` classifies
+each sub-claim itself, so a top-level domain would always be ignored, and
+the project's convention is to not accept fields that are ignored. A request
+whose `context` contains `document_id` or `document_pool` returns 400. The
+spec named only `document_id`; `document_pool` is rejected for the same
+reason, since an LLM-invented sub-claim can't know which uploaded document
+or pool it corresponds to. The endpoint has its own rate-limit bucket,
+stricter than `/verify/project`'s (one call every 20 seconds, burst of 2),
+given the larger fan-out. Its LLM client (`_compound_client`) is built at
+import time; `NebiusTokenFactoryClient()` only reads env vars, so a missing
+`NEBIUS_API_KEY` gives a clean `503` on the call instead of an import crash,
+the same pattern as `substrate.py`'s `__init__`. 11 new offline tests use a
+fake decompose client and fixed-evidence fake adapters, including one that
+shows the cap is checked before verification (a capturing adapter asserts
+zero calls when decomposition exceeds the cap).
+
+## Post-v3: opt-in per-verdict summary and the "three C's" display rename
+
+Two small additions requested by the project owner after v3 shipped. Both
+were confirmed with the owner before implementation.
+
+**Display rename only, no wire-format change.** The owner asked why the
+third state doesn't also start with C, to match CONFIRMED and CONTRADICTED.
+The `VerdictState.UNDETERMINED` enum value and the API wire value stay
+`"undetermined"`: the Cloud Run demo depends on them, and the full
+breaking-rename alternative was offered and declined. `docs/index.html`
+gained `displayStateLabel()`, which maps `"undetermined"` to `"clouded"` for
+display text only. CSS classes (`.state-badge.undetermined`,
+`.verdict-card.undetermined`) stay keyed on the real state string, so styling
+needed no change. A `jsdom` run of the shipped file confirmed the badge's
+CSS class is still `undetermined` and its visible text is `clouded`.
+
+**Opt-in summary (`context.include_summary=true`).** The owner asked for a
+short generated summary after a verify call. An always-on summary would add
+a new live LLM call to `quant` and `silicon`, which make zero live calls
+today, and the project tracks LLM spend against a $20 cap. The scope
+agreed: opt-in through a context flag, off by default everywhere, and
+uniform across all four domains when requested (the caller accepts that
+call's cost).
+
+A new `_summary_client` (built at import time without crashing, like
+`_compound_client`) and `_generate_summary()` run in `/verify`'s handler
+after the verdict is fully computed. A summary failure (client unavailable,
+a failed call) is caught and reported as a separate `summary_error` field
+and never affects the verdict. The system prompt tells the model the summary
+is commentary on a decision already made: it must not introduce a fact,
+number or claim absent from the evidence and reasoning it is given, and must
+not soften or contradict the state. 5 new offline tests (a monkeypatched
+fake summary client) cover: absent by default, present when opted in, a
+generation failure never failing the verdict, an unavailable client giving a
+named error, and `quant` (otherwise LLM-free) getting a summary when asked.
 
 ## Causal-claim stance fix + judge_stance() model routing (found live, 2026-10-25)
 
-Found by the project owner directly testing the live deployed
-`/verify/compound` endpoint against a real, obscure historical claim
-from their own research area (quantum key distribution) — not by an
-internal test suite. Full finding, locked fix spec, and testing
-requirements: `claude/ANTI_CASSIOPEIA_STANCE_CAUSAL_CLAIM_FIX_PROMPT.md`.
+The project owner found this by testing the live `/verify/compound`
+endpoint with an obscure historical claim from their own research area
+(quantum key distribution), not through the test suite.
 
-**The bug:** "The BB84 protocol was built on Stephen Wiesner's earlier
-concept of quantum conjugate coding" was `CONFIRMED` on a passage that
-only narrates "In 1984, the two combined quantum conjugate coding with a
-cryptographic key-exchange scheme, producing ... BB84" — consistent with
-a causal relationship but not actually asserting one. `judge_stance()`
-had no notion of evidence *strength* for causal/dependency claims
-specifically (a plain factual claim has no such gap — "the passage
-states the fact" and "the passage supports the claim" are the same
-thing there).
+**The bug.** "The BB84 protocol was built on Stephen Wiesner's earlier
+concept of quantum conjugate coding" was `CONFIRMED` on a passage that only
+says "In 1984, the two combined quantum conjugate coding with a
+cryptographic key-exchange scheme, producing ... BB84". That is consistent
+with a causal relationship but does not assert one. `judge_stance()` had no
+notion of evidence strength for causal or dependency claims. For a plain
+factual claim, "the passage states the fact" and "the passage supports the
+claim" are the same thing; for a causal claim they are not.
 
-**The fix:** one additive paragraph in `retrieval/stance.py`'s
-`STANCE_SYSTEM_PROMPT`, right after the existing ESP32/ESP32-S31 entity-
-matching caution — instructs the model to check, for a causal/
-dependency claim specifically, whether the passage actually STATES the
-relationship rather than merely mentioning both things in a way that's
-consistent with it. No new return value, no claim-type classifier added
-in code (same "ask the model, don't pre-filter with a keyword list"
-reasoning the entity-matching fix already established). 11 new offline
-tests in the new `tests/test_retrieval_stance.py` (judge_stance()'s own
-parsing contract, both fix paragraphs' guidance text locked in place
-against accidental removal, and the Wiesner/BB84 shape scripted through
-a fake client).
+**The fix.** One paragraph added to `retrieval/stance.py`'s
+`STANCE_SYSTEM_PROMPT`, after the existing ESP32 / ESP32-S31
+entity-matching caution. For a causal or dependency claim, the model must
+check whether the passage states the relationship or only mentions both
+things in a way consistent with it. There is no new return value and no
+claim-type classifier in code, following the same "ask the model, don't
+pre-filter with a keyword list" reasoning as the entity-matching fix. 11 new
+offline tests in `tests/test_retrieval_stance.py` cover `judge_stance()`'s
+parsing contract, both fix paragraphs' text (locked against accidental
+removal), and the Wiesner/BB84 shape through a fake client.
 
-**The model-routing question, raised alongside the fix:** the finding's
-own §0 text noted that asking Nemotron Ultra directly (outside this
-pipeline) got the Wiesner/BB84 distinction right. A live paired test
-(same fixed prompt, same real claim/passage pair) found gpt-oss-120b
-(searchlight's own default) returned "supports" — still wrong — while
-Nemotron Ultra returned "unrelated", correctly. Per this project's own
-`NEMOTRON_PIVOT_REPORT.md` standard (n=1 is not a conclusion), this was
-escalated before any code changed:
-- A 5-pair BALANCED live sample (3 "should be unrelated" co-occurrence-
-  only pairs including the real Wiesner/BB84 case, 2 "should be
-  supports" explicit-assertion pairs, covering different relation verbs)
-  — both models scored 5/5. This matters because a model that just says
-  "unrelated" to everything would trivially "win" a sample skewed toward
-  negative cases without being more correct (the exact failure mode
-  `NEMOTRON_PIVOT_REPORT.md` already documented for the Nemotron
-  Lightning tier: "extremely safe but extremely unhelpful").
-- The balanced sample alone didn't explain the one real disagreement, so
-  the Wiesner/BB84 pair specifically was repeated 4 more times per
-  model. **Reproducible result: gpt-oss-120b correct only 2/6 times
-  total on this one genuinely borderline pair (coin-flip-ish, biased
-  toward the wrong answer); Nemotron Ultra correct 5/5 times total.**
-  The gap is specific to genuinely borderline causal/relational
-  judgments, not a general difference between the models (both tied on
-  every easier pair).
-- **Decision: `searchlight.py`'s `judge_stance()` calls now route to a
-  separate, dedicated client on `RECOMMENDED_STANCE_MODEL`
-  (`nvidia/Nemotron-3-Ultra-550b-a55b`, defined in `retrieval/stance.py`
-  itself) — `propose()`/the live-search step stay on gpt-oss-120b**
-  (`NEMOTRON_PIVOT_REPORT.md` already found it strictly better there at
-  full-pipeline scale; nothing in this round's evidence says otherwise).
-  `SearchlightAdapter.__init__` gained a `stance_client` param,
-  defaulting to the SAME object as `client` when a caller explicitly
-  injects one — every existing test's single fake client keeps working
-  unchanged; only `default_domains()`'s real, no-arg construction
-  actually gets two different real clients. `substrate.py`'s own
-  `SUBSTRATE_MODEL` already happens to equal `RECOMMENDED_STANCE_MODEL`
-  (for its own, broader, pre-existing reasons) — not imported from
-  there, to avoid coupling two adapters' otherwise-independent model
-  choices to one shared constant for what is, for `substrate.py`, a
-  coincidence. 6 new offline tests in
-  `tests/test_searchlight_stance_routing.py` (two different real
-  clients when nothing is injected; a single injected fake still
-  handles both prompt shapes; two injected fakes are routed correctly;
-  a broken stance client is a named per-source gap that doesn't block
-  `propose()`).
+**Model routing.** Asking Nemotron Ultra directly (outside the pipeline)
+got the Wiesner/BB84 distinction right. A paired live test (same prompt,
+same claim and passage) found `gpt-oss-120b` (`searchlight`'s default)
+returned "supports", which is wrong, and Nemotron Ultra returned
+"unrelated", which is correct. By the `NEMOTRON_PIVOT_REPORT.md` standard
+(n=1 is not a conclusion), this was escalated before any code changed:
+- A balanced 5-pair live sample (3 pairs that should be "unrelated" because
+  they are co-occurrence only, including Wiesner/BB84, and 2 that should be
+  "supports" because they assert explicitly, across different relation
+  verbs): both models scored 5/5. Balance matters because a model that
+  answers "unrelated" to everything would win a skewed sample without being
+  more correct, the failure `NEMOTRON_PIVOT_REPORT.md` documented for the
+  Nemotron Lightning tier ("extremely safe but extremely unhelpful").
+- The balanced sample didn't explain the one disagreement, so the
+  Wiesner/BB84 pair was repeated 4 more times per model. Result:
+  `gpt-oss-120b` correct 2/6 times on this borderline pair, Nemotron Ultra
+  correct 5/5 times. The gap is specific to borderline causal or relational
+  judgments; both models tied on every easier pair.
+- **Decision.** `searchlight.py`'s `judge_stance()` calls route to a
+  separate client on `RECOMMENDED_STANCE_MODEL`
+  (`nvidia/Nemotron-3-Ultra-550b-a55b`, defined in `retrieval/stance.py`).
+  `propose()` and the live-search step stay on `gpt-oss-120b`, which
+  `NEMOTRON_PIVOT_REPORT.md` found better at full-pipeline scale and nothing
+  here contradicts. `SearchlightAdapter.__init__` gained a `stance_client`
+  parameter that defaults to the same object as `client` when a caller
+  injects one, so every existing test with a single fake client works
+  unchanged; only `default_domains()`'s no-argument construction gets two
+  different real clients. `substrate.py`'s `SUBSTRATE_MODEL` happens to equal
+  `RECOMMENDED_STANCE_MODEL` for its own, older reasons and is not imported
+  from there, to keep two adapters' model choices independent. 6 new offline
+  tests in `tests/test_searchlight_stance_routing.py`: two different real
+  clients when nothing is injected, a single injected fake handling both
+  prompt shapes, two injected fakes routed correctly, and a broken stance
+  client giving a named per-source gap that doesn't block `propose()`.
 
-**Honest note from the live end-to-end re-test:** re-running the exact
-sub-claim through the REAL engine (live search, not the isolated
-`judge_stance()` call) found a DIFFERENT source this time — Wikipedia's
-"Timeline of cryptography" — whose own text states "Based on Stephen
-Wiesner's idea ... Bennett and Brassard design ... BB84." That IS an
-explicit causal assertion, so a `CONFIRMED` verdict on THAT passage is
-correct, not a regression — live search results vary run to run (the
-same documented caveat this project's test suite already carries
-elsewhere). This surfaces a genuine, separate fact: real sources
-disagree on whether BB84 was "based on" Wiesner's work or an
-independent rediscovery later credited to him (Wikipedia's own timeline
-page asserts the former; Brassard's own retrospectives lean toward the
-latter) — this claim's ground truth is itself contested among reliable
-sources, not something this fix is expected to resolve. Flagged here,
-not silently absorbed into "the fix worked" or "the fix failed" —
-exactly the kind of case `claude/ANTI_CASSIOPEIA_COMPETITIVE_BENCHMARK_PROTOCOL.md`'s
-category 1 exists to probe at proper scale across many claims, not just
-this one.
+**Note from the live end-to-end re-test.** Re-running the sub-claim through
+the full engine (live search) found a different source, Wikipedia's
+"Timeline of cryptography", which states "Based on Stephen Wiesner's idea
+... Bennett and Brassard design ... BB84." That is an explicit causal
+assertion, so `CONFIRMED` on that passage is correct and not a regression;
+live search varies run to run. It also shows that reliable sources disagree
+on whether BB84 was "based on" Wiesner's work or an independent
+rediscovery later credited to him (Wikipedia's timeline asserts the former;
+Brassard's retrospectives lean toward the latter). The claim's ground truth
+is contested, so this fix isn't expected to settle it. It is the kind of case
+category 1 of the competitive-benchmark protocol probes at scale.
 
 ## Hybrid retrieval (BM25 + vector), ported from Constellation
 
-Built per `claude/ANTI_CASSIOPEIA_HYBRID_RETRIEVAL_BUILD_PROMPT.md`, in
-direct response to competitive-benchmark round 1's own finding: 3
-conservative misses and one dangerously-soft conspiracy verdict, all
-traced to BM25 finding nothing when a claim is phrased in different
-words than its best source — a gap BM25 structurally cannot close,
-regardless of tuning.
+Built in response to competitive-benchmark round 1: 3 conservative misses
+and one weak conspiracy verdict, all traced to BM25 finding nothing when a
+claim is worded differently from its best source. BM25 cannot close that gap
+by tuning.
 
-**Ported, not invented**: `retrieval/hybrid.py`'s `HybridIndex`/
-`VectorIndex`/`rrf_fuse()` are a direct port of the sibling project
-`eclipse-constellation`'s own already-evaluated `HybridRetriever`/
-`VectorIndex` (RRF, k=60, the same standard constant, not re-tuned).
-`NebiusTokenFactoryClient.embed()` uses the same `Qwen/Qwen3-Embedding-8B`
-model and the same OpenAI-compatible `/embeddings` shape Constellation's
-own client already proved works on this provider — confirmed live
-against THIS account's own `GET /v1/models`, not assumed from
-Constellation's choice (a separate project, separate account).
+**Ported from the sibling project.** `retrieval/hybrid.py`'s `HybridIndex`,
+`VectorIndex` and `rrf_fuse()` port `eclipse-constellation`'s
+`HybridRetriever` and `VectorIndex` (RRF with k=60, the standard constant,
+not re-tuned). `NebiusTokenFactoryClient.embed()` uses the same
+`Qwen/Qwen3-Embedding-8B` model and OpenAI-compatible `/embeddings` shape
+that Constellation's client uses on this provider, confirmed against this
+account's own `GET /v1/models`.
 
-**Two integration points, deliberately different shapes** (per the
-build spec's own §2): `substrate.py`'s BYOE/pooled paths build a
-`HybridIndex` over the uploaded document(s)' chunks (closer to a direct
-`HybridRetriever` port); `searchlight.py`'s multi-candidate path embeds
-the query plus that claim's freshly-fetched passages, RRF-fuses against
-the BM25 ranking already happening over them, then discards — no
-persistent index, since there's no persistent corpus to index.
+**Two integration points with different shapes.** `substrate.py`'s BYOE and
+pooled paths build a `HybridIndex` over the uploaded documents' chunks
+(close to a direct `HybridRetriever` port). `searchlight.py`'s
+multi-candidate path embeds the query and that claim's freshly fetched
+passages, RRF-fuses against the BM25 ranking over them, then discards the
+result. There is no persistent index because there is no persistent corpus.
 
-**Honest degradation, both at index time and query time,
-independently**: `embed()` catches `NebiusClientError` (a live failure)
-AND `AttributeError`/`TypeError` (a client that doesn't implement
-`embed()` at all — every existing offline test fake in this repo is
-exactly this shape) — either way, `HybridSearchResult.methods` records
-which method(s) actually ran, and a vector-less result is byte-for-byte
-the same ranking `BM25Index.search()` already produced before this
-build. 20+14+4+3 = new offline tests across `test_llm_nebius_client.py`
-(embed()'s own contract), `test_retrieval_hybrid.py` (RRF fusion,
-`VectorIndex`, degradation at both index and query time, the `mode=`
+**Degradation at index time and query time, independently.** `embed()`
+catches `NebiusClientError` (a live failure) and `AttributeError` /
+`TypeError` (a client without `embed()`, which describes every existing
+offline test fake). In either case `HybridSearchResult.methods` records
+which methods ran, and a vector-less result is the same ranking
+`BM25Index.search()` produced before this build. New offline tests (20 + 14 + 4 + 3 = 41) across
+`test_llm_nebius_client.py` (`embed()`'s contract), `test_retrieval_hybrid.py`
+(RRF fusion, `VectorIndex`, degradation at index and query time, the `mode=`
 eval-only isolation parameter), and `test_hybrid_retrieval_integration.py`
-(proving each domain adapter's wiring genuinely calls `embed()`, not
-just that degradation-with-no-embedder still works).
+(each adapter's wiring calls `embed()`, not only that degradation works).
 
-**New honest limitation this build introduces** (see
-`retrieval/__init__.py`'s own updated docstring): there is still no
-persistent embedding — or chunk, or BM25 index — cache anywhere in this
-codebase. Every hybrid-search call re-chunks AND re-embeds its source
-text from scratch, same as BM25 already re-chunked and re-indexed on
-every call before this build existed. Querying the same uploaded
-document twice re-embeds it twice, at real added cost and latency. A
-persistent per-document cache keyed off `UploadStore`'s own
-`document_id` would close this — a real, separate architecture
-decision, named here for a future round, not hidden.
+**New limitation.** There is no persistent embedding, chunk or BM25 index
+cache anywhere (see `retrieval/__init__.py`'s docstring). Each hybrid search
+re-chunks and re-embeds its source text, as BM25 already re-chunked and
+re-indexed on every call. Querying the same uploaded document twice
+embeds it twice, at added cost and latency. A per-document cache keyed on
+`UploadStore`'s `document_id` would fix this; it is a separate architecture
+decision for a later round.
 
-**Real eval numbers** (`evals/retrieval/`, 13 hand-labelled questions
-across 6 real documents, live `Qwen/Qwen3-Embedding-8B` — see
-`evals/retrieval/RESULTS.md` for the full table and honest reading):
-on questions deliberately paraphrased away from their source wording,
-pure vector search has the best R@1 (0.50 vs. BM25's 0.36) — confirming
-the core hypothesis. Fused hybrid's own R@1 on those same paraphrased
-questions is, surprisingly, WORSE than either pure method alone (0.21)
-— reported as a real, measured, counterintuitive result, not smoothed
-over or tuned away on an N=7 sample. At R@3/hit@3 — the metric that
-actually matches how this pipeline uses retrieval (a top-k candidate
-list shown to `propose()`, never a blind trust of rank #1) — hybrid and
-vector both beat BM25 on paraphrased questions (0.86 vs. 0.79) and tie
-it on keyword-overlap questions (0.83 all three). **This is the build's
-real, defensible result: hybrid never makes recall-at-the-metric-that-
-matters worse, and measurably improves it for paraphrased claims** —
-not a universal "hybrid beats BM25" claim, which this sample is too
-small to support.
+**Eval numbers** (`evals/retrieval/`: 13 hand-labelled questions across 6
+documents, live `Qwen/Qwen3-Embedding-8B`; full table and reading in
+`evals/retrieval/RESULTS.md`). On questions paraphrased away from their
+source wording, vector search alone has the best R@1 (0.50 against BM25's
+0.36). Fused hybrid's R@1 on the same questions is worse than either method
+alone (0.21), reported as measured and not tuned away on an N=7 sample. At
+R@3 and hit@3, the metric that matches how the pipeline uses retrieval (a
+top-k list shown to `propose()`, never blind trust of rank 1), hybrid and
+vector both beat BM25 on paraphrased questions (0.86 against 0.79) and tie
+it on keyword-overlap questions (0.83 for all three). So hybrid does not
+lower recall at the metric that matters and improves it for paraphrased
+claims. The sample is too small to support a general claim that hybrid beats
+BM25.
 
-**Live re-test of round 1's own failing claims** (§4.3 of the build
-spec), against the real `SearchlightAdapter` with hybrid retrieval now
-live: **3 of 4 are now fixed.** The ARPANET "LOGIN" claim now correctly
-`CONFIRMED` (1.0 confidence, 2 real sources). The moon-landing
-conspiracy claim now correctly `CONTRADICTED` (0.90) on a REAL
-authoritative source (Wikipedia's own moon-landing-conspiracy-theories
-page, "regarded as pseudoscience and demonstrably false") — replacing
-round 1's fortuitous-but-weak fictional-movie-quote evidence entirely.
-The sunglasses/cancer fact-check claim now correctly `CONTRADICTED`
-(1.0 confidence, 3 real Full Fact sources). The 4th (the SpaceX viral-
-video claim) is still `UNDETERMINED` — but retrieval itself clearly
-improved: it now finds 4 real, topically-relevant sources (EarthSky,
-Wikipedia's own "2026 SpaceX lunar impact" page, BBC) where round 1
-found zero usable passages; the remaining gap is that those sources
-address the real underlying lunar-impact event, not the specific
-claim's nuance about one particular video being fake — a different,
-more subtle limitation than the original verbatim-query retrieval gap,
-not something this build claims to have also fixed.
+**Live re-test of round 1's failing claims** (§4.3 of the build spec)
+against `SearchlightAdapter` with hybrid retrieval: 3 of 4 are fixed.
+- The ARPANET "LOGIN" claim is now `CONFIRMED` (1.0 confidence, 2 sources).
+- The moon-landing conspiracy claim is now `CONTRADICTED` (0.90) on
+  Wikipedia's moon-landing-conspiracy-theories page ("regarded as
+  pseudoscience and demonstrably false"), replacing round 1's weak
+  fictional-movie-quote evidence.
+- The sunglasses and cancer fact-check claim is now `CONTRADICTED` (1.0
+  confidence, 3 Full Fact sources).
+- The SpaceX viral-video claim is still `UNDETERMINED`. Retrieval improved:
+  it finds 4 relevant sources (EarthSky, Wikipedia's "2026 SpaceX lunar
+  impact" page, BBC) where round 1 found none. Those sources cover the
+  lunar-impact event, not the claim's point about one video being fake, a
+  subtler gap that this build does not claim to fix.
 
 ## The Tavily/load_dotenv bug: a measurement bug, not a product bug
 
-Found mid-session, 2026-10-25, while investigating a completely
-different question (whether Tavily + Nemotron + this project's own
-independent verification could beat Perplexity head-to-head). `searchlight.py`'s
-`_tavily_search()` — already the PRIMARY search backend in production,
-tried before DDG/Wikipedia — reads its API key via `os.environ.get("TAVILY_API_KEY")`
-directly. Every script in `stress_test/` (`run_test1.py`, `run_test2.py`,
-every `run_test3_*.py`, `run_nemotron_pivot.py`, and the competitive-
-benchmark protocol's own round-1 runner) only ever read its OWN direct
-provider keys (Perplexity/Tavily/Gemini) via `dotenv_values(".env")` —
-a dict read straight from the file, never touching the real process
-environment — and NONE of them ever called `load_dotenv()`. So
-`TAVILY_API_KEY` was never actually set in any of their processes, and
-`_tavily_search()`'s own documented contract ("returns `[]` if the key
-isn't set") fired silently, in **every stress-test run in this
-project's history that exercised `searchlight.py`'s real pipeline** —
-falling back to the much weaker DDG/Wikipedia backends every single
-time. The live production server (`api/server.py`) was never affected —
-it already calls `load_dotenv(override=False)` at import time. The real
-deployed service has always had Tavily active; only this project's own
-*measurement* of it, across its entire test history, was crippled by a
-one-line omission.
+Found on 2026-10-25 while investigating whether Tavily, Nemotron and this
+project's verification could beat Perplexity head to head.
+`searchlight.py`'s `_tavily_search()` is the primary search backend in
+production and reads its key with `os.environ.get("TAVILY_API_KEY")`.
+Every script in `stress_test/` (`run_test1.py`, `run_test2.py`, every
+`run_test3_*.py`, `run_nemotron_pivot.py`, and round 1's runner) read its own
+provider keys (Perplexity, Tavily, Gemini) with `dotenv_values(".env")`,
+which reads the file into a dict without touching the process environment,
+and none called `load_dotenv()`. So `TAVILY_API_KEY` was never set in those
+processes, and `_tavily_search()`'s documented contract (return `[]` when
+the key is unset) fired silently in every stress-test run that exercised
+`searchlight.py`'s pipeline. Each such run fell back to DDG and Wikipedia.
+The production server was not affected: `api/server.py` calls
+`load_dotenv(override=False)` at import time. Only the project's
+measurement of it was weakened.
 
-**Fixed** in all 11 affected scripts. **Confirmed, not just fixed**:
-calling Tavily live with the exact text of 3 claims that had failed in
-competitive-benchmark round 1 returned excellent, directly on-point
-results for all three (including the exact Full Fact article, by URL,
-for the sunglasses/cancer claim) — re-running those claims through the
-real engine with the fix in place resolved them correctly. The hybrid-
-retrieval build (above) independently re-tested the same 4 claims by a
-completely different mechanism (better retrieval ranking, not search-
-backend availability) and found the same 3 of 4 fixed — two unrelated
-fixes converging on the same result, real corroboration. Full account,
-including the one claim that stayed unresolved either way and the two
-claims that got genuinely *worse* on re-run from ordinary live-search
-variance (not a regression from this fix):
-[`stress_test/results/BENCHMARK_ROUND1_REPORT.md`](../stress_test/results/BENCHMARK_ROUND1_REPORT.md)'s
-own erratum. Every model-choice decision this project has made,
-cross-referenced against whether it needs re-measuring now that Tavily
-actually works: [`stress_test/results/MODEL_SELECTION_FINDINGS.md`](../stress_test/results/MODEL_SELECTION_FINDINGS.md).
+**Fixed** in all 11 affected scripts. **Confirmed:** calling Tavily with the
+text of 3 claims that failed in round 1 returned directly relevant results
+for all three (including the Full Fact article, by URL, for the sunglasses
+claim), and re-running them through the engine resolved them. The hybrid
+retrieval build, using a different mechanism (better ranking, not search
+availability), re-tested the same 4 claims and also fixed 3 of 4. Details,
+including the claim that stayed unresolved and two that got worse on re-run
+from live-search variance (not a regression from this fix), are in the
+erratum in
+[`stress_test/results/BENCHMARK_ROUND1_REPORT.md`](../stress_test/results/BENCHMARK_ROUND1_REPORT.md).
+Which model-choice decisions need re-measuring now that Tavily works:
+[`stress_test/results/MODEL_SELECTION_FINDINGS.md`](../stress_test/results/MODEL_SELECTION_FINDINGS.md).
 
 ## Adaptive-depth evidence gathering ("the optimiser")
 
-Requested directly by the project owner: not every claim needs the same
-depth of checking — a cheap claim should resolve fast, a genuinely
-ambiguous one should get more scrutiny, and no matter which path runs,
-the output must still always be exactly one of the three states this
-whole engine is built around (confirmed/contradicted/undetermined — the
-"three C's"). Built as a strict, locked design, not an open-ended
-reinterpretation: **no separate upfront "classify this claim's type"
-call** — this project already rejected that pattern once (the causal-
-claim stance fix's own docstring explains why: ask the model/the real
-evidence, don't pre-filter with a guessed classifier) — so the
-escalation trigger is the REAL, OBSERVED evidence outcome of a first,
-cheap pass, never a guess about the claim made before searching.
+Requested by the project owner: a cheap claim should resolve fast, an
+ambiguous one should get more scrutiny, and either way the output must be
+exactly one of the three states. The design is fixed: there is no upfront
+call to classify a claim's type, which the project already rejected (the
+causal-claim fix's docstring explains why). The escalation trigger is the
+evidence a first cheap pass produces, never a guess made before searching.
 
-`searchlight.py`'s `_gather_multi_candidate` now does two things, both
-reusing `core/engine.py`'s own real scoring conditions directly (not
-re-derived constants that could drift out of sync):
-- **Fast path**: stops checking further candidate sources the moment
-  two independent sources already agree on a stance — a real,
-  measured speed win (one easy claim, Dead Sea Scrolls, needed 2
-  `propose()` calls instead of the old unconditional 3).
-- **Escalation path**: if the first pass's evidence is empty, or
-  genuinely tied (`abs(support - contradict) < DECISION_THRESHOLD` —
-  the EXACT condition `engine.py`'s own scoring already uses, imported
-  directly), checks more sources than normal with a second, differently-
-  phrased search.
+`searchlight.py`'s `_gather_multi_candidate` does two things, both reusing
+`core/engine.py`'s scoring conditions directly instead of copies that could
+drift:
+- **Fast path.** It stops checking candidate sources once two independent
+  sources agree on a stance. One easy claim (Dead Sea Scrolls) needed 2
+  `propose()` calls instead of the earlier unconditional 3.
+- **Escalation path.** If the first pass's evidence is empty or tied
+  (`abs(support - contradict) < DECISION_THRESHOLD`, the same condition
+  `engine.py` uses, imported directly), it checks more sources with a
+  second, differently phrased search.
 
-Either path produces ordinary `Evidence` objects flowing through the
-exact same, unchanged `VerificationEngine` scoring — there is no new
-state and no bypass, and the single most important test in the whole
-build asserts exactly that (`verdict.state` is always a real
-`VerdictState` member, on both paths). **Honest limitation, found and
-stated, not patched over**: the escalation path's differently-phrased
-second search does not reliably surface genuinely *different* candidate
-URLs — on a real repeated test it sometimes returned the same or
-overlapping results as the plain claim text. The mechanism correctly
-*reacts* to ambiguity every time; it doesn't guarantee the second search
-actually *helps* every time.
+Both paths produce ordinary `Evidence` that goes through the unchanged
+`VerificationEngine` scoring. There is no new state and no bypass, and the
+most important test in the build asserts that `verdict.state` is always a
+`VerdictState` member on both paths.
 
-## The domain rename: robotics/research_web/ml_data/fpga_embedded → substrate/searchlight/quant/silicon
+**Limitation.** The escalation path's reworded second search does not always
+surface different candidate URLs: in a repeated test it sometimes returned
+the same or overlapping results as the plain claim text. The mechanism
+reacts to ambiguity every time, but the second search doesn't always help.
 
-A full, breaking rename, including `Claim.domain`'s real wire value —
-confirmed explicitly with the project owner before executing, given the
-consequence (anyone polling the live demo with the old names gets
-errors once it's redeployed). Rationale: each old name was just the
-CURRENT example of a broader category a SaaS-style verification
-pipeline would actually have — "robotics" is one example of a physical-
-hardware/datasheet domain, not the domain's full scope; same for the
-other three. New names chosen to read as the broader category, not
-narrower than what's already built, with no change to any adapter's
-actual behavior — a rename, not a redesign.
+## The domain rename: robotics / research_web / ml_data / fpga_embedded to substrate / searchlight / quant / silicon
 
-Scope: the live product (`anticassiopeia/`), its own tests, `docs/`,
-`evals/`, and `scripts/demo.py` — all fully renamed, verified with a
-real live smoke test (`GET /domains` returns the 4 new names; `POST
-/verify` with the new names routes correctly; the OLD names now cleanly
-400). Deliberately NOT renamed, stated plainly: every `claude/*.md`
-verbatim build prompt, `docs/extracted/constellation-robotics-seed.md`,
-and all of `stress_test/` (every script, every claim manifest, every
-report) — all historical records of a point in time, the same
-convention this project already holds its own past reports to.
-Temporary backward-compatibility shim modules were added at the four old
-import paths SOLELY because `stress_test/`'s own scripts still import
-them directly; one honest, accepted, named limitation from this —
-`run_test3_nebius_agent.py`'s monkeypatch trick (used to simulate
-"skip independent verification" for a baseline comparison) now silently
-no-ops, since it patches the shim's own namespace, not the real,
-renamed module the adapters actually use. Documented in the shim's own
-docstring and appended to `stress_test/results/INDEX.md`, not fixed —
-fixing it means editing `stress_test/` itself, out of scope for the
-rename.
+A full, breaking rename, including `Claim.domain`'s wire value, confirmed
+with the project owner first because anyone polling the live demo with the
+old names gets errors after redeploy. Each old name was only the current
+example of a broader category (robotics is one example of a physical
+hardware and datasheet domain, and likewise for the others), so the new
+names describe the category. No adapter's behavior changed.
 
-## Competitive benchmark round 2: 102 externally-generated claims, independently verified
+Scope: the product (`anticassiopeia/`), its tests, `docs/`, `evals/` and
+`scripts/demo.py` are renamed and were smoke-tested (`GET /domains` returns
+the 4 new names, `POST /verify` with them routes correctly, and the old
+names return a clean 400). Not renamed: `docs/extracted/constellation-robotics-seed.md`
+and all of `stress_test/` (scripts, claim manifests, reports), which are
+records of a point in time.
 
-Scaled round 1's protocol 11x and changed claim sourcing: instead of 9
-hand-picked claims, 102 were generated by three different external AI
-tools (ChatGPT, Gemini, Perplexity via direct API call, since its UI
-doesn't support file uploads) from a locked prompt
-(`claude/CLAIM_GENERATION_PROMPT_FOR_EXTERNAL_AI.md`), then
-independently verified against real primary/secondary sources before
-any of them were used to score anything — the generating AI's own
-`suggested_ground_truth` is never trusted, only `verified_ground_truth`
-is. 185 raw claims, 14 true duplicates removed (several more candidate
-pairs were read in full and judged NOT duplicates — same vocabulary,
-different assertions), 102 web-verifiable claims kept (a 69-claim block
-of category-8 formal control-theory/FPGA claims was split off and
-parked, since those are closed-form mathematical truths, not
-web-searchable facts, and need `substrate`'s own adaptive-depth search,
-not yet ported). Verification: 100 of 102 generator-suggested verdicts
-held up against independent research; 2 were caught and corrected (a
-Hesiod *Theogony* claim bundling a secure textual detail with one from a
-disputed spurious line, and a Voynich Manuscript claim bundling a solid
-radiocarbon result with a much weaker, separately-sourced origin claim).
-Full dataset and methodology: `stress_test/claims/external_generated/`.
+Backward-compatibility shim modules remain at the four old import paths
+because `stress_test/`'s scripts import them directly. One accepted
+limitation follows: `run_test3_nebius_agent.py`'s monkeypatch (used to
+simulate "skip independent verification" for a baseline) now silently does
+nothing, because it patches the shim's namespace and not the renamed module
+the adapters use. This is recorded in the shim's docstring and in
+`stress_test/results/INDEX.md`. Fixing it means editing `stress_test/`,
+which was out of scope for the rename.
 
-All 102 ran through the real engine and all 5 competitor variants (no
-category exemption this round, unlike round 1 — see
-`BENCHMARK_ROUND2_REPORT.md` for why). Headline result: **14/14
-calibration probes correct, zero overreach, across 7 traditions** — the
-round-1 stance-fix holds at 7x the sample size on 6 traditions it was
-never tuned on. Generic-RAG's round-1 calibration "win" (blanket
-caution) reversed completely at this scale, confirming 9 of 14
-supernatural claims — round 1's result was retrieval luck on two
-obscure claims, not real caution about faith specifically. Anti-
-Cassiopeia's raw accuracy (70.5%, lowest of six systems) is reported
-exactly as measured; its error shape (3 dangerous misses out of 88 vs.
-6-9 for every competitor, the rest conservative) is the one this project
-optimizes for. One real, independently-root-caused finding on the three
-dangerous misses: a live-search non-determinism gap (round 2's own
-script didn't persist full per-claim evidence, so one dangerous miss
-that didn't reproduce on replay couldn't be root-caused after the
-fact) — noted as a concrete gap for a future round's script, not fixed
-retroactively (the evidence that would explain it is simply gone).
+## Competitive benchmark round 2: 102 externally generated claims, independently verified
 
-**Found and fixed from this round's data, after the fact**:
-`run_test3_tavily_gemini.py`'s circuit breaker was built for a genuinely
-permanent per-day Gemini quota cap (found in an earlier pilot) and had
-no way to tell that apart from an ordinary per-minute rate limit, which
-round 2 hit on claim ~18 of 102 — tripping the breaker and skipping 84
-of the remaining claims rather than backing off ~49s and continuing.
-Fixed by parsing the error body's `retryDelay` and only treating a
-short (<90s), explicitly-stated delay as retriable, leaving the original
-permanent-cap behavior untouched for the case it was actually built for.
-Re-run separately (`stress_test/rerun_round2_tavily_gemini.py`) rather
-than repeating the whole round, since nothing else about round 2 was
-affected.
+Round 2 scaled round 1 up 11x and changed the claim source. Instead of 9
+hand-picked claims, 102 were generated by three external AI tools (ChatGPT,
+Gemini, and Perplexity by direct API call, because its UI doesn't support
+file uploads) from a locked prompt, then verified independently against
+primary and secondary sources before any was used for scoring. The
+generating AI's own `suggested_ground_truth` is never used, only
+`verified_ground_truth`. From 185 raw claims, 14 true duplicates were
+removed (several more candidate pairs were read in full and judged not
+duplicates: same vocabulary, different assertions). 102 web-verifiable
+claims were kept. A block of 69 category-8 formal control-theory and FPGA
+claims was parked (they are closed-form mathematical truths, not
+web-searchable facts, and need `substrate`'s adaptive-depth search, which
+wasn't ported). Of the 102, 100 generator-suggested verdicts held up and 2
+were corrected: a Hesiod *Theogony* claim that bundled a secure textual
+detail with one from a disputed spurious line, and a Voynich Manuscript
+claim that bundled a solid radiocarbon result with a weaker, separately
+sourced origin claim. Dataset and method: `stress_test/claims/external_generated/`.
 
-## Open design decisions (not yet made)
+All 102 ran through the engine and all 5 competitor variants, with no
+category exemption (unlike round 1; see `BENCHMARK_ROUND2_REPORT.md`). The
+14 calibration probes were all correct with zero overreach across 7
+traditions, so the round 1 stance fix holds at 7x the sample on 6 traditions
+it was not tuned on. Generic RAG's round 1 calibration "win" (blanket
+caution) reversed, confirming 9 of 14 supernatural claims. After the
+ground-truth correction in Erratum 3 of the round 2 report, Anti-Cassiopeia's
+raw accuracy was 71.6% (lowest of the six systems), with 2 dangerous misses
+out of 88 scored claims against 4 to 8 for every competitor, and the rest
+conservative. One gap: round 2's script did not save full per-claim
+evidence, so one dangerous miss that did not reproduce on replay could not
+be root-caused afterwards, a live-search non-determinism gap noted for a
+future round's script.
 
-- Evidence retrieval inside each domain adapter: web search? local
-  datasheet index? direct API calls (synthesis tool output, dataset
-  files)? Each domain will likely need a different answer.
-- Scoring: the current trust-weighted threshold rule in `engine.py` is a
-  placeholder, not a researched method. Revisit once real evidence from at
-  least one real domain is flowing through it.
+**Found and fixed from this round's data.** `run_test3_tavily_gemini.py`'s
+circuit breaker was built for a permanent per-day Gemini quota cap and could
+not tell it from an ordinary per-minute rate limit, which round 2 hit around
+claim 18 of 102. The breaker tripped and skipped 84 claims instead of
+backing off about 49 seconds. It now parses the error body's `retryDelay`
+and treats only a short (under 90 s), explicit delay as retriable; the
+original permanent-cap behavior is unchanged. The affected variant was
+re-run separately (`stress_test/rerun_round2_tavily_gemini.py`), since
+nothing else in round 2 was affected.
+
+## Open design decisions
+
+- Evidence retrieval inside each domain adapter: web search, a local
+  datasheet index, or direct API calls (synthesis tool output, dataset
+  files). Each domain likely needs a different answer.
+- Scoring: the trust-weighted threshold rule in `engine.py` is a
+  placeholder, not a researched method. Revisit it once evidence from more
+  than one real domain flows through it.
