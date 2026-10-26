@@ -1,0 +1,573 @@
+[
+  {
+    "id": "chatgpt-025",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Mainstream Egyptology holds the pyramids were built from quarried and hauled/hoisted limestone and granite blocks, supported by quarry marks, unfinished obelisks, worker-village and ramp evidence, and tool marks. The 'poured geopolymer concrete' hypothesis (Davidovits) is a minority fringe view rejected by the archaeological consensus.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-026",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "The 2019 EHT image of M87* was produced by a globally distributed array of radio telescopes using very-long-baseline interferometry at ~230 GHz (~1.3mm, radio/submillimeter band), not a single optical telescope at visible wavelengths.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-027",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "Tablet XI of the Epic of Gilgamesh accurately depicts Utnapishtim building a vessel, preserving living creatures, and surviving a flood; the claim's epistemic qualifier correctly separates textual content from objective historical/supernatural truth.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-037",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "The Moon-landing-hoax narrative is well-settled false, and Apollo 11/14/15 left retroreflector arrays that are still used in lunar laser ranging to measure the Earth-Moon distance precisely; both conjuncts are true.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-038",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Peer review is a quality filter, not a guarantee of truth; retractions, replication failures, and scientific revision of peer-reviewed findings are well documented, so 'guarantees every assertion is true and can never be overturned' is false.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-039",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "Exodus does narrate Moses leading the Israelites out of Egypt, and the claim correctly notes that the literary narrative alone does not establish every detail as independently verified archaeology (the historicity of the Exodus narrative is in fact disputed among scholars).",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-041",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "A text merely containing a prediction does not establish supernatural revelation; this requires secure, independent dating prior to the event plus exclusion of natural explanations (vague/retrospective composition, coincidence, post-hoc redaction) -- the claim's own 'regardless of dating' clause is the logical flaw.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-042",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Dates are correct (Wiesner's conjugate-coding paper appeared in SIGACT News in 1983; BB84 was published in 1984), but Bennett and Brassard learned of conjugate coding directly from Wiesner in person years earlier (reportedly at a 1979 IEEE FOCS meeting), and BB84 is a novel key-distribution protocol built on the idea, not a copy of the manuscript's content -- publication-order chronology does not establish 'copying.'",
+    "verification_sources": [
+      "https://scottaaronson.blog/?p=5730"
+    ],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-043",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "The null result is consistent with special relativity and helped undermine ether theory, but it does not by itself logically derive relativity (the Lorentz-FitzGerald contraction was an alternative ad hoc explanation of the same null result decades before Einstein's 1905 postulates); SR required additional theoretical input beyond the experiment.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-044",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "The 1919 eclipse observations and their later historiographical scrutiny are real, but general relativity has since received extensive independent confirmation (Mercury perihelion precession, Pound-Rebka gravitational redshift, Hulse-Taylor binary pulsar decay, GPS relativistic corrections, gravitational lensing surveys, and the 2015+ LIGO/Virgo gravitational-wave detections), so 'never received any independent experimental confirmation' is false.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-045",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Chronological ordering of composition-date versus event-date, even if assumed firm, cannot by itself prove supernatural foreknowledge (it is also consistent with coincidence, vague language fitted post hoc, or genuinely uncertain dating) -- and the claim itself flags the dating as uncertain, which undercuts even the weaker historical inference.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-046",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "The Great Isaiah Scroll (1QIsa^a) is indeed much older than the medieval Masoretic codices, but textual scholarship (e.g. Parry's catalogue of variants) documents numerous orthographic and some substantive differences from the Masoretic Text (e.g. Isaiah 53:11 follows a Septuagint-type reading); 'every word in every modern translation matches exactly' is a false universal claim.",
+    "verification_sources": [
+      "https://interpreterfoundation.org/journal/the-great-isaiah-scroll-1qisaa-catalogue-of-textual-variants"
+    ],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-047",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "A single anatomically modern feature is weak evidence given disputed age, stratigraphic context, and co-occurring archaic traits; paleoanthropology routinely treats such finds (e.g. mosaic fossils) as requiring converging multiple lines of evidence, not a single trait, before assigning population membership.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-048",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Statistical significance in one paper establishes none of the three stated conclusions: it does not establish causation (correlation/causation fallacy), does not guarantee replication in every population (external validity is a separate question), and does not rule out confounding (which requires study design/adjustment, not just a p-value).",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-049",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Textual and epigraphic confirmation of an original construction order establishes only that a temple was originally built then; it says nothing about whether the surviving foundations date entirely to that reign versus later rebuilding, repair, or modification -- a very common archaeological occurrence at long-used sacred sites.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-050",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "A probability-one outcome in quantum mechanics is conditional on the specific prepared state and the specific measurement operator; changing either the state or the measurement generally changes the outcome statistics entirely, so the result cannot be universalized across all states and measurements.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-051",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Bell-test violations rule out local hidden-variable theories that satisfy the specific assumptions used in deriving the inequality (locality, measurement independence/no superdeterminism, realism); theories that reject one of these assumptions (e.g. Bohmian nonlocal hidden variables, superdeterministic models) are not excluded, so 'every conceivable hidden-variable theory' is false.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-052",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Decimal-place precision (resolution/repeatability) is distinct from accuracy (closeness to the true value), freedom from systematic error, and validity of the underlying physical model -- a textbook metrology conflation; a highly precise instrument can still be systematically biased or built on a flawed model.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-053",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Manuscript authenticity establishes only that the document genuinely dates to the claimed period and faithfully records what its author asserted; it does not independently establish that the described supernatural event objectively occurred -- the same evidentiary gap targeted by the project's calibration-probe category.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-054",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Mathematical equivalence of predictions reflects a formal/structural relationship, not historical transmission; well-documented cases of genuine independent discovery with mathematically equivalent results exist (Newton/Leibniz calculus, Darwin/Wallace natural selection, Heisenberg/Schrodinger formulations later proven equivalent), so equivalence alone cannot prove copying absent documentary evidence.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-055",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "In textual criticism, being present in the oldest surviving witness does not prove authorial originality: the surviving oldest copy is not necessarily the autograph, and early interpolations predating all surviving witnesses, or independent excision in a later recension, are both well-documented phenomena.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-056",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "A finite sequence of correct outputs, however long, is statistically consistent with a nonzero but small error probability (basic statistics/epistemology of induction); 'exactly zero probability of future error' cannot be justified from finite test performance alone.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-057",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Discrete-timestep collision checking only verifies the sampled configurations; with finite controller bandwidth, nonzero link geometry, and nonzero localization error, the true continuous-time trajectory between samples can pass through states that are in collision even though the sampled points were not -- this is exactly why continuous collision checking / conservative margins exist in motion planning.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-058",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Zero instantaneous end-effector velocity from a null-space vector holds only at that instant and configuration; as the robot moves along the commanded null-space direction the configuration (and hence the Jacobian and its null space) changes, so integrating over a finite interval does not generally return zero net end-effector displacement -- this is a first-order/instantaneous property being falsely extended to finite-time integration.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-059",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Full row rank of the Jacobian is a local, configuration-dependent property; it says nothing about whether other configurations reachable along an arbitrary Cartesian path are singular, so it cannot guarantee singularity-free execution of every collision-free path through the whole workspace.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-060",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Joint-position feasibility is independent of velocity, acceleration, torque, and power feasibility, which depend on the time-derivatives of the trajectory and the robot's dynamics; a geometrically valid path can easily require velocities/torques/power that exceed actuator limits.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-061",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Discretizing a continuous-time-stable PID controller does not preserve stability at arbitrary sampling rates/delays: the classic sampling-rate-vs-stability tradeoff, plus actuator delay, sensor quantization, and computational latency, can all destabilize an otherwise-stable continuous design -- a foundational digital control result (e.g. via the Nyquist/root-locus shift under added delay).",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-062",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Satisfying the nonholonomic rolling constraint is a kinematic condition independent of speed, but dynamic feasibility (required lateral/centripetal force at a given curvature and speed, wheel-slip/friction limits, motor torque limits) worsens with the square of speed; a fixed curvature profile becomes dynamically infeasible at sufficiently high speed.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-063",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "A two-flop synchronizer reduces the probability of metastability propagating to the receiving domain (improves MTBF) but does not mathematically eliminate it; metastability failure probability is nonzero (bounded by MTBF formulas depending on clock frequency, data toggle rate, and flop metastability window), never exactly zero -- standard CDC design theory.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-064",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Simulation regression and RTL-vs-RTL formal equivalence both verify logical/functional behavior at the RTL abstraction level; they say nothing about board-level signal integrity, power/electrical margins, physical timing closure, reset-domain robustness, or CDC correctness, all of which require separate static timing analysis, CDC analysis, and physical verification.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-065",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "This conflates latency (time from a given input to its corresponding output, 12 cycles here) with throughput/initiation interval (one new input accepted per cycle); a pipelined design with 12-cycle latency and 1-cycle initiation interval does NOT have '1-cycle latency,' and latency does not become frequency-independent -- a classic metric confusion the claim gets backwards.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-066",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Representing every input exactly does not guarantee bit-exact output matching a floating-point reference, because intermediate rounding/truncation choices, overflow handling, and the order of arithmetic operations (which affects rounding in a chain of fixed-point ops) can all diverge from the floating-point evaluation even with exact inputs -- a well-known fixed-point/floating-point equivalence pitfall.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-067",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Exact representability in fixed point depends on the value's binary scale (exponent) relative to the fixed-point format's integer-bit range and fractional-bit precision, not merely on whether the significand's bit-width fits the word; a value with a large exponent can overflow the integer range, or one with a very negative exponent can require more fractional bits than available, even if the significand itself fits.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-068",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Passing a finite published test-vector suite demonstrates correctness only on those specific inputs; it is not equivalent to a formal/exhaustive proof covering every input length and parameter configuration in the (typically unbounded or astronomically large) input space -- finite testing and formal equivalence are categorically different verification strengths.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-069",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Matching a reference implementation on supplied test vectors does not establish correctness at lookup-table boundaries or for inputs exposed to fixed-point rounding error outside the tested set; a security bound's validity depends on the approximation/rounding direction being conservative everywhere in the legal input domain, which finite-vector testing cannot establish.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-070",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "A bounded worst-case computation time only guarantees the controller's own timing budget; end-to-end physical safety also depends on perception completeness (missed obstacles), actuator response delay, and bounded braking/stopping distance -- none of which is addressed by a WCET bound alone, so 'the entire robot is guaranteed safe' does not follow.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-071",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "A formal proof is only valid relative to its modeled transition relation and assumptions; behaviors outside that model (power-up transients, clock-domain-crossing races, single-event upsets from radiation) are by construction not covered, so the proof cannot be extended to guarantee the physical circuit avoids illegal states under those unmodeled conditions.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-072",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Static timing analysis only reports on paths it actually analyzes under the applied constraints; a path whose clock was never correctly constrained can be silently excluded from the report, so positive slack on 'every constrained path' provides no guarantee about an unconstrained/missing path that may violate timing in silicon -- a well-known timing-closure false-confidence trap.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-073",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Two independently generated clocks with equal nominal (and even equal measured average) frequency are not thereby phase-locked; without a shared reference or explicit phase alignment, independent PLLs drift and jitter relative to each other, so the domains remain asynchronous and require standard CDC treatment despite matching frequencies.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-074",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Gray coding guarantees only one logical bit changes per count increment at the source; it assumes those bits arrive at the sampling flops without skew. If routing/propagation delay differences let bits from successive increments overlap at the synchronizer inputs, the receiver can sample a non-adjacent, invalid intermediate value despite the Gray code -- skew constraints are still required in practice.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-075",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Per the AMBA AXI protocol specification (A3.2.1/A3.2.2), once a write transmitter asserts WVALID it must hold WVALID and keep WDATA (and WSTRB/WLAST) stable until WREADY is sampled high; changing WDATA while WVALID is high and WREADY is low is a protocol violation, not legal.",
+    "verification_sources": [
+      "https://docs.amd.com/r/en-US/pg101-axi-protocol-checker/AXI-Protocol-Checks-and-Descriptions",
+      "https://www.intel.com/content/www/us/en/docs/programmable/838773/25-1/axi4-memory-mapped-assertions.html"
+    ],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-076",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "An AXI4 burst may never cross a 4KB address boundary (AMBA spec A3.4.1). A 32-byte transfer starting at 0x0FF0 spans 0x0FF0-0x100F, crossing the 0x1000 boundary, so it is illegal regardless of per-beat alignment or subordinate acceptance.",
+    "verification_sources": [
+      "https://xilinx-wiki.atlassian.net/wiki/spaces/A/pages/18841951/Validating+a+master+AXI4+interface+using+the+Verification+IP+as+a+slave+part+2"
+    ],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-077",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "medium",
+    "verification_notes": "Xilinx BRAM documentation defines READ_FIRST/WRITE_FIRST collision behavior reliably only for synchronized access (same clock, or sufficiently separated edges); for independent-clock true-dual-port collisions within the metastability/setup window, the vendor explicitly treats the outcome as undefined and requires the designer to avoid same-address collisions (e.g. via false-path constraints) rather than guaranteeing READ_FIRST semantics regardless of relative clock-edge timing. I could not pull the exact UG573 TDP collision passage, hence medium rather than high confidence.",
+    "verification_sources": [
+      "https://docs.amd.com/r/2022.2-English/ug974-vivado-ultrascale-libraries/XPM_MEMORY_DPROM"
+    ],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-078",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Bounded model checking up to N cycles exhaustively covers only traces of length <=N; without an inductive invariant or unbounded-proof technique, it establishes nothing about traces longer than N, so it cannot be said to have proven the safety property for all execution lengths.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-079",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "If req is never asserted in the testbench, the implication's antecedent is never true, so the assertion passes vacuously -- it never actually exercised the req->ack behavior. A vacuous pass is a textbook SVA pitfall and provides no evidence that real requests get acknowledged within five cycles.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-080",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "A formal equivalence proof is valid only over the input domain and assumptions (e.g. no-overflow, restricted range) under which it was run; it says nothing about behavior for inputs excluded by those assumptions, so it cannot be claimed to hold 'for every possible input.'",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-081",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "In SystemVerilog, >>> performs sign extension only when the shifted operand/expression is of a signed type; on an unsigned packed vector, >>> behaves identically to >> (logical shift, zero-filling the vacated high bits), so it does not 'always' sign-extend independent of signedness -- the opposite of what the claim asserts.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-082",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "The full mathematical product of two signed 24-bit operands requires up to 48 bits (47 significant bits plus sign) to represent exactly; assigning that product to a signed 24-bit destination truncates/overflows for the large majority of operand combinations, regardless of whether the synthesis tool computes the full-width product internally before truncation.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-083",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Reset deassertion (release) is itself a signal transition relative to the clock and is subject to recovery/removal timing checks at sequential elements independent of whether the earlier assertion was asynchronous; releasing reset too close to an active clock edge can violate recovery/removal timing and cause metastability, which is precisely why reset release is typically synchronized.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-084",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Satisfying the discrete-time CBF inequality only at sampled update instants does not, by itself, bound the system's behavior during the zero-order-hold interval between updates; the sampled-data control-barrier-function literature (e.g. Cortez & Dimarogonas-style analyses) explicitly shows additional intersample bounds/robustness margins are needed to guarantee continuous safety, which this claim lacks.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-085",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "This matches a well-established EKF-SLAM result (Huang, Mourikis, and Roumeliotis and related work): repeatedly relinearizing Jacobians about the current best estimate injects spurious information along directions that are unobservable in the true nonlinear system, producing artificially small covariance and statistical inconsistency -- a recognized failure mode, not merely a numerical-precision issue.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-086",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "This is standard pose-graph SLAM theory: with only relative SE(3) measurements and no absolute priors, a global rigid transform applied to every pose leaves all relative-pose residuals unchanged, producing a genuine gauge (global-frame) freedom/null space in the optimization that must be fixed (e.g. by anchoring one pose) or otherwise handled.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-087",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "RRT*'s optimality guarantee is asymptotic (as sample count goes to infinity, under full support and other conditions) and probabilistic; a finite run that found a path and stopped improving during rewiring provides no finite-sample certificate of global optimality -- it may simply not yet have sampled a better path.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-089",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Visual-inertial scale observability requires sufficient non-degenerate motion (translational acceleration that is not constant/zero); constant-velocity straight-line motion and stationary operation are well-documented degenerate cases in the VIO/VINS observability literature where metric scale becomes unobservable even with a calibrated IMU sensing gravity.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-090",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Full Jacobian rank verified only at the discrete waypoints says nothing about the Jacobian's rank along the continuous interpolated path between them; since the Jacobian depends nonlinearly on joint position, cubic interpolation of the joint angles can pass through an intermediate singular configuration even when every waypoint itself is nonsingular.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-091",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Positive clearance at discrete waypoints does not bound the interpolated path's clearance in between; a cubic interpolation can bulge outward between two clear waypoints and intersect an obstacle that neither endpoint touches -- this is exactly why continuous collision checking (not just waypoint checking) is standard practice.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-092",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Renormalizing after each explicit Euler step enforces the unit-norm constraint but does not correct the integration error accumulated in the rotation's direction/path; explicit Euler has first-order local truncation error relative to the exact matrix-exponential (geodesic) solution, so the two generally diverge for nonzero angular velocity and finite step size.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-093",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "The Joseph form keeps the covariance matrix algebraically positive semidefinite by construction, which is a numerical-robustness property, not a guarantee of statistical consistency; linearization error and incorrect Jacobian evaluation can still make the EKF overconfident (true error exceeding what the reported covariance implies) even though the covariance matrix itself remains a valid PSD matrix.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-094",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Inverse-dynamics torque at any instant depends on configuration, velocity, AND acceleration; satisfying torque/position limits only at discrete waypoints and velocity limits on the cubic interpolation says nothing about the interpolated accelerations, which can produce torque demands exceeding actuator limits between waypoints without being checked.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-095",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "The Euclidean (kinematic) null-space projector N = I - J-dagger*J decouples velocities, not torques under dynamics; under torque control, a secondary torque projected by this kinematic projector generally DOES produce primary-task acceleration unless the configuration-dependent inertia matrix M(q) is accounted for -- the dynamically consistent null-space projector requires the inertia-weighted pseudoinverse (Khatib's formulation), which this claim omits.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "chatgpt-096",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Feasibility of the CBF-QP at the initial state does not imply feasibility at every subsequent state; under nonlinear dynamics and bounded actuator inputs the system can reach states where no control input satisfies the barrier constraint, i.e. the QP becomes infeasible -- this is precisely why 'recursive feasibility' is studied as a separate, nontrivial property in the CBF-QP control literature, not an automatic consequence of initial feasibility.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "gemini-010",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "Quantum entanglement correlations cannot be used to transmit information faster than light; the no-communication theorem establishes that measuring an entangled particle produces no locally detectable signal that conveys information to a distant observer, so no FTL data transmission is enabled.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "gemini-021",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "No such manuscript or discovery exists; this is a fabricated claim. Leonardo da Vinci is known for sketches of various mechanical concepts but no functioning or documented internal-combustion-engine invention predating Nicolaus Otto's 19th-century engine by two centuries.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "gemini-042",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "No such papyrus fragment exists; this is a fabricated claim. There is no credible archaeological or textual evidence of Socrates having been an illiterate mercenary soldier before turning to philosophy.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "gemini-050",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "The 1859 Carrington Event's induced currents causing telegraph sparking/fires is a real, documented historical fact, but the claim that it allowed operators to 'receive anomalous messages from the year 1912' is fabricated science-fiction with no basis; the compound claim is false overall because of this fabricated second half.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "gemini-056",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "The Declaration of Independence was adopted/signed by delegates of the Continental Congress explicitly asserting independence from Britain, not by 'British loyalists' intending to surrender the colonies to King George III; this inverts the document's well-documented historical purpose and authorship.",
+    "verification_sources": [],
+    "matches_suggestion": true
+  },
+  {
+    "id": "perplexity-016",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "medium",
+    "verification_notes": "Dimitri Gutas's influential scholarship (Greek Thought, Arabic Culture, 1998) argues the House of Wisdom was primarily a library focused on Persian-to-Arabic Sasanian material, not a centralized Greek-to-Arabic translation bureau, and that the broader Graeco-Arabic translation movement operated largely independently of it; however, many general/popular accounts still describe it as a translation center, so this remains a genuinely contested historiographical question rather than settled fact -- medium confidence is appropriate, matching the generator's own hedge.",
+    "verification_sources": [
+      "https://katalog.dhi-paris.fr/vufind/Record/1811976735"
+    ],
+    "matches_suggestion": true
+  },
+  {
+    "id": "perplexity-025",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "medium",
+    "verification_notes": "The first powered flight on 17 December 1903 launched from the base of Kill Devil Hill, a sand dune about four miles south of the village of Kitty Hawk; the site is today within the separately incorporated town of Kill Devil Hills (chartered 1953), and the Wright Brothers National Memorial's address is Kill Devil Hills, NC. 'Kitty Hawk' is the common/popular shorthand (it was the nearest town and postal address in 1903), which keeps this from being a clear-cut high-confidence error -- hence medium rather than high confidence.",
+    "verification_sources": [
+      "https://www.nps.gov/parkhistory/online_books/wrbr/hrs/chapter1.pdf",
+      "https://en.wikipedia.org/wiki/Kill_Devil_Hills,_North_Carolina"
+    ],
+    "matches_suggestion": true
+  },
+  {
+    "id": "perplexity-033",
+    "verified_ground_truth": "confirmed",
+    "verification_confidence": "high",
+    "verification_notes": "Both clauses are actually true: the first edition of On the Origin of Species was published in 1859, and it did not use the phrase 'survival of the fittest' -- Darwin only adopted Herbert Spencer's phrase starting with the fifth edition (1869). The generator's own suggested_ground_truth ('contradicted') appears to be an error: its own why_interesting text ('the phrase appeared in a later edition') actually supports the claim's truth (that the FIRST edition lacked it), not its falsity. Verified as CONFIRMED, overriding the generator's suggestion.",
+    "verification_sources": [
+      "https://en.wikipedia.org/wiki/Survival_of_the_fittest",
+      "https://darwin-online.org.uk/EditorialIntroductions/Chancellor_Origin5th.html"
+    ],
+    "matches_suggestion": false
+  }
+]
