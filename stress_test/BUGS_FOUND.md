@@ -3760,3 +3760,100 @@ four real `ml_data` rows.
 - Claim: `{"text": "The Buddha literally performed a miracle by multiplying food to feed a crowd.", "domain": "research_web", "context": {}}`
 - Tavily+Gemini predicted: **contradicted**, ground truth: **undetermined** (dangerous)
 
+
+## Test #2 bare-Nebius batch `test3-track_b` — 1 dangerous/crash result(s) (baseline, not a pipeline bug)
+
+### perplexity-025 (research_web, tier 1)
+- Claim: `{"text": "The first successful powered flight by the Wright brothers took place at Kitty Hawk, North Carolina, in 1903.", "domain": "research_web", "context": {}}`
+- Bare-Nebius predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+
+## Test #3 nebius-agent batch `track_b` — 1 dangerous/crash result(s) (isolates the value of skipping verify_proposal(); not a pipeline bug)
+
+### perplexity-025 (research_web, tier 1)
+- Claim: `{"text": "The first successful powered flight by the Wright brothers took place at Kitty Hawk, North Carolina, in 1903.", "domain": "research_web", "context": {}}`
+- Nebius-agent (no verify) predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+
+## Test #3 generic-RAG batch `track_b` — 4 dangerous/crash result(s) (a naive off-the-shelf-style baseline; not a pipeline bug)
+
+### chatgpt-025 (research_web, tier 1)
+- Claim: `{"text": "The ancient Egyptian pyramids at Giza were constructed using concrete poured into molds rather than by assembling quarried stone blocks.", "domain": "research_web", "context": {}}`
+- Generic-RAG predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### chatgpt-075 (research_web, tier 1)
+- Claim: `{"text": "In an AXI4 interface, a transmitter may legally change WDATA on every clock edge while WVALID remains high and WREADY remains low, because data stability is required only on the edge at which the handshake completes.", "domain": "research_web", "context": {}}`
+- Generic-RAG predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### chatgpt-076 (research_web, tier 1)
+- Claim: `{"text": "An AXI4 master may issue a correctly aligned INCR burst beginning at address 0x0FF0 with a total transfer size of 32 bytes, provided that each individual beat is aligned to its transfer size and the subordinate accepts every beat.", "domain": "research_web", "context": {}}`
+- Generic-RAG predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### perplexity-025 (research_web, tier 1)
+- Claim: `{"text": "The first successful powered flight by the Wright brothers took place at Kitty Hawk, North Carolina, in 1903.", "domain": "research_web", "context": {}}`
+- Generic-RAG predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+
+## Test #3 Perplexity batch `track_b` — 3 dangerous/crash result(s) (external API baseline; not a pipeline bug)
+
+### chatgpt-072 (research_web, tier 1)
+- Claim: `{"text": "A post-route static timing analysis reports nonnegative setup slack for every constrained setup path, and the design is therefore guaranteed to satisfy its intended operating frequency even when a register-to-register path is absent from timing analysis because its clock was never correctly constrained.", "domain": "research_web", "context": {}}`
+- Perplexity predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### perplexity-025 (research_web, tier 1)
+- Claim: `{"text": "The first successful powered flight by the Wright brothers took place at Kitty Hawk, North Carolina, in 1903.", "domain": "research_web", "context": {}}`
+- Perplexity predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+
+### perplexity-033 (research_web, tier 1)
+- Claim: `{"text": "The first edition of Darwin\u2019s On the Origin of Species was published in 1859, but it did not use the phrase \u201csurvival of the fittest.\u201d", "domain": "research_web", "context": {}}`
+- Perplexity predicted: **contradicted**, ground truth: **confirmed** (dangerous)
+
+
+## Test #3 Tavily+Gemini batch `track_b` — 2 dangerous/crash result(s) (external API baseline; not a pipeline bug)
+
+### chatgpt-092 (research_web, tier 1)
+- Claim: `{"text": "A robot's attitude estimator integrates a unit-quaternion differential equation using explicit Euler integration and normalizes the quaternion after every step; therefore, the resulting orientation is exactly the same as the solution obtained using the matrix exponential for arbitrary angular velocity and arbitrary integration step size.", "domain": "research_web", "context": {}}`
+- Tavily+Gemini predicted: **CRASH**, ground truth: **contradicted** (crash)
+- Error: `GeminiQuotaExhausted: Gemini returned 429: {
+  "error": {
+    "code": 429,
+    "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 15, model: gemini-3.5-flash-lite, description: Generate content requests per minute limit exceeded on Free Tier. See https://ai.google.dev/gemini-api/docs/rate-limits.\nPlease retry in 58.150218179s.",
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.Help",
+        "links": [
+          {
+            "description": "Learn more about Gemini API quotas",
+            "url": "https://ai.google.dev/gemini-api/docs/rate-limits"
+          }
+        ]
+      },
+      {
+        "@type": "type.googleapis.com/google.rpc.QuotaFailure",
+        "violations": [
+          {
+            "description": "Generate content requests per minute limit exceeded on Free Tier. See https://ai.google.dev/gemini-api/docs/rate-limits.",
+            "quotaMetric": "generativelanguage.googleapis.com/generate_content_free_tier_requests",
+            "quotaId": "GenerateRequestsPerMinutePerProjectPerModel-FreeTier",
+            "quotaDimensions": {
+              "model": "gemini-3.5-flash-lite",
+              "location": "global"
+            },
+            "quotaValue": "15"
+          }
+        ]
+      },
+      {
+        "@type": "type.googleapis.com/google.rpc.RetryInfo",
+        "retryDelay": "58s"
+      }
+    ]
+  }
+}
+`
+
+### perplexity-025 (research_web, tier 1)
+- Claim: `{"text": "The first successful powered flight by the Wright brothers took place at Kitty Hawk, North Carolina, in 1903.", "domain": "research_web", "context": {}}`
+- Tavily+Gemini predicted: **confirmed**, ground truth: **contradicted** (dangerous)
+

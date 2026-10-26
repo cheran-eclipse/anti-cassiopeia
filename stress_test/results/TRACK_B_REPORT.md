@@ -47,14 +47,59 @@ popular-shorthand-vs-technical-precision tension the independent
 verification pass already flagged as a judgment call (medium confidence)
 for this exact claim, not a new problem this run introduced.
 
-## What this does and doesn't tell us
+## Competitor sweep — run (project owner's call: yes, it's required)
 
-Confirms the engine's conservative-failure design holds even on claims
-far outside its usual subject matter (formal engineering/math, not
-history/mythology/conspiracy) — if anything, it gets MORE conservative
-here, which is the right direction. Does NOT yet give a "which model
-works for which" comparison for this track (no competitor run) — if
-that's wanted, the same `_for_competitor_harness()`-style domain patch
-round 2 used would apply identically here; not done in this pass to keep
-scope and cost bounded for a track whose main open question (is this
-testable at all) is what this run answers.
+No new infrastructure needed, same as predicted: Track B's claims are
+architecturally identical in shape to Track A (free-text claims through
+the same harness functions), so the same 5-variant sweep round 2 used
+applies unchanged. Script: `stress_test/run_track_b_competitors.py`
+(reuses Anti-Cassiopeia's own already-captured results from
+`track_b_raw.json` rather than re-running the real engine a second
+time). Real cost: $0.181922 Nebius + $0.008770 Perplexity + $0.033884
+Gemini (Tavily: 69 free-credit calls).
+
+| System | Correct | Dangerous | Conservative miss | Crash |
+|---|---|---|---|---|
+| **Anti-Cassiopeia** | 26/69 (37.7%) | 1 | 42 | 0 |
+| Bare model (no retrieval) | 66/69 (95.7%) | 1 | 2 | 0 |
+| Nebius-agent | 29/69 (42.0%) | 1 | 39 | 0 |
+| Generic RAG | 42/69 (60.9%) | 4 | 23 | 0 |
+| Perplexity | 66/69 (95.7%) | 3 | 0 | 0 |
+| Tavily+Gemini | 57/69 (82.6%) | 1 | 10 | 1 |
+
+**This is a genuinely different, important result from Track A, not
+just a smaller version of it.** Bare model — zero retrieval, pure
+parametric knowledge — gets 95.7% correct, tied with Perplexity for
+best of all six systems, and far ahead of Anti-Cassiopeia's 37.7%. This
+makes sense once the claim shape is considered: category-8's formal/
+technical claims (control theory, FPGA, digital logic, EKF-SLAM) are
+well-established textbook and literature material that a capable LLM's
+training data already covers cold — unlike Track A's claims (viral
+myths, obscure history, calibration probes), where live, citable web
+retrieval is exactly what makes the difference. **Here, retrieval is a
+genuine handicap, not a help**: `searchlight`'s live web search mostly
+can't find a page directly discussing "does a nonzero null-space vector
+preserve end-effector pose over a finite interval," so it correctly, but
+unhelpfully, defaults to conservative `undetermined` — while a model
+just answering from what it already knows gets it right most of the
+time. Anti-Cassiopeia's own dangerous-miss rate (1.4%) stays exactly as
+safe as everywhere else; what changes here is that its retrieval-
+grounded design trades a large amount of raw accuracy for that safety,
+on a claim shape where the competitors' parametric knowledge happens to
+already be strong. This is an honest limitation worth stating plainly,
+not a reason to change anything about the engine's own design — a
+retrieval-grounded verifier is not the right tool for "does the model
+already know this cold," and this track demonstrates that boundary
+concretely rather than leaving it theoretical.
+
+**The one shared soft case**: `perplexity-025` (Wright Flyer "Kitty
+Hawk") is dangerous for bare model, Perplexity, AND Anti-Cassiopeia —
+the same popular-shorthand-vs-technical-precision tension flagged
+throughout this track's own verification, not three independent system
+failures. `perplexity-033` (Darwin's "survival of the fittest" phrase,
+corrected to `confirmed` during this track's own verification — see that
+file's commit) is where Perplexity-the-competitor lands on `contradicted`
+instead — the same mistake the ORIGINAL generating AI made before
+independent verification caught it, a small, concrete demonstration of
+why this project never trusts a single system's own answer as ground
+truth.
