@@ -1,0 +1,285 @@
+[
+  {
+    "claim_id": "chatgpt-001",
+    "category": 1,
+    "generated_by": [
+      "chatgpt"
+    ],
+    "predicted_verdict": "contradicted",
+    "severity": "correct",
+    "confidence": 0.9,
+    "ground_truth_verdict": "contradicted",
+    "evidence": [
+      {
+        "source": "https://en.wikipedia.org/wiki/History_of_quantum_mechanics",
+        "stance": "contradicts",
+        "snippet": "Schr\u00f6dinger subsequently showed that the two approaches were equivalent."
+      }
+    ],
+    "reasoning": [
+      "Gathered 1 piece(s) of evidence from domain 'searchlight'.",
+      "Support weight: 0.00, contradiction weight: 0.75.",
+      "Confidence capped at 0.90: only one source contributed to this verdict, and a lone source cannot alone justify full certainty.",
+      "Verdict: contradicted (confidence 0.90)."
+    ],
+    "missing": [],
+    "error": null
+  },
+  {
+    "claim_id": "chatgpt-030",
+    "category": 1,
+    "generated_by": [
+      "chatgpt"
+    ],
+    "predicted_verdict": "undetermined",
+    "severity": "conservative_miss",
+    "confidence": null,
+    "ground_truth_verdict": "confirmed",
+    "evidence": [],
+    "reasoning": [
+      "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+      "Support weight: 0.00, contradiction weight: 0.00.",
+      "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+    ],
+    "missing": [
+      "Checked 4 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://en.wikipedia.org/wiki/Eddington_experiment: cited quote not actually verbatim on the page (Quote not found verbatim (whitespace-normalized) in chunk 'https://en.wikipedia.org/wiki/Eddington_experiment#46' (lines starting at 822). Proposer's quote: \"It is notable that while the Eddington results were seen as a confirmation of Einstein's prediction, and in that capacity soon found their way into general relativity text books, among other astronomers there followed a decade-long discussion of the quantitative values of light deflection, with the precise results in contention even after s\".); https://aetherczar.substack.com/p/526-the-great-eclipse-of-1919: real verified quote found, but doesn't address this specific claim; https://en.wikipedia.org/wiki/Eddington_experiment#:~:text=Observations%20of%20the%20total%20solar,starlight%20passing%20near%20the%20Sun.: cited quote not actually verbatim on the page (Quote not found verbatim (whitespace-normalized) in chunk 'https://en.wikipedia.org/wiki/Eddington_experiment#:~:text=Observations%20of%20the%20total%20solar,starlight%20passing%20near%20the%20Sun.#46' (lines starting at 822). Proposer's quote: \"It is notable that while the Eddington results were seen as a confirmation of Einstein's prediction, and in that capacity soon found their way into general relativity text books, among other astronomers there followed a decade-long discussion of the quantitative values of light deflection, with the precise results in contention even after s\".); https://spacedaily.com/t-in-1919-british-astronomer-arthur-eddington-sailed-to-the-island-of-principe-to-photograph-a-total-solar-eclipse-measuring-starlight-bent-by-the-suns-gravity-a-result-that-confirm: model cited an unknown chunk_id '15' \u2014 dropped"
+    ],
+    "error": null
+  },
+  {
+    "claim_id": "chatgpt-031",
+    "category": 1,
+    "generated_by": [
+      "chatgpt"
+    ],
+    "predicted_verdict": "contradicted",
+    "severity": "correct",
+    "confidence": 0.9,
+    "ground_truth_verdict": "contradicted",
+    "evidence": [
+      {
+        "source": "https://en.wikipedia.org/wiki/Higgs_boson",
+        "stance": "contradicts",
+        "snippet": "Physicists explain the  fundamental particles  and  forces  of the universe in terms of the  Standard Model  \u2013 a widely accepted framework based on  quantum field theory  that predicts almost all known particles and forces aside from  gravity  with great accuracy. (A separate theory,  general relati"
+      }
+    ],
+    "reasoning": [
+      "Gathered 1 piece(s) of evidence from domain 'searchlight'.",
+      "Support weight: 0.00, contradiction weight: 0.75.",
+      "Confidence capped at 0.90: only one source contributed to this verdict, and a lone source cannot alone justify full certainty.",
+      "Verdict: contradicted (confidence 0.90)."
+    ],
+    "missing": [],
+    "error": null
+  },
+  {
+    "claim_id": "gemini-001",
+    "category": 1,
+    "generated_by": [
+      "gemini"
+    ],
+    "predicted_verdict": "confirmed",
+    "severity": "correct",
+    "confidence": 0.9,
+    "ground_truth_verdict": "confirmed",
+    "evidence": [
+      {
+        "source": "https://www.publichealth.columbia.edu/research/center-infection-and-immunity/penicillin-83-years-ago-today",
+        "stance": "supports",
+        "snippet": "In 1928, he accidentally left a petri dish in which he was growing Staphylococcus aureus bacteria uncovered. Later, he noticed that there was mold growing on the plate, and around the mold, the staph bacteria were dead."
+      }
+    ],
+    "reasoning": [
+      "Gathered 1 piece(s) of evidence from domain 'searchlight'.",
+      "Support weight: 0.75, contradiction weight: 0.00.",
+      "Confidence capped at 0.90: only one source contributed to this verdict, and a lone source cannot alone justify full certainty.",
+      "Verdict: confirmed (confidence 0.90)."
+    ],
+    "missing": [],
+    "error": null
+  },
+  {
+    "claim_id": "gemini-011",
+    "category": 1,
+    "generated_by": [
+      "gemini"
+    ],
+    "predicted_verdict": "contradicted",
+    "severity": "correct",
+    "confidence": 0.9,
+    "ground_truth_verdict": "contradicted",
+    "evidence": [
+      {
+        "source": "comparative synthesis across 2 sources (https://www.history.com/articles/printing-press, https://lithub.com/so-gutenberg-didnt-actually-invent-the-printing-press)",
+        "stance": "contradicts",
+        "snippet": "Created in China, the printing press revolutionized society there before being further developed in Europe in the 15th Century by Johannes Gutenberg and his invention of the Gutenberg press. | Eventually, early capitalists in Europe invested in Johannes Gutenberg\u2019s business venture\u2014the one that comb"
+      }
+    ],
+    "reasoning": [
+      "Gathered 1 piece(s) of evidence from domain 'searchlight'.",
+      "Support weight: 0.00, contradiction weight: 0.60.",
+      "Confidence capped at 0.90: only one source contributed to this verdict, and a lone source cannot alone justify full certainty.",
+      "Verdict: contradicted (confidence 0.90)."
+    ],
+    "missing": [],
+    "error": null
+  },
+  {
+    "claim_id": "gemini-012",
+    "category": 1,
+    "generated_by": [
+      "gemini",
+      "perplexity"
+    ],
+    "predicted_verdict": "contradicted",
+    "severity": "dangerous",
+    "confidence": 0.9,
+    "ground_truth_verdict": "confirmed",
+    "evidence": [
+      {
+        "source": "https://bhanzu.com/math/calculus/leibniz-newton-calculus-controversy",
+        "stance": "contradicts",
+        "snippet": "The Leibniz Newton calculus controversy was a priority dispute over who invented calculus: Isaac Newton (1643 to 1727, England), who developed his method of fluxions in 1665 and 1666 but published little of it, or Gottfried Wilhelm Leibniz (1646 to 1716, Germany), who developed his differential calc"
+      }
+    ],
+    "reasoning": [
+      "Gathered 1 piece(s) of evidence from domain 'searchlight'.",
+      "Support weight: 0.00, contradiction weight: 0.75.",
+      "Confidence capped at 0.90: only one source contributed to this verdict, and a lone source cannot alone justify full certainty.",
+      "Verdict: contradicted (confidence 0.90)."
+    ],
+    "missing": [],
+    "error": null
+  },
+  {
+    "claim_id": "gemini-022",
+    "category": 1,
+    "generated_by": [
+      "gemini"
+    ],
+    "predicted_verdict": "contradicted",
+    "severity": "correct",
+    "confidence": 0.9,
+    "ground_truth_verdict": "contradicted",
+    "evidence": [
+      {
+        "source": "comparative synthesis across 3 sources (https://courses.lumenlearning.com/suny-jcc-ushistory1os/chapter/the-economics-of-cotton, https://books.core-econ.org/the-economy/microeconomics/02-technology-incentives-09-industrial-revolution-colonies.html, https://courses.lumenlearning.com/wm-ushistory1/chapter/the-cotton-revolution)",
+        "stance": "contradicts",
+        "snippet": "Southern cotton, picked and processed by American slaves, helped fuel the nineteenth-century Industrial Revolution in both the United States and Great Britain. | The raw cotton that was milled into textiles in Britain also came from slave plantations in North America, for the most part in the Britis"
+      }
+    ],
+    "reasoning": [
+      "Gathered 1 piece(s) of evidence from domain 'searchlight'.",
+      "Support weight: 0.00, contradiction weight: 0.60.",
+      "Confidence capped at 0.90: only one source contributed to this verdict, and a lone source cannot alone justify full certainty.",
+      "Verdict: contradicted (confidence 0.90)."
+    ],
+    "missing": [],
+    "error": null
+  },
+  {
+    "claim_id": "gemini-023",
+    "category": 1,
+    "generated_by": [
+      "gemini"
+    ],
+    "predicted_verdict": "undetermined",
+    "severity": "conservative_miss",
+    "confidence": null,
+    "ground_truth_verdict": "contradicted",
+    "evidence": [],
+    "reasoning": [
+      "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+      "Support weight: 0.00, contradiction weight: 0.00.",
+      "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+    ],
+    "missing": [
+      "Checked 6 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://home.cern/science/computing/the-birth-of-the-web: model honestly reported the claim isn't stated here; https://ifs.uoregon.edu/2024/09/10/cern70-where-the-web-was-born: model honestly reported the claim isn't stated here; https://home.cern/tag/world-wide-web: model honestly reported the claim isn't stated here; https://www.ebsco.com/research-starters/history/first-world-wide-web-files-posted-internet: model honestly reported the claim isn't stated here; https://home.cern/science/computing/the-birth-of-the-web/short-history-web: model honestly reported the claim isn't stated here; https://en.wikipedia.org/wiki/Tim_Berners-Lee: model honestly reported the claim isn't stated here"
+    ],
+    "error": null
+  },
+  {
+    "claim_id": "gemini-032",
+    "category": 1,
+    "generated_by": [
+      "gemini"
+    ],
+    "predicted_verdict": "undetermined",
+    "severity": "conservative_miss",
+    "confidence": null,
+    "ground_truth_verdict": "contradicted",
+    "evidence": [],
+    "reasoning": [
+      "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+      "Support weight: 0.00, contradiction weight: 0.00.",
+      "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+    ],
+    "missing": [
+      "Checked 3 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://maidensandmanuscripts.com/2020/10/15/the-gregorian-calendar-is-adopted-in-1582: model honestly reported the claim isn't stated here; https://en.wikipedia.org/wiki/Adoption_of_the_Gregorian_calendar: model honestly reported the claim isn't stated here; https://www.youtube.com/watch?v=-dqRGEsSBOU: model honestly reported the claim isn't stated here"
+    ],
+    "error": null
+  },
+  {
+    "claim_id": "gemini-043",
+    "category": 1,
+    "generated_by": [
+      "gemini"
+    ],
+    "predicted_verdict": "undetermined",
+    "severity": "conservative_miss",
+    "confidence": null,
+    "ground_truth_verdict": "contradicted",
+    "evidence": [],
+    "reasoning": [
+      "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+      "Support weight: 0.00, contradiction weight: 0.00.",
+      "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+    ],
+    "missing": [
+      "Checked 5 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://www.snopes.com/fact-check/titanic-sinking-inside-job: real verified quote found, but doesn't address this specific claim; https://www.businessinsider.com/conspiracy-theory-that-the-rothschilds-and-federal-reserve-proponents-sank-the-titanic-2015-10: real verified quote found, but doesn't address this specific claim; https://en.wikipedia.org/wiki/Titanic_conspiracy_theories: model honestly reported the claim isn't stated here; https://www.youtube.com/watch?v=pOq20A-uW9E: model honestly reported the claim isn't stated here; https://www.youtube.com/watch?v=xFx3u5N9cFg: model honestly reported the claim isn't stated here; compared 2 individually-unrelated verified quotes together -- still not a clear enough incompatible account to contradict, staying undetermined"
+    ],
+    "error": null
+  },
+  {
+    "claim_id": "gemini-051",
+    "category": 1,
+    "generated_by": [
+      "gemini"
+    ],
+    "predicted_verdict": "undetermined",
+    "severity": "conservative_miss",
+    "confidence": null,
+    "ground_truth_verdict": "contradicted",
+    "evidence": [],
+    "reasoning": [
+      "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+      "Support weight: 0.00, contradiction weight: 0.00.",
+      "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+    ],
+    "missing": [
+      "Checked 6 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://sunco.com/blogs/sunco-blog/who-really-invented-the-lightbulb: model honestly reported the claim isn't stated here; https://www.nationalgeographic.com/history/article/thomas-edison-light-bulb-history: model honestly reported the claim isn't stated here; https://ethw.org/Light_and_Power: model honestly reported the claim isn't stated here; https://www.history.com/articles/thomas-edison: model honestly reported the claim isn't stated here; https://www.energy.gov/articles/history-light-bulb: model honestly reported the claim isn't stated here; https://www.idahowood.com/blogs/news/the-real-story-behind-thomas-edison-and-the-light-bulb: model honestly reported the claim isn't stated here"
+    ],
+    "error": null
+  },
+  {
+    "claim_id": "perplexity-010",
+    "category": 1,
+    "generated_by": [
+      "perplexity"
+    ],
+    "predicted_verdict": "undetermined",
+    "severity": "conservative_miss",
+    "confidence": null,
+    "ground_truth_verdict": "contradicted",
+    "evidence": [],
+    "reasoning": [
+      "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+      "Support weight: 0.00, contradiction weight: 0.00.",
+      "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+    ],
+    "missing": [
+      "Checked 6 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://en.wikipedia.org/wiki/Design: model honestly reported the claim isn't stated here; https://www.design.ing: model honestly reported the claim isn't stated here; https://www.facebook.com/Connect.Juba/videos/the-internets-origin-storyin-1983-arpanet-adopted-the-tcpip-protocol-which-becam/2002072500255968: model honestly reported the claim isn't stated here; https://battleofgeniuses.com/blog/transition-from-arpanet-to-the-world-wide-web-a-paradigm-shift-in-comm: model honestly reported the claim isn't stated here; https://www.history.com/articles/invention-of-the-internet: model honestly reported the claim isn't stated here; https://en.wikipedia.org/wiki/ARPANET: model honestly reported the claim isn't stated here"
+    ],
+    "error": null
+  }
+]

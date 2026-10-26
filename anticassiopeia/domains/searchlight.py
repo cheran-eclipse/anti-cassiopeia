@@ -220,7 +220,7 @@ from anticassiopeia.llm.nebius_client import NebiusClientError, NebiusTokenFacto
 from anticassiopeia.retrieval import Chunk, HybridIndex, ScoredChunk, chunk_document, verify_proposal
 from anticassiopeia.retrieval.bm25 import tokenize
 from anticassiopeia.retrieval.extract import propose
-from anticassiopeia.retrieval.stance import RECOMMENDED_STANCE_MODEL, judge_stance
+from anticassiopeia.retrieval.stance import RECOMMENDED_STANCE_MODEL, judge_comparative_stance, judge_stance
 
 _TAG_RE = re.compile(r"<[^>]+>")
 _WS_RE = re.compile(r"\s+")
@@ -257,6 +257,25 @@ _MAX_SOURCES_TO_CHECK = 3
 #: that mistake. Total sources checked across BOTH the normal pass and
 #: an escalation pass never exceeds this cap.
 _ESCALATED_MAX_SOURCES_TO_CHECK = _MAX_SOURCES_TO_CHECK * 2
+
+#: COMPARATIVE-SYNTHESIS CONTRADICTION (found necessary live: round 2 of the
+#: competitive-benchmark protocol -- 9 of category 1's 11 conservative
+#: misses had ZERO evidence at all, because every individual source was
+#: correctly judged "unrelated" by judge_stance()'s own deliberately strict
+#: SECOND paragraph, even though several sources TOGETHER clearly described
+#: a different, real account incompatible with the claim. See
+#: retrieval/stance.py's judge_comparative_stance() for the actual judgment
+#: and its own, separate safety reasoning. Below DIRECT-EVIDENCE trust
+#: (0.75) since this is one inferential step removed from a passage that
+#: explicitly addresses the claim -- still above DECISION_THRESHOLD (0.5)
+#: so it CAN produce a real verdict, deliberately not by a wide margin.
+_COMPARATIVE_SYNTHESIS_TRUST = 0.6
+#: Never trust a single passage's silence as synthesis material -- requires
+#: at least this many INDEPENDENT (already near-duplicate-filtered, see
+#: _is_near_duplicate_evidence) unrelated-but-verified quotes before even
+#: attempting comparative synthesis, so one odd or thin source can't drive
+#: a contradiction verdict on its own.
+_MIN_QUOTES_FOR_COMPARATIVE_SYNTHESIS = 2
 
 _BLOCK_PAGE_MARKERS = (
     "access denied",
@@ -877,7 +896,8 @@ class SearchlightAdapter(DomainAdapter):
         cap: int,
         evidence: list[Evidence],
         problems: list[str],
-    ) -> tuple[list[Evidence], list[str], int]:
+        unrelated_quotes: list[tuple[str, str]],
+    ) -> tuple[list[Evidence], list[str], int, list[tuple[str, str]]]:
         """Checks up to `cap` sources from `hits_by_source`
         (propose()->verify_proposal()->judge_stance(), same per-source
         pipeline as always), appending to the running `evidence`/
@@ -886,7 +906,14 @@ class SearchlightAdapter(DomainAdapter):
         BEFORE reaching `cap` the moment _is_decisive_pair(evidence)
         turns true (see that function's own docstring for why this never
         changes the final verdict's state, only how many live calls it
-        took to get there). Returns (evidence, problems, checked_count)."""
+        took to get there). `unrelated_quotes` collects every individually-
+        "unrelated"-judged (source_url, verified_quote) pair -- real,
+        already-verbatim-checked text that judge_stance() correctly found
+        doesn't directly address the claim ALONE, kept so
+        _gather_multi_candidate can try judge_comparative_stance() across
+        them if no direct evidence turns up at all (see that function and
+        retrieval/stance.py's own comment for why). Returns (evidence,
+        problems, checked_count)."""
         checked = 0
         for source_url, source_hits in hits_by_source.items():
             if checked >= cap:
@@ -931,6 +958,7 @@ class SearchlightAdapter(DomainAdapter):
                 continue
             if stance == "unrelated":
                 problems.append(f"{source_url}: real verified quote found, but doesn't address this specific claim")
+                unrelated_quotes.append((source_url, proposal.quote))
                 continue
 
             candidate_evidence = replace(result.evidence, stance=stance)
@@ -943,7 +971,7 @@ class SearchlightAdapter(DomainAdapter):
             evidence.append(candidate_evidence)
             if _is_decisive_pair(evidence):
                 break
-        return evidence, problems, checked
+        return evidence, problems, checked, unrelated_quotes
 
     async def _gather_multi_candidate(self, claim: Claim) -> list[Evidence]:
         _web_gap_var.set(None)
@@ -968,14 +996,16 @@ class SearchlightAdapter(DomainAdapter):
         hits_by_source, chunks_by_id, notes = await self._fetch_rank_sources(question, exclude_urls=set())
         problems: list[str] = list(notes)
         evidence: list[Evidence] = []
+        unrelated_quotes: list[tuple[str, str]] = []
         checked = 0
 
         if hits_by_source:
             if self._client is None:
                 _web_gap_var.set(f"Live candidates and matching passages were found, but the LLM propose step can't run: {self._client_error}")
                 return []
-            evidence, problems, checked = await self._check_sources(
+            evidence, problems, checked, unrelated_quotes = await self._check_sources(
                 hits_by_source, chunks_by_id, model_question, claim, _MAX_SOURCES_TO_CHECK, evidence, problems,
+                unrelated_quotes,
             )
 
         # ADAPTIVE-DEPTH ESCALATION: fires only on the REAL, OBSERVED outcome
@@ -996,15 +1026,60 @@ class SearchlightAdapter(DomainAdapter):
             remaining_cap = max(_ESCALATED_MAX_SOURCES_TO_CHECK - checked, 0)
             if esc_hits_by_source and remaining_cap > 0:
                 chunks_by_id.update(esc_chunks_by_id)
-                evidence, problems, checked2 = await self._check_sources(
+                evidence, problems, checked2, unrelated_quotes = await self._check_sources(
                     esc_hits_by_source, chunks_by_id, model_question, claim, remaining_cap, evidence, problems,
+                    unrelated_quotes,
                 )
                 checked += checked2
 
+        # COMPARATIVE-SYNTHESIS CONTRADICTION: only attempted when the two
+        # passes above found NO direct evidence at all, and only with
+        # enough independent "unrelated"-but-verified quotes to make a
+        # synthesis judgment meaningful (see the constant's own docstring
+        # and retrieval/stance.py's judge_comparative_stance() for the
+        # full reasoning and safety scoping -- this never runs when any
+        # direct evidence exists, so it cannot interfere with or weaken
+        # an existing confirm/contradict verdict, only recover one from an
+        # otherwise-empty result).
+        if (
+            not evidence
+            and self._stance_client is not None
+            and len(unrelated_quotes) >= _MIN_QUOTES_FOR_COMPARATIVE_SYNTHESIS
+        ):
+            quote_sources = unrelated_quotes[:_ESCALATED_MAX_SOURCES_TO_CHECK]
+            try:
+                comparative = await judge_comparative_stance(
+                    self._stance_client, claim.text, [q for _url, q in quote_sources]
+                )
+            except (NebiusClientError, httpx.HTTPError) as exc:
+                problems.append(f"comparative synthesis across {len(quote_sources)} sources failed: {exc}")
+                comparative = "undetermined"
+            if comparative == "contradicts":
+                urls = ", ".join(url for url, _q in quote_sources)
+                combined_snippet = " | ".join(q for _url, q in quote_sources)
+                evidence = [Evidence(
+                    source=f"comparative synthesis across {len(quote_sources)} sources ({urls})",
+                    snippet=combined_snippet,
+                    stance="contradicts",
+                    trust=_COMPARATIVE_SYNTHESIS_TRUST,
+                )]
+            else:
+                problems.append(
+                    f"compared {len(quote_sources)} individually-unrelated verified quotes together -- "
+                    "still not a clear enough incompatible account to contradict, staying undetermined"
+                )
+
         if not evidence:
+            # Phrased as "not yet resolved", not "no evidence exists" -- real sources
+            # were found and read (checked/problems below name exactly which ones and
+            # why each didn't settle it, including a comparative-synthesis attempt
+            # across them when one was tried above); the honest state here is
+            # "this hasn't been conclusively worked out from what's available", not
+            # "nothing is known about this at all".
             _web_gap_var.set((
-                f"Checked {checked} distinct live source(s) with matching passages, but none "
-                "produced usable evidence: " + "; ".join(problems)
+                f"Checked {checked} distinct live source(s) with matching passages, but this claim's "
+                "specific assertion hasn't been conclusively resolved from what they say: "
+                + "; ".join(problems)
             ))
         return evidence
 

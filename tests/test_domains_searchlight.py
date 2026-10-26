@@ -847,9 +847,16 @@ async def test_live_multi_candidate_undetermined_when_no_real_source_settles_it(
     ev = await adapter.gather_evidence(claim)
     assert ev == [], f"expected no evidence (honest gap), got: {ev}"
     gap = adapter.describe_gap(claim, ev)
+    # Reworded 2026-10-26 (comparative-synthesis fix, round 2 category-1
+    # investigation): phrased as "not yet resolved" rather than "no
+    # evidence exists" -- real sources were checked and read, the honest
+    # state is "not conclusively resolved from what they say", not
+    # "nothing is known about this at all". See stance.py's own module
+    # comment and COMPARATIVE_SYNTHESIS_FIX_NOTE.md for the full reasoning.
     assert (
         "no live candidate pages found" in gap[0].lower()
         or "none produced usable evidence" in gap[0].lower()
+        or "hasn't been conclusively resolved" in gap[0].lower()
     ), gap
 
 

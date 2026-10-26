@@ -202,3 +202,76 @@ async def judge_stance(client: NebiusTokenFactoryClient, claim_text: str, verifi
     if "support" in word:
         return "supports"
     return "unrelated"
+
+
+# FOUND (round 2 competitive benchmark, 2026-10-26): of category-1's 11
+# conservative misses, 9 had ZERO evidence at all -- not one contradicting
+# source trusted too readily (the one claim that looked like that,
+# gemini-012/Newton-Leibniz, didn't even reproduce that pattern on replay).
+# The real, dominant shape: the SECOND paragraph above (correctly) rejects
+# every individual passage as "unrelated" because none of them explicitly
+# states or denies the claim's specific causal mechanism -- even when
+# MULTIPLE passages, read together, clearly describe a different, real
+# account that the claim's specific mechanism doesn't fit (e.g. three
+# sources on the Industrial Revolution's actual causes, none of which ever
+# says "not cheap cotton via the Louisiana Purchase", but none of which
+# mentions that mechanism either, instead describing textile mechanization,
+# coal, and trade broadly). A human reading all three would call the claim
+# false; judge_stance() checking each ALONE never gets there, by design --
+# that design is still correct for CONFIRMING (one passage's silence
+# shouldn't let a claim through), but it leaves a real gap for
+# CONTRADICTING via synthesis across sources.
+#
+# judge_comparative_stance() below is a SEPARATE, additive capability, not
+# a change to judge_stance() or its prompt above -- it only ever runs (see
+# searchlight.py's _gather_multi_candidate) when gather_evidence() would
+# otherwise return nothing at all (every individual passage already judged
+# "unrelated"), and only when at least 2 independently-sourced passages
+# are available to compare, since a single passage's silence proves
+# nothing and this function must not become a backdoor around the SECOND
+# paragraph's deliberate strictness. Deliberately conservative: it must
+# answer "contradicts" only when the passages themselves describe a
+# positive, incompatible account, never merely because they're silent on
+# the claim's specific mechanism (silence is what judge_stance() already
+# handles correctly as "unrelated" -- this function's whole job is telling
+# "silent" apart from "describes something else that doesn't fit").
+COMPARATIVE_STANCE_SYSTEM_PROMPT = """You will be given a CLAIM and several PASSAGES. Each passage has \
+already been independently confirmed to be real, verbatim text from a real source, and each was \
+ALREADY checked individually and found not to directly state or deny the claim's specific assertion. \
+Your job is different: look at the passages TOGETHER and decide whether they collectively describe a \
+different, real account of the same event or relationship that is genuinely INCOMPATIBLE with the \
+claim's specific assertion -- not whether they merely fail to confirm it.
+
+Answer "contradicts" ONLY if the passages, taken together, consistently describe what actually \
+happened, caused, or was responsible, AND that real account leaves no room for the claim's specific \
+mechanism to also be true (e.g. the passages describe several different real causes of an event, none \
+of which is the one the claim names, and naming the real causes implicitly rules out the claim's \
+invented one). Do NOT answer "contradicts" just because the passages are silent about the claim's \
+specific mechanism, cover a related but different aspect, or could in principle coexist with it --mere \
+absence of confirmation is not evidence of denial, and this is NOT license to treat silence as \
+contradiction. If you are not genuinely confident the passages describe an incompatible account, \
+answer "undetermined".
+
+Reply with EXACTLY one word: contradicts or undetermined."""
+
+
+async def judge_comparative_stance(
+    client: NebiusTokenFactoryClient, claim_text: str, verified_quotes: list[str]
+) -> str:
+    """Returns "contradicts" | "undetermined" -- never "supports": this
+    function only ever runs when gather_evidence() would otherwise be
+    empty, specifically to recover a CONTRADICTION synthesized across
+    multiple individually-"unrelated" passages (see the module-level
+    comment above) -- it has no role in confirming a claim, which is
+    exactly the case judge_stance()'s existing SECOND paragraph already
+    protects deliberately. Caller's responsibility (see searchlight.py):
+    only call this with 2+ independently-sourced, already-verified quotes.
+    Any model reply not containing "contradict" is treated as
+    "undetermined" -- same fail-safe convention as judge_stance()."""
+    numbered = "\n\n".join(f"PASSAGE {i + 1}: {q}" for i, q in enumerate(verified_quotes))
+    prompt = f"CLAIM: {claim_text}\n\n{numbered}"
+    raw = await client.complete(prompt, system=COMPARATIVE_STANCE_SYSTEM_PROMPT, temperature=0.0)
+    word = raw.strip().lower()
+    if "contradict" in word:
+        return "contradicts"
+    return "undetermined"

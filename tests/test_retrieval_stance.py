@@ -17,7 +17,12 @@ place against an accidental future removal.
 
 import pytest
 
-from anticassiopeia.retrieval.stance import STANCE_SYSTEM_PROMPT, judge_stance
+from anticassiopeia.retrieval.stance import (
+    COMPARATIVE_STANCE_SYSTEM_PROMPT,
+    STANCE_SYSTEM_PROMPT,
+    judge_comparative_stance,
+    judge_stance,
+)
 
 
 class _FakeClient:
@@ -250,5 +255,83 @@ async def test_a_passage_that_genuinely_contests_a_supernatural_claim_still_cont
         client,
         "Jesus Christ physically rose from the dead three days after his crucifixion.",
         "No contemporary Roman or Jewish record from that period corroborates the resurrection account, and textual critics date the earliest written reports to decades after the events they describe.",
+    )
+    assert result == "contradicts"
+
+
+# --- judge_comparative_stance() (round 2 finding, new): synthesizing a
+# contradiction across multiple individually-"unrelated" quotes, never a
+# confirmation -- see stance.py's own module-level comment for the full
+# round-2 finding this responds to. ---
+
+
+async def test_comparative_contradicts_reply_is_parsed_as_contradicts():
+    client = _FakeClient("contradicts")
+    result = await judge_comparative_stance(client, "claim", ["quote one", "quote two"])
+    assert result == "contradicts"
+
+
+async def test_comparative_undetermined_reply_is_parsed_as_undetermined():
+    client = _FakeClient("undetermined")
+    result = await judge_comparative_stance(client, "claim", ["quote one", "quote two"])
+    assert result == "undetermined"
+
+
+async def test_comparative_ambiguous_reply_defaults_to_undetermined_not_a_crash():
+    """Same fail-safe convention as judge_stance() itself: anything that
+    isn't a clear "contradicts" must never silently become one."""
+    client = _FakeClient("I'm not sure, maybe, hard to say")
+    result = await judge_comparative_stance(client, "claim", ["quote one", "quote two"])
+    assert result == "undetermined"
+
+
+async def test_comparative_reply_can_never_be_supports():
+    """judge_comparative_stance() has no "supports" outcome at all -- it
+    exists only to recover a contradiction synthesized across sources
+    judge_stance() already individually found "unrelated"; it must never
+    be able to confirm a claim, which is exactly the case judge_stance()'s
+    own SECOND paragraph already protects deliberately. Even a reply that
+    says "supports" must not slip through as anything but undetermined."""
+    client = _FakeClient("supports")
+    result = await judge_comparative_stance(client, "claim", ["quote one", "quote two"])
+    assert result == "undetermined"
+
+
+async def test_comparative_prompt_contains_the_claim_and_every_numbered_quote():
+    client = _FakeClient("contradicts")
+    await judge_comparative_stance(client, "the real claim text", ["first real quote", "second real quote"])
+    assert "the real claim text" in client.last_prompt
+    assert "PASSAGE 1: first real quote" in client.last_prompt
+    assert "PASSAGE 2: second real quote" in client.last_prompt
+    assert client.last_system == COMPARATIVE_STANCE_SYSTEM_PROMPT
+
+
+def test_comparative_prompt_forbids_treating_silence_as_denial():
+    """Locks in the deliberate safety scoping against an accidental future
+    loosening: mere absence of confirmation must never count as grounds
+    for "contradicts" on its own."""
+    assert "mere absence of confirmation is not evidence of denial" in COMPARATIVE_STANCE_SYSTEM_PROMPT
+
+
+async def test_comparative_synthesized_industrial_revolution_shape_round_trips_correctly():
+    """The real round-2 shape this responds to: several sources describe
+    the ACTUAL causes of a real event, none of which name the claim's
+    specific invented cause, and none of which individually rebuts it --
+    not a test of real model reasoning (that needs a live call), just that
+    judge_comparative_stance() correctly returns whatever the (correctly
+    prompted) model concludes for this shape, same parsing contract as
+    every other case."""
+    client = _FakeClient("contradicts")
+    result = await judge_comparative_stance(
+        client,
+        "The Industrial Revolution in Great Britain was primarily caused by the sudden availability "
+        "of cheap cotton imported exclusively from American plantations following the Louisiana Purchase.",
+        [
+            "Historians generally attribute the Industrial Revolution's origins in Britain to a "
+            "combination of factors: mechanized textile production, abundant coal reserves, and "
+            "existing trade networks built up over the preceding century.",
+            "Britain's industrialization was already well underway in the textile sector before the "
+            "Louisiana Purchase in 1803, driven by innovations like the spinning jenny and power loom.",
+        ],
     )
     assert result == "contradicts"

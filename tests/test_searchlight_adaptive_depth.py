@@ -353,3 +353,193 @@ async def test_three_cs_invariant_holds_on_both_paths():
     assert fast_verdict.state == VerdictState.CONFIRMED
     assert esc_verdict.state == VerdictState.CONFIRMED
     assert len(esc_search_calls) == 2, "escalation scenario must have actually escalated"
+
+
+# --- COMPARATIVE-SYNTHESIS CONTRADICTION (round 2 finding, new) ---
+#
+# 9 of category 1's 11 conservative misses had every individual source
+# correctly judged "unrelated", even when several of them together
+# clearly described a different, incompatible real account. See
+# retrieval/stance.py's module-level comment and judge_comparative_stance()
+# for the full finding and safety scoping. These tests prove the WIRING
+# in _gather_multi_candidate -- not real model reasoning (that needs a
+# live call) -- using a client that discriminates individual judge_stance()
+# prompts ("CLAIM: ...\n\nPASSAGE: ...") from the comparative one
+# ("CLAIM: ...\n\nPASSAGE 1: ...\n\nPASSAGE 2: ...") by the literal
+# "PASSAGE 1:" marker only the comparative prompt ever contains.
+
+
+class _ComparativeTrackingFakeClient:
+    """Same propose()-dispatch convention as _TrackingFakeClient; stance
+    calls are split into `individual_stance_response` (every single-quote
+    judge_stance() call) and `comparative_stance_response` (the one
+    judge_comparative_stance() call, if it happens at all) so a test can
+    set them independently, and `comparative_calls` tracks exactly how many
+    times the comparative prompt shape was actually sent."""
+
+    def __init__(
+        self,
+        propose_by_marker: dict[str, str | Exception],
+        individual_stance_response: str = "unrelated",
+        comparative_stance_response: str = "contradicts",
+    ):
+        self._propose_by_marker = propose_by_marker
+        self._individual_stance_response = individual_stance_response
+        self._comparative_stance_response = comparative_stance_response
+        self.calls: list[str] = []
+        self.comparative_calls: list[str] = []
+
+    async def complete(self, prompt: str, *, system: str | None = None, temperature: float = 0.0) -> str:
+        self.calls.append(prompt)
+        if prompt.startswith("CLAIM:"):
+            if "PASSAGE 1:" in prompt:
+                self.comparative_calls.append(prompt)
+                return self._comparative_stance_response
+            return self._individual_stance_response
+        for marker, response in self._propose_by_marker.items():
+            if marker in prompt:
+                if isinstance(response, Exception):
+                    raise response
+                return response
+        return _NOT_FOUND_JSON
+
+
+#: Claim text/quotes for the comparative-synthesis tests below MUST share
+#: real vocabulary with the fixture pages' actual content ("reference
+#: pump", "12 bar", "pressure") -- _fetch_rank_sources() does REAL BM25
+#: retrieval against the real fixture files, so an unrelated-vocabulary
+#: claim (e.g. about some invented unrelated "event") would never even
+#: retrieve a candidate, independent of anything these tests mean to
+#: exercise. The claim itself is a plausible CAUSAL overreach the fixture
+#: pages never address (how the rating was achieved), not just the rating
+#: itself (which they do state) -- the right shape for "unrelated".
+_CAUSAL_OVERREACH_CLAIM = (
+    "the reference pump's 12 bar pressure rating was achieved specifically by replacing "
+    "its original impeller design in 2020"
+)
+
+
+async def test_comparative_synthesis_recovers_a_contradiction_from_two_unrelated_sources():
+    """The real round-2 shape: 2 sources each produce a real, verified
+    quote that individual judge_stance() correctly calls "unrelated" --
+    zero direct evidence -- but judge_comparative_stance() (scripted here
+    to say "contradicts", not a real model judgment) recovers one
+    synthesized contradiction, at the comparative-synthesis trust level,
+    not the normal 0.75 direct-evidence trust."""
+    with serve_fixtures() as base_url:
+        url_a = f"{base_url}/stable_page.html"
+        url_b = f"{base_url}/stable_page_rephrased.html"
+
+        async def fake_search(_query: str, _max: int) -> list[str]:
+            return [url_a, url_b]
+
+        client = _ComparativeTrackingFakeClient(
+            propose_by_marker={
+                f"{url_a}#0": _found_json(f"{url_a}#0", "The reference pump is rated for a maximum operating pressure of 12 bar."),
+                f"{url_b}#0": _found_json(f"{url_b}#0", "An independent test report confirmed the reference pump operates safely up to 12 bar without failure."),
+            },
+            individual_stance_response="unrelated",
+            comparative_stance_response="contradicts",
+        )
+        adapter = SearchlightAdapter(client=client, search=fake_search, block_private_networks=False)
+        engine = VerificationEngine(domains={"searchlight": adapter})
+        claim = Claim(text=_CAUSAL_OVERREACH_CLAIM, domain="searchlight")
+        verdict = await engine.verify(claim)
+
+    _assert_three_cs_invariant(verdict)
+    assert verdict.state == VerdictState.CONTRADICTED
+    assert len(client.comparative_calls) == 1, "comparative synthesis must have actually been attempted"
+    assert len(verdict.evidence) == 1
+    assert verdict.evidence[0].stance == "contradicts"
+    assert verdict.evidence[0].trust < 0.75, "synthesized evidence must be weighted below direct-evidence trust"
+
+
+async def test_comparative_synthesis_not_attempted_with_only_one_unrelated_source():
+    """Safety scoping: a single unrelated quote proves nothing by itself
+    and must never trigger comparative synthesis at all."""
+    with serve_fixtures() as base_url:
+        url_a = f"{base_url}/stable_page.html"
+
+        async def fake_search(_query: str, _max: int) -> list[str]:
+            return [url_a]
+
+        client = _ComparativeTrackingFakeClient(
+            propose_by_marker={
+                f"{url_a}#0": _found_json(f"{url_a}#0", "The reference pump is rated for a maximum operating pressure of 12 bar."),
+            },
+            individual_stance_response="unrelated",
+            comparative_stance_response="contradicts",
+        )
+        adapter = SearchlightAdapter(client=client, search=fake_search, block_private_networks=False)
+        engine = VerificationEngine(domains={"searchlight": adapter})
+        claim = Claim(text=_CAUSAL_OVERREACH_CLAIM, domain="searchlight")
+        verdict = await engine.verify(claim)
+
+    _assert_three_cs_invariant(verdict)
+    assert verdict.state == VerdictState.UNDETERMINED
+    assert len(client.comparative_calls) == 0, "must not attempt synthesis from a single unrelated quote"
+
+
+async def test_comparative_synthesis_staying_undetermined_leaves_no_evidence():
+    """When the comparative judgment itself concludes "undetermined" (the
+    sources are genuinely just silent, not describing an incompatible
+    account), the claim correctly stays UNDETERMINED with no evidence at
+    all -- this feature must never manufacture evidence out of a negative
+    comparative result."""
+    with serve_fixtures() as base_url:
+        url_a = f"{base_url}/stable_page.html"
+        url_b = f"{base_url}/stable_page_rephrased.html"
+
+        async def fake_search(_query: str, _max: int) -> list[str]:
+            return [url_a, url_b]
+
+        client = _ComparativeTrackingFakeClient(
+            propose_by_marker={
+                f"{url_a}#0": _found_json(f"{url_a}#0", "The reference pump is rated for a maximum operating pressure of 12 bar."),
+                f"{url_b}#0": _found_json(f"{url_b}#0", "An independent test report confirmed the reference pump operates safely up to 12 bar without failure."),
+            },
+            individual_stance_response="unrelated",
+            comparative_stance_response="undetermined",
+        )
+        adapter = SearchlightAdapter(client=client, search=fake_search, block_private_networks=False)
+        engine = VerificationEngine(domains={"searchlight": adapter})
+        claim = Claim(text=_CAUSAL_OVERREACH_CLAIM, domain="searchlight")
+        verdict = await engine.verify(claim)
+
+    _assert_three_cs_invariant(verdict)
+    assert verdict.state == VerdictState.UNDETERMINED
+    assert len(client.comparative_calls) == 1, "synthesis must still have been attempted"
+    assert verdict.evidence == []
+
+
+async def test_comparative_synthesis_never_attempted_when_direct_evidence_already_exists():
+    """Safety scoping: comparative synthesis must only ever run to RECOVER
+    a verdict from otherwise-empty evidence, never to pile onto or
+    override a verdict that already has direct evidence. Both sources here
+    are individually "supports" (real direct evidence, via the fast path's
+    _is_decisive_pair), so the comparative path -- gated on `not evidence`
+    in _gather_multi_candidate -- must never even be considered, regardless
+    of what the comparative client is scripted to say."""
+    with serve_fixtures() as base_url:
+        url_a = f"{base_url}/stable_page.html"
+        url_b = f"{base_url}/stable_page_rephrased.html"
+
+        async def fake_search(_query: str, _max: int) -> list[str]:
+            return [url_a, url_b]
+
+        client = _ComparativeTrackingFakeClient(
+            propose_by_marker={
+                f"{url_a}#0": _found_json(f"{url_a}#0", "The reference pump is rated for a maximum operating pressure of 12 bar."),
+                f"{url_b}#0": _found_json(f"{url_b}#0", "An independent test report confirmed the reference pump operates safely up to 12 bar without failure."),
+            },
+            individual_stance_response="supports",
+            comparative_stance_response="contradicts",
+        )
+        adapter = SearchlightAdapter(client=client, search=fake_search, block_private_networks=False)
+        engine = VerificationEngine(domains={"searchlight": adapter})
+        claim = Claim(text="the reference pump is rated for a maximum operating pressure of 12 bar", domain="searchlight")
+        verdict = await engine.verify(claim)
+
+    _assert_three_cs_invariant(verdict)
+    assert verdict.state == VerdictState.CONFIRMED
+    assert len(client.comparative_calls) == 0, "must never attempt synthesis once direct evidence already exists"
