@@ -5,9 +5,8 @@
 Give it a claim. It returns one of three verdicts: **confirmed**,
 **contradicted** or **undetermined**, together with the quote, the source
 and the location it relied on. When it can't find the evidence, it says
-what is missing instead of guessing. The frontend shows the three states
-as **Confirmed / Contradicted / Clouded**; the API's wire value stays
-`"undetermined"`.
+what is missing instead of guessing. The frontend labels the states
+Confirmed / Contradicted / Clouded; the API value is `"undetermined"`.
 
 Built for the Nebius x NVIDIA Global AI Hackathon, Apps and Agents track.
 Use it as a CLI, an HTTP API, the hosted web frontend (see
@@ -15,54 +14,86 @@ Use it as a CLI, an HTTP API, the hosted web frontend (see
 agent's tool loop, before that agent commits to an answer. All four go
 through the same `VerificationEngine`. Runs on Nebius Token Factory.
 
-## Where it helps
+## Where it fits
 
-- **Before an agent answers.** Call it as a tool. If the claim isn't
-  supported, the agent gets "undetermined" and the missing evidence, not a
-  confident invention.
-- **On your own documents.** Upload a datasheet, a CSV or a timing report
-  and check what someone said about it. Statistics and timing figures are
-  recomputed in code, not read off by a model.
-- **On a citation.** Does that page actually say what is claimed? The
-  quote is fetched and matched verbatim.
+Anti-Cassiopeia is for work where a confident wrong claim costs more than a
+missing answer. It checks a claim against evidence a person can inspect (a
+document, a dataset, a report, or the open web) and returns "undetermined"
+when the evidence isn't there. It does not answer from a model's memory.
 
-## How it compares (measured, with the limits)
-
-| | Result | Against |
+| Setting | Problem | What it does |
 |---|---|---|
-| Wrong answers on contested open-web claims (88 scored, independently verified) | **2 wrong of 64 answered** (96.9% precision) | 4 to 8 wrong for each of five competitors |
-| Faith-based claims that must not be confirmed or denied (14 probes, 7 traditions) | **14 / 14 left undetermined** | 3 to 10 of 14 for the competitors |
-| Claims about your files (872 statistics and timing claims) | **100% correct, 0 dangerous**, computed in code | model with a code tool: 99.1% / 0.5% dangerous; generic RAG on the same files: 34% / 19% dangerous |
+| Training and evaluation data | Claims inside candidate training or evaluation sets are too many to check by hand | Labels each claim confirmed, contradicted or undetermined, with a quote and a locator. Undetermined items are held back instead of guessed, so the labels you keep are the ones with evidence |
+| Newsrooms and fact-checkers | A viral claim needs a sourced answer fast, and "no source found" is a result | Fetches sources, quotes them, and returns undetermined when nothing settles it |
+| Research groups | Citations and reported statistics get repeated without being re-checked | Matches a quoted passage against the cited page and recomputes a reported statistic from the dataset |
+| Scientific institutions and labs | Specs, timing and instrument reports are compared with requirements by eye | Parses the report or datasheet and compares the stated figure with the requirement, with a line-level locator |
+| Government and public bodies | Statements about policy or statistics must match the official documents | Checks claims against uploaded documents (up to 10 pooled) and cites the document and passage |
+| AI labs and agent builders | An agent states facts it has not checked | Runs as a tool call before the agent answers, and returns the missing evidence when the claim isn't supported |
+| Education | Claims in coursework are checked against course material by hand | Checks a claim against an uploaded text and shows where the support comes from |
+| Space, defence and other high-consequence engineering | A part, a margin or a number in a report must match a requirement | Compares a stated rating or report figure with the requirement, and says when no rating exists, as it does for QuSpin's magnetometer |
 
-**Where it does not win.** It answers fewer claims (73.6% of decidable
-open-web claims in round 2), so its raw accuracy there is the lowest of the
-six systems tested (71.6%). On textbook material a model already knows (69
-formal and technical claims), a bare model scores 95.7% against this
-project's 37.7%, because live search can't find a page that discusses the
-claim and the engine stays "undetermined". Its one wrong answer there is
-still 1 of 69. Systems that cannot read your files score poorly on file
-claims by construction, so the comparisons that count are the ones where
-every system gets the same documents. Details, errata and caveats are in
+**Why it helps in these settings.**
+- Every confirmed or contradicted answer carries the quote or the
+  recomputation and where it came from, so reviewing it is a lookup, not a
+  research task.
+- "Undetermined" is a normal result with the missing evidence named. For a
+  training set or a report, that is the difference between a clean label and
+  a plausible one.
+- Statistics and timing figures are recomputed from the file, whatever its
+  size. The largest test file was 23 MB, and models given a file inline
+  can't take most of the `ml_data` files at all.
+- It works on your own material: uploads, pooled search across documents,
+  and bundles of claims.
+
+**What is measured and what is not.** Measured so far: sourced answers on 88
+independently verified open-web claims (12 of them shaped like published
+fact-checks, all answered correctly), recomputed statistics and report
+figures on 14 UCI datasets and 9 real Vivado reports, and document checks on
+two open-source documents (ODrive, NASA JPL rover). Not measured: any effect
+on model training, a deployment in any of the settings above, or use inside
+a live agent loop. Read the table as the design's intended fit, not as
+validation in those settings. [`docs/USE_CASES.md`](docs/USE_CASES.md)
+gives, for each setting, what the repo shows and what test would show more.
+
+## How it compares
+
+A comparison only counts when every system works from the same evidence: the
+same file, or the same search results. Systems answering from what they
+learned in training (a bare model, or Perplexity's own index) are left out of
+the claims below, because their results say nothing about verification,
+either for or against. Those runs are in the benchmark reports.
+
+| Same evidence for all | Anti-Cassiopeia | Others |
+|---|---|---|
+| Wrong answers on open-web claims (88 scored, independently verified, same Tavily search) | **2 of 64 answered** (96.9% precision) | Tavily+Gemini 4 of 85, generic RAG 5 of 74, same pipeline with one stance model 5 of 68 |
+| Faith-based claims that must not be confirmed or denied (14 probes, 7 traditions, same search) | **14 / 14 undetermined** | Tavily+Gemini 5, generic RAG 3, same pipeline with one stance model 10 |
+| Wrong confident answers on 116 `silicon` timing and register claims, same report for all | **0** | code-exec 3, `gpt-oss-120b` with the file pasted in 4, generic RAG 7, sonar with the file pasted in 15 (may also search the web) |
+| Wrong confident answers on the 216 `quant` claims small enough to paste, same file for all (corrected labels) | **0** | code-exec 1, sonar with the file pasted in 48, generic RAG 55, `gpt-oss-120b` with the file pasted in 59 |
+
+**Limits.** The precision ranges on the first row overlap (Anti-Cassiopeia
+89.3 to 99.1%, Tavily+Gemini 88.5 to 98.2%), so it is a lead, not a proof.
+Anti-Cassiopeia answers fewer claims (73.6% of decidable open-web claims in
+round 2). On claims with no retrievable page, such as textbook control
+theory (Track B), the result depends on what a model memorized, so those runs
+are reported in [`TRACK_B_REPORT.md`](stress_test/results/TRACK_B_REPORT.md)
+and not used as evidence either way. A model can't be given most `ml_data`
+files inline: 540 of 756 claims use a file too large to paste (the largest is
+23 MB), and Anti-Cassiopeia reads them from disk. The file-claim rows use
+labels corrected for 25 stale `air_quality.csv` claims, described in
+[`DOC_FED_CONTROL_REPORT.md`](stress_test/results/DOC_FED_CONTROL_REPORT.md). Details are in
 [Competitive benchmark](#competitive-benchmark).
 
-**Models.** No single model does everything. Nemotron Ultra handles the
-stages where it had a zero-dangerous-miss record (`substrate` extraction,
-`searchlight`'s hardest stance judgments). `gpt-oss-120b` extracts evidence
-for `searchlight`. Tavily provides live search, and `Qwen/Qwen3-Embedding-8B`
-powers hybrid retrieval. Each choice has dated evidence in
-[`MODEL_SELECTION_FINDINGS.md`](stress_test/results/MODEL_SELECTION_FINDINGS.md)
-and ["How the model choice was made"](#how-the-model-choice-was-made).
+**Models.** No single model does everything: Nemotron Ultra, `gpt-oss-120b`,
+Tavily and `Qwen/Qwen3-Embedding-8B` each handle the stage where they
+measured best. See [Models](#models).
 
 ## Why "Anti-Cassiopeia"
 
-Cassiopeia, in Greek myth, was the queen punished for boasting an
-unfounded claim of beauty — bound to her throne, forced to circle the pole
-eternally, upside-down half the year. This project is named against that
-specific failure: it exists to catch and refuse the fluent, detailed,
-plausible-sounding claim that doesn't actually check out. Where evidence
-is thin, it says so — it does not round up to confidence it hasn't earned.
+In Greek myth, Cassiopeia was punished for boasting of a beauty she could
+not back up. The project is named against that failure: a fluent,
+plausible claim that doesn't check out. Where evidence is thin, it says so.
 
-## The mechanism
+## How it works
 
 ```
 Claim ──▶ VerificationEngine.verify()
@@ -77,172 +108,85 @@ Claim ──▶ VerificationEngine.verify()
         VerificationEngine._score()  ──▶  Verdict (state, confidence, reasoning, missing)
 ```
 
-One verification engine, one shared `Verdict` contract — orchestrating
-independent, domain-specific evidence strategies, not running one unified
-reasoning algorithm across them. Everything domain-specific — what counts
-as a source, how to retrieve evidence, how much to trust it — lives in a
+One engine and one `Verdict` type. Everything domain-specific (what counts
+as a source, how to retrieve evidence, how much to trust it) lives in a
 `DomainAdapter` plugin. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-for the full design and current build status, and
+for the design and build status, and
 [`docs/DESIGN.md`](docs/DESIGN.md#related-work) for how this relates to
 FEVER, FActScore, SAFE, RARR, and FacTool.
 
-## Four domains, all real
+## Four domains
 
 | Domain | What it checks | Example claim | Evidence | Status |
 |---|---|---|---|---|
 | `substrate` | Hardware specs against a stated condition | "Bar30 survives 500 m depth" | Datasheet facts retrieved and re-checked against manufacturer sources (BlueROV2, Bar30, Bar100XT) with Nemotron Ultra, or your uploaded document | 3 of 4 researched parts sourced. The 4th (QuSpin QZFM Gen-3) has a confirmed source stating no rating exists, see [extraction provenance](docs/extracted/constellation-robotics-seed.md). Fixed corpus plus uploads, no live web search |
-| `quant` | A statistic in a dataset | "The mean of `voltage` is 5.0 V" | Re-computed from the real CSV | Real, offline, no external dependency |
-| `silicon` | FPGA timing and register maps | "The design meets 100 MHz timing" | Parsed from a Vivado timing or synthesis report, or a CMSIS-SVD register-map file | Real, offline. Timing parser verified against a real Vivado report, register-map parser against real ARM and Espressif SVD files (see module docstring) |
-| `searchlight` | Whether a source says what is claimed | "ARPANET's first message crashed after two letters" | A fetched page, quote matched verbatim | Real, network-dependent. Tavily is the primary search backend, with DDG and Wikipedia as fallback |
+| `quant` | A statistic in a dataset | "The mean of `voltage` is 5.0 V" | Re-computed from the real CSV | Offline, no external dependency |
+| `silicon` | FPGA timing and register maps | "The design meets 100 MHz timing" | Parsed from a Vivado timing or synthesis report, or a CMSIS-SVD register-map file | Offline. Timing parser verified against a real Vivado report, register-map parser against real ARM and Espressif SVD files (see module docstring) |
+| `searchlight` | Whether a source says what is claimed | "ARPANET's first message crashed after two letters" | A fetched page, quote matched verbatim | Needs network. Tavily is the primary search backend, with DDG and Wikipedia as fallback |
 
-Every domain either returns real evidence with a real locator, or an
-honest, specific, named reason it can't yet — never a guess. See
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full per-piece
-status and known limitations stated plainly, not hidden.
+Every domain returns evidence with a locator, or names the reason it can't.
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for per-component status
+and known limitations.
 
-## How the model choice was made
+## Models
 
-Not a blanket swap to "the NVIDIA model" and a claim of done, and not
-one model for the whole pipeline either. Four separate, dated decisions,
-each on its own evidence, each revisited when new evidence showed up —
-not four coincidences that happen to agree:
-
-| Stage | Model | Why (one line; full evidence linked) |
+| Stage | Model | Why |
 |---|---|---|
-| `substrate`'s evidence extraction (`propose()`) | **Nemotron Ultra** | Only tier with a perfect, zero-dangerous-miss record across 3 independent runs — [full pivot](stress_test/results/NEMOTRON_PIVOT_REPORT.md) |
-| `searchlight`'s evidence extraction (`propose()`) | **`gpt-oss-120b`** | No Nemotron tier beat it at an adequate sample size. Re-checked directly against Nemotron Ultra once Tavily was confirmed active (a small, 4-claim live re-check, not a full re-run): both models 4/4 correct, identical verdicts — decision holds, now on marginally better evidence, at ~7x lower cost for zero measured gain. [Full note](stress_test/results/DECISION2_REMEASUREMENT_NOTE.md) |
-| `searchlight`'s hardest stance judgments (`judge_stance()`) | **Nemotron Ultra** | A separate, later, narrower decision — `gpt-oss-120b` correct only 2/6 on a reproduced hard causal-relationship case; Ultra correct 5/5, tied with it on every easier case tested — [the fix + the evidence](docs/ARCHITECTURE.md#causal-claim-stance-fix--judge_stance-model-routing-found-live-2026-10-25) |
-| Live web search | **Tavily** (primary; DDG+Wikipedia fallback) | Not a mention — a real, functional, runtime call this project nearly measured as useless by its own mistake, then found genuinely decisive once that mistake was fixed. See ["Tavily actually matters here"](#tavily-actually-matters-here-not-just-present) below. |
-| Hybrid retrieval's semantic leg | **`Qwen/Qwen3-Embedding-8B`** | The one embedding model confirmed live on this account's own `GET /v1/models` — not assumed from a sibling project's choice. See ["Hybrid retrieval"](#hybrid-retrieval-bm25--vector) below. |
+| `substrate` evidence extraction (`propose()`) | **Nemotron Ultra** | Zero dangerous misses in 3 independent runs (n=15, 40, 40). [Pivot report](stress_test/results/NEMOTRON_PIVOT_REPORT.md) |
+| `searchlight` evidence extraction (`propose()`) | **`gpt-oss-120b`** | No Nemotron tier beat it at an adequate sample size. A 4-claim re-check with Tavily active tied 4/4 at about one seventh of the cost. [Note](stress_test/results/DECISION2_REMEASUREMENT_NOTE.md) |
+| `searchlight` hard stance judgments (`judge_stance()`) | **Nemotron Ultra** | Correct 5/5 on a hard causal case where `gpt-oss-120b` was correct 2/6; tied on easier cases. [Details](docs/ARCHITECTURE.md#causal-claim-stance-fix--judge_stance-model-routing-found-live-2026-10-25) |
+| Live web search | **Tavily** (DDG and Wikipedia fallback) | See [Search](#search-tavily) |
+| Hybrid retrieval, semantic half | **`Qwen/Qwen3-Embedding-8B`** | The embedding model available on this account's `GET /v1/models` |
 
-The `substrate`/`searchlight` `propose()` split, in the detail that
-earned it — four Nemotron tiers (Ultra, Super, Nano, and a one-pilot
-look at 3.5 Lightning) tested against `openai/gpt-oss-120b` on both
-live-LLM domains, reusing the project's own eval harness, at two sample
-sizes, tracking not just accuracy but *dangerous* misses — a confident
-wrong answer, the exact failure this project exists to prevent, as
-distinct from an honest "undetermined."
+Super and Nano each produced dangerous misses at n=40 that n=15 had not
+shown, so only Ultra was adopted for `substrate`. The comparison also
+found and fixed three pipeline bugs that affected every model: no
+output-token cap, no quote-length guidance, and no entity-matching check
+before judging a passage's stance. Nano and 3.5 Lightning remain untested
+cheaper options. Full ledger:
+[`MODEL_SELECTION_FINDINGS.md`](stress_test/results/MODEL_SELECTION_FINDINGS.md).
 
-The honest version of what happened, in order:
-1. **First look (n=15):** substrate seemed tier-insensitive — Super and
-   Ultra both matched baseline exactly. Wrong conclusion, too early:
-   one dangerous event at n=15 is statistically compatible with a true
-   rate anywhere from ~1% to ~30%.
-2. **Escalating to n=40** (the same rigor, applied consistently, not
-   just where it helped the headline number) showed Super AND Nano both
-   crack — real dangerous misses neither had shown at n=15. Only Ultra
-   held clean across both sample sizes.
-3. **Reading the actual failure transcripts**, not just the aggregate
-   rates, found three real, model-agnostic pipeline bugs (no output-
-   token cap, no quote-length guidance, no entity-matching check before
-   judging a passage's stance) — fixed before trusting any further
-   comparison, since all three would distort results for every model,
-   not just Nemotron.
-4. **Re-testing everything that had shown a problem**, baseline rerun
-   fresh each time too (so a post-fix change could be attributed
-   correctly): the fixes flipped Ultra to a real win on `searchlight`
-   and fully resolved Nano's substrate weakness — but did nothing for
-   Super on either domain, evidence that Super's underperformance is a
-   real model property, not a pipeline artifact.
+## Search (Tavily)
 
-**Result:** `substrate` now runs on **Nemotron Ultra** — the only tier
-with a clean, zero-dangerous-miss record across all three of its
-independent substrate runs. `searchlight` stays on `gpt-oss-120b` —
-no tested Nemotron tier beat it there at an adequately-sized sample,
-and Ultra's one post-fix win is narrow and single-sample against
-baseline's ten-run, crash-free record across this entire investigation.
-Nano and 3.5 Lightning remain credible cheaper follow-ups, not yet
-proven to the same standard.
+Tavily is `searchlight`'s primary search backend, a live API call at
+runtime. DDG and Wikipedia run only when Tavily returns no URLs
+(`_search_candidate_urls()` in `searchlight.py`). In Test #3 it returned
+results for all 473 scored queries.
 
-Full numbers, every pilot, the bugs found and how they were found, and
-the reasoning behind every decision point above:
-[`stress_test/results/NEMOTRON_PIVOT_REPORT.md`](stress_test/results/NEMOTRON_PIVOT_REPORT.md).
-`judge_stance()`'s own, separate routing decision (Ultra, for a
-narrower, later, differently-evidenced reason) is in
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#causal-claim-stance-fix--judge_stance-model-routing-found-live-2026-10-25).
-Every decision above, cross-referenced in one place with dates and
-evidence: [`stress_test/results/MODEL_SELECTION_FINDINGS.md`](stress_test/results/MODEL_SELECTION_FINDINGS.md).
-
-## Tavily actually matters here, not just "present"
-
-*(This is a real, functional, runtime call to the Tavily API as part of
-the solution — the Hackathon's own "Best Use of Tavily" bonus-award
-criterion, stated here because it's true, not because it's being
-claimed for the first time in this sentence.)*
-
-Tavily is `searchlight`'s **primary** search backend in production —
-tried before DDG/Wikipedia, which only run if Tavily contributes zero
-URLs (`searchlight.py`'s `_search_candidate_urls()`). That's been true
-since this project's own Test #3 found Tavily returned real, structured
-results for 100% of 473 scored queries, a meaningfully more reliable
-profile than a keyless fallback.
-
-**This project then nearly measured that decision as worthless, by its
-own mistake, and caught it.** Every one of its own stress-test scripts
-— across this project's ENTIRE testing history, not just one run — was
-missing a `load_dotenv()` call. `searchlight.py`'s real Tavily client
-reads its API key straight from the process environment, not from the
-`.env`-file helper every script used for ITS OWN direct provider calls
-— so Tavily silently returned nothing in every historical measurement,
-falling back to the much weaker DDG/Wikipedia path every time, while
-the live production server (which does load `.env` correctly) was never
-affected. Found mid-session while chasing a completely different
-question ("could Tavily actually beat Perplexity here"), fixed in all 11
-affected scripts, and confirmed with a real before/after: **3 of the 4
-claims that had failed in this project's own competitive-benchmark round
-1 resolved correctly the moment Tavily actually ran** — including
-finding the exact published fact-check article, by URL, on the first
-live call. A second, independent fix (hybrid retrieval, below) found the
-same 3 claims fixable by a completely different mechanism — two
-unrelated fixes converging on the same result is real corroboration,
-not coincidence. Full account:
-[`stress_test/results/BENCHMARK_ROUND1_REPORT.md`](stress_test/results/BENCHMARK_ROUND1_REPORT.md)'s
-own erratum section.
+Every stress-test script before 2026-10-25 was missing `load_dotenv()`, so
+Tavily was switched off in those runs and `searchlight` fell back to
+DDG and Wikipedia. The production server was not affected. After the fix,
+3 of the 4 claims that failed in benchmark round 1 resolved. Details:
+[`BENCHMARK_ROUND1_REPORT.md`](stress_test/results/BENCHMARK_ROUND1_REPORT.md).
 
 ## Hybrid retrieval (BM25 + vector)
 
-`retrieval/__init__.py` used to state plainly that vector/embedding
-search wasn't implemented. It is now — BM25 (keyword) fused with a real
-embedding model (`Qwen/Qwen3-Embedding-8B`, confirmed live and
-available, not assumed) via reciprocal rank fusion, additive to the
-existing BM25-only path, never a replacement, ported from a real,
-already-evaluated implementation in the sibling project
-`eclipse-constellation` rather than invented from scratch. Honest,
-measured result, not a stand-in number: on paraphrased questions (where
-the query doesn't share the source's exact words), hybrid/vector beat
-plain BM25 at hit@3 — 0.86 vs. 0.79 — the metric this pipeline actually
-depends on (the top-k shown to the model, never a blind rank-1 trust).
-On keyword-overlap questions, plain BM25 still wins outright, exactly as
-expected, and that's reported too, not smoothed over. Degrades honestly
-to BM25-only on any embedding failure, at both index time and query
-time — never silently pretends the vector leg ran when it didn't. Full
-numbers, the honest reading of where fusion helped and where it
-surprisingly didn't: [`evals/retrieval/RESULTS.md`](evals/retrieval/RESULTS.md).
+BM25 keyword search fused with `Qwen/Qwen3-Embedding-8B` embeddings by
+reciprocal rank fusion, alongside the BM25-only path. Ported from
+`eclipse-constellation`. On 13 hand-labelled questions, hit@3 on paraphrased
+questions was 0.86 for hybrid and vector against 0.79 for BM25. On
+keyword-overlap questions BM25 alone does better (R@1 0.67 against 0.50
+for hybrid). It falls back to BM25 if embedding fails, and adds about 1 to
+2 seconds per claim. Results:
+[`evals/retrieval/RESULTS.md`](evals/retrieval/RESULTS.md).
 
 ## Adaptive-depth evidence gathering
 
-Not every claim needs the same amount of checking. `searchlight`'s
-evidence loop now does two things, both triggered by the real evidence
-seen so far — never by guessing a claim's "type" upfront, which this
-project rejected once already (see the causal-claim stance fix): stop
-checking further sources the moment two independent sources already
-agree (a real, measured speed win — one easy claim needed 2 calls
-instead of the old unconditional 3), and check MORE sources than normal,
-with a differently-phrased second search, when the first pass comes back
-empty or genuinely tied (the same tie condition `core/engine.py`'s own
-scoring already uses — reused directly, not re-guessed). Either path
-produces ordinary evidence flowing through the exact same, unchanged
-scoring — this can never introduce a result outside the three states
-the whole engine is built around, and that invariant has its own
-dedicated test.
+`searchlight` stops checking sources once two independent sources agree
+(one easy claim took 2 calls instead of 3). When the first pass finds
+nothing or ties, it checks more sources with a reworded second search.
+Both paths feed the same scoring, so the verdict is always one of the
+three states, and a test covers that.
 
 ## Competitive benchmark
 
 Claims were generated by ChatGPT, Gemini and Perplexity from a locked
 prompt, then **independently verified against real sources** before any of
-them touched the engine. Six systems were scored on the same claims:
-Anti-Cassiopeia, a bare model, the same pipeline with a single stance model
-("Nebius-agent"), generic RAG, Perplexity, and Tavily+Gemini.
+them touched the engine. Six systems ran on the same claims. Four use the
+same Tavily search results and are compared here: Anti-Cassiopeia, the same
+pipeline with a single stance model ("Nebius-agent"), generic RAG, and
+Tavily+Gemini. The bare model (training data only) and Perplexity (its own
+index) are in the reports and are not compared here.
 
 **Round 2, open web, 88 scored claims** (precision = correct among the
 claims a system answered):
@@ -251,124 +195,38 @@ claims a system answered):
 |---|---|---|---|---|
 | **Anti-Cassiopeia** | 64 | **2** | **96.9%** | 73.6% |
 | Tavily+Gemini | 85 | 4 | 95.3% | 96.6% |
-| Perplexity | 85 | 6 | 92.9% | 97.7% |
 | Generic RAG | 74 | 5 | 93.2% | 86.0% |
 | Same pipeline, single stance model | 68 | 5 | 92.6% | 78.2% |
-| Bare model | 88 | 8 | 90.9% | 100% |
 
 Precision ranges overlap (Anti-Cassiopeia 89.3 to 99.1%, Tavily+Gemini
 88.5 to 98.2%), so this is a lead, not a proof. Anti-Cassiopeia declines
 more often: most of its misses are "undetermined" where an answer existed.
 
-**What the benchmark changed.** It found and fixed real bugs: a
-calibration bug that confirmed a faith claim on a source that said
-"according to tradition", a stance rule that was too strict to contradict
-claims no single source rebuts, a compound-claim path that rewrote a
-sub-claim into its own negation, and a measurement bug that left Tavily
-switched off in every earlier test run. Each is documented with its fix.
+**Other results.** The 14 faith-based probes covered 7 traditions; generic
+RAG confirmed 9 of them, including the Fátima apparition and Muhammad's
+Night Journey. Most of Anti-Cassiopeia's misses are causal and relational
+claims, where it requires a source to state the relationship. A follow-up,
+`judge_comparative_stance()`, recovered 2 of 12 such claims in a live
+check, with no regressions. Track B (69 formal and technical claims) is
+the case where retrieval doesn't help, covered above.
 
-<details>
-<summary>Round-by-round log (full narrative)</summary>
+**What the benchmark changed.** It found and fixed a calibration bug that
+confirmed a faith claim on a source that said "according to tradition", a
+stance rule too strict to contradict claims no single source rebuts, a
+compound-claim path that rewrote a sub-claim into its own negation, and the
+Tavily measurement bug above. Each is documented with its fix.
 
+Reports:
+[round 1](stress_test/results/BENCHMARK_ROUND1_REPORT.md),
+[round 2](stress_test/results/BENCHMARK_ROUND2_REPORT.md),
+[comparative-synthesis fix](stress_test/results/COMPARATIVE_SYNTHESIS_FIX_NOTE.md),
+[Track B](stress_test/results/TRACK_B_REPORT.md),
+and the claim sets in
+[`stress_test/claims/external_generated/`](stress_test/claims/external_generated/README.md).
 
-A separate, repeatable protocol (not a one-off): generate a small,
-hand-picked set of claims across categories chosen specifically to
-probe where a verification system is likely to fail (causal/relational
-claims, deliberately obscure history, mythology framed as "what a text
-says," well-settled conspiracy claims, archaeology, calibration probes
-on matters of faith that should never resolve to confirmed/contradicted,
-and real, already-published fact-checks used as ground truth) — run
-them through this engine AND several real competitors (Perplexity,
-a Tavily+Gemini pairing, a naive generic-RAG baseline, a "retrieval
-with no independent verify" baseline, and a bare-model-with-zero-
-retrieval floor), score it honestly, root-cause every miss, fix what's
-real and fixable, name what isn't. Round 1 found and fixed a real,
-dangerous calibration bug (a flat claim about religious revelation
-confidently confirmed on a source that itself only said "according to
-tradition") — and, in the same round, found the Tavily measurement bug
-above. The re-run that confirmed the Tavily fix then surfaced a DEEPER
-version of the same calibration problem: a confidently-worded source
-with no hedge at all still got a supernatural claim (a literal
-resurrection) wrongly confirmed. Fixed properly, not patched around —
-`judge_stance()` now recognizes when the CLAIM ITSELF asserts a
-supernatural/metaphysical event as objective fact (blocking any
-"supports," however the source is worded) while still letting ordinary
-contesting evidence through as "contradicts," and still confirming
-category-3/category-5-style claims (what a text says, real archaeology)
-exactly as before. A separate claim from the same round (a specific
-viral video's authenticity) stayed honestly unresolved — the one source
-that would settle it is bot-blocked, and every other real source
-describes the underlying event but not the video's authenticity
-specifically, a media-forensics task this project doesn't attempt via
-text search, named plainly rather than forced.
+## Bring your own evidence
 
-Round 2 scaled this up 11x and changed the claim source: 102 claims,
-generated by three different external AI tools (ChatGPT, Gemini,
-Perplexity) from a locked prompt, then independently verified against
-real primary sources before any of them touched the engine (100 of 102
-generator-suggested verdicts held up; 2 were caught and corrected — see
-[`stress_test/claims/external_generated/README.md`](stress_test/claims/external_generated/README.md)).
-The headline result: **14/14 calibration probes correct, zero overreach,
-across 7 different religious/spiritual traditions** — the stance-fix
-from round 1 holds up at 7x the sample size and on 6 traditions it was
-never tuned on. Generic-RAG's round 1 "win" on calibration (blanket
-caution) reversed completely at this scale — it confidently confirmed
-9 of 14 supernatural claims this round, including the Fátima apparition
-and Muhammad's Night Journey, showing round 1's result was retrieval
-luck on two obscure claims, not real caution about faith specifically.
-Anti-Cassiopeia's **raw accuracy (71.6%) was the lowest of the six
-systems tested** on this round's mix — reported honestly, not spun — but
-its error shape is the one this project is built around: only 2
-dangerous (confidently wrong) answers out of 88 scored claims, against
-4-8 for every competitor (a ground-truth correction, Erratum 3 in the round 2
-report, moved one miss from dangerous to correct); the rest of its misses are conservative
-(correctly declining rather than guessing). Most of that conservatism
-concentrates in causal/relational claims, the direct, visible cost of
-the stance-judgment fix that made round 1's Darwin/Wallace-style claims
-work correctly. A pre-existing bug in the Tavily+Gemini competitor's
-rate-limit handling (it misdiagnosed an ordinary per-minute limit as
-permanent quota exhaustion, skipping most of the round) was found and
-fixed after the fact.
-
-Round 2's own category-1 misses turned out not to be what they first
-looked like: 9 of 11 had ZERO evidence gathered, not a lone contradicting
-source trusted too fast — real sources described a different, true
-account without ever explicitly rebutting the claim's specific invented
-detail, and the strict causal-claim check (built to stop false
-*confirmations*) was also blocking *contradictions* that needed synthesis
-across sources. Fixed additively — `judge_comparative_stance()` recovers
-a contradiction from 2+ sources that together describe an incompatible
-account, weighted below direct-evidence trust, never able to confirm —
-live-validated with 2 clean recoveries and zero attributable regressions.
-A 69-claim "Track B" of category-8 formal/technical claims (control
-theory, FPGA, statistics — parked at round 2) is now independently
-verified and run through the real engine and all 5 competitors, and it
-surfaces a genuine, honest limitation rather than another win: a bare
-model with zero retrieval hits 95.7% correct here, far ahead of this
-project's own 37.7%, because these are well-established textbook facts a
-capable LLM already knows cold — live web retrieval mostly can't find a
-page directly discussing a Jacobian null-space proof, so it correctly,
-but unhelpfully, defaults to `undetermined`. The project's own
-dangerous-miss rate stays just as safe here (1.4%) as everywhere else —
-what changes is how much raw accuracy a retrieval-grounded design trades
-for that safety when the claim shape is "does the model already know
-this," not "does a live source need checking." Separately, an actual
-bug in the compound-claim decomposition path was found and fixed this
-same session: it could silently rewrite a false sub-claim into its own
-negation, verifying a different claim than the one submitted — caught
-with a deterministic fidelity check, regression-tested against the
-exact bad output that triggered it.
-Full results: [`stress_test/results/BENCHMARK_ROUND1_REPORT.md`](stress_test/results/BENCHMARK_ROUND1_REPORT.md),
-[`stress_test/results/BENCHMARK_ROUND2_REPORT.md`](stress_test/results/BENCHMARK_ROUND2_REPORT.md),
-[`stress_test/results/COMPARATIVE_SYNTHESIS_FIX_NOTE.md`](stress_test/results/COMPARATIVE_SYNTHESIS_FIX_NOTE.md),
-[`stress_test/results/TRACK_B_REPORT.md`](stress_test/results/TRACK_B_REPORT.md).
-
-</details>
-
-## Bring your own evidence (v2 + v3)
-
-The four domains above also work against a document YOU supply, not just
-the project's own seeded corpus / live search:
+The four domains also work against a document you supply.
 
 ```bash
 curl -X POST localhost:8000/upload -H "X-API-Key: $ANTICASSIOPEIA_API_KEY" \
@@ -376,26 +234,19 @@ curl -X POST localhost:8000/upload -H "X-API-Key: $ANTICASSIOPEIA_API_KEY" \
 # -> {"document_id": "...", "filename": "my_datasheet.pdf", "size_bytes": 48213}
 ```
 
-`.txt` / `.md` / `.csv` / `.rpt` / `.svd` / `.xml` are read as plain text;
-`.pdf` (via `pypdf`) and `.docx` (via `python-docx`) have their real text
-layer extracted. A scanned/image-only PDF with no text layer is a named
-error, not a silent empty result — OCR is explicitly out of scope. The
-extracted text is held in memory for 24h under an opaque `document_id`,
-capped and evicted the same way the API's own rate-limit state is.
+`.txt`, `.md`, `.csv`, `.rpt`, `.svd` and `.xml` are read as plain text;
+`.pdf` (via `pypdf`) and `.docx` (via `python-docx`) have their text layer
+extracted. A PDF with no text layer returns an error; there is no OCR. The
+extracted text is kept in memory for 24 hours under an opaque
+`document_id`.
 
-**Single claim against your document** — pass that `document_id` in
-`context`. For `substrate`, the real chunk → BM25 retrieve → LLM propose →
-independently re-verify → judge stance pipeline runs against your
-document's real text instead of the fixed corpus. For `quant` /
-`silicon` (v3), plain `/verify` resolves the same way
-`/verify/project` always has for those two domains — the document's real
-extracted text is written to a server-owned scratch file and pointed at
-by the existing `dataset_path`/`report_path` context field, so you still
-supply every structured field those adapters need (column/stat, or
-peripheral/metric/comparator) — nothing is fabricated. `searchlight`'s
-two modes (URL-fetch or live search) don't consume an uploaded document
-at all, so a `document_id` there is a clean, named `400`, not a silent
-no-op:
+**One claim against a document.** Pass the `document_id` in `context`. For
+`substrate`, the pipeline (chunk, BM25 retrieve, propose, re-verify, judge
+stance) runs on your document instead of the fixed corpus. For `quant` and
+`silicon`, the document text is written to a scratch file and used as
+`dataset_path` / `report_path`; you still supply the structured fields
+(column and stat, or peripheral, metric and comparator). `searchlight`
+doesn't use uploads, so a `document_id` there returns 400.
 
 ```bash
 curl -X POST localhost:8000/verify -H "X-API-Key: $ANTICASSIOPEIA_API_KEY" \
@@ -403,11 +254,9 @@ curl -X POST localhost:8000/verify -H "X-API-Key: $ANTICASSIOPEIA_API_KEY" \
   -d '{"text": "the X9 sensor is rated for 450m depth", "domain": "substrate", "context": {"document_id": "..."}}'
 ```
 
-**Search across all your documents (v3 pooled search)** — don't know
-which of your uploads has the fact? Set `document_pool: true` instead of
-`document_id` (substrate-only; mutually exclusive with `document_id`).
-`GET /documents` lists your own currently-valid uploads first if you want
-to check what's poolable:
+**Search all your uploads.** Set `document_pool: true` instead of
+`document_id` (`substrate` only, exclusive with `document_id`).
+`GET /documents` lists your current uploads.
 
 ```bash
 curl localhost:8000/documents -H "X-API-Key: $ANTICASSIOPEIA_API_KEY"
@@ -418,30 +267,19 @@ curl -X POST localhost:8000/verify -H "X-API-Key: $ANTICASSIOPEIA_API_KEY" \
   -d '{"text": "the X9 sensor is rated for 450m depth", "domain": "substrate", "context": {"document_pool": true}}'
 ```
 
-One combined BM25 index is built across every one of your pooled
-documents' chunks — still exactly ONE live LLM propose call and ONE
-judge-stance call per claim, same cost as searching a single document;
-only the local (free) BM25 corpus is bigger. The citation names the real
-document the answer actually came from, never a generic "pool"
-placeholder. Capped at the 10 most-recently-uploaded documents per call —
-stated in the verdict's own reasoning if you have more than that.
-Documents are scoped to the API key that uploaded them (a SHA-256 hash of
-the key, never the raw key, is the ownership tag) — one caller's pool
-never includes another caller's uploads. Honest exception: the public
-demo key is shared by every visitor to the hosted frontend, so under that
-one key specifically, "your pool" means "every demo-key visitor's
-uploads, pooled together" — expected for a shared sandbox, not real
-per-caller isolation. A caller using their own `ANTICASSIOPEIA_API_KEY`
-gets genuine isolation.
+One BM25 index covers up to your 10 most recently uploaded documents, with
+one propose call and one stance call per claim. The citation names the
+document the answer came from. Uploads are tied to the API key that
+uploaded them (stored as a SHA-256 hash). The shared public demo key is the
+exception: under it, the pool holds every demo visitor's uploads.
 
-**A bundle of claims, each tied to a different document** — `quant` and
-`silicon` need their own structured fields too (column/stat, or
-peripheral/metric/comparator), same as always; `POST /verify/project`
-only auto-fills *which real file* a `document_id` refers to, by
-deterministically sniffing the upload's format (extension first, cross-
-checked by real content markers for the one genuinely ambiguous case,
-`.xml` — never an LLM guessing what code can already determine) and
-routing it to the right domain:
+**A bundle of claims.** `POST /verify/project` takes up to 20 claims, each
+with its own `document_id` or `document_pool`. It detects each upload's
+format (by extension, and by content markers for `.xml`) and routes it to
+the right domain. `quant` and `silicon` claims still need their structured
+fields. The response has each claim's `Verdict` and one rolled-up status:
+any `CONTRADICTED` claim makes the bundle contradicted, and one claim's
+error doesn't fail the others. It has its own rate limit.
 
 ```bash
 curl -X POST localhost:8000/verify/project -H "X-API-Key: $ANTICASSIOPEIA_API_KEY" \
@@ -452,21 +290,13 @@ curl -X POST localhost:8000/verify/project -H "X-API-Key: $ANTICASSIOPEIA_API_KE
       ]}'
 ```
 
-The response carries both each claim's own full `Verdict` and one rolled-
-up project status (AND-semantics — one real `CONTRADICTED` part falsifies
-the whole bundle; one claim's own error, e.g. an unknown `document_id`,
-never fails the others). Up to 20 claims per call, its own rate limit
-(a project call can fan out into several live LLM calls). Any claim in
-the batch can use `"document_pool": true` instead of `document_id` (v3) —
-one project call can mix claims pinned to a specific document with claims
-that search your whole upload pool.
-
-**Compound claims (v3)** — `POST /verify/compound` splits ONE free-text
-claim ("A and B") into independent parts via an LLM call
-(`anticassiopeia/core/compound.py`'s `decompose_claim()` — see
-`docs/ARCHITECTURE.md`'s "Item 20" section for the full history), verifies
-each part through this same engine, and rolls the sub-verdicts up with
-AND-semantics (any real `CONTRADICTED` part falsifies the whole claim):
+**Compound claims.** `POST /verify/compound` splits one free-text claim
+("A and B") into parts with an LLM call (`decompose_claim()` in
+`core/compound.py`), verifies each part, and rolls up the same way (any
+`CONTRADICTED` part contradicts the whole). A fidelity check rejects
+splits that change a part's meaning. Parts go to `substrate` or
+`searchlight` only, and `document_id` / `document_pool` in `context`
+return 400. Limits: 8 parts (422 above that) and one call per 20 seconds.
 
 ```bash
 curl -X POST localhost:8000/verify/compound -H "X-API-Key: $ANTICASSIOPEIA_API_KEY" \
@@ -474,29 +304,15 @@ curl -X POST localhost:8000/verify/compound -H "X-API-Key: $ANTICASSIOPEIA_API_K
   -d '{"text": "The ODrive is open-source and BlueROV2 uses a Bar30 sensor rated for 300m"}'
 ```
 
-Decomposition only ever classifies a sub-claim into `substrate`/
-`searchlight` — that restriction is deliberately **not** loosened just
-because `/verify/project`/pooled search can now resolve a real uploaded
-document elsewhere; an LLM splitting free text never sees which
-document, or document pool, a sub-claim would even need. `context` on
-this endpoint flatly REJECTS `document_id` and `document_pool` (a clean
-400, not a silent ignore) for exactly that reason. Its own, stricter
-rate limit (one call every 20s) — a single call here can fan out into a
-decompose call plus one verify call per sub-claim — and a hard cap of 8
-decomposed sub-claims (a clear `422` above it, never a silent truncation).
-
-## See it run
+## Run it
 
 ```bash
 pip install -e .
 PYTHONPATH=. python scripts/demo.py
 ```
 
-Runs 6 real claims across all 4 domains through the actual engine — no
-mocked output. Example excerpt (substrate, on real sourced facts, from an
-actual run on 2026-10-24 — regenerated here after an external review
-caught the previous excerpt showing a stale confidence 1.00 the engine's
-single-source cap, added earlier this project, no longer produces):
+The demo runs 6 claims across all 4 domains through the engine. Example
+output (`substrate`, 2026-10-24):
 
 ```
 [✗] (substrate) Bar30 survives 500 m depth
@@ -508,36 +324,30 @@ single-source cap, added earlier this project, no longer produces):
       locator: DOC3_Bar30, chunk DOC3_Bar30#3, ~char 813 (chunk starts line 10)
 ```
 
-## Eval suite
+**Evals:**
 
 ```bash
 PYTHONPATH=. python evals/run_evals.py
 ```
 
-31 real cases across all 4 domains, all passing as of this commit (13
-need a live `NEBIUS_API_KEY` — substrate' calls and searchlight's
-multi-candidate mode both do — and skip cleanly, not falsely, without one;
-see `docs/ARCHITECTURE.md` for how that's decided).
+31 cases across all 4 domains. 14 need a live `NEBIUS_API_KEY` (`substrate`
+and `searchlight`'s multi-candidate mode) and are skipped without one. See
+`docs/ARCHITECTURE.md` for how that is decided.
 
-## Running the live API
+**API:**
 
 ```bash
-cp .env.example .env   # fill in NEBIUS_API_KEY — only needed once an adapter uses the LLM client
+cp .env.example .env   # fill in NEBIUS_API_KEY
 ```
 
-`POST /verify` requires an API key — set `ANTICASSIOPEIA_API_KEY` in `.env`
-before starting the server. Generate a real random key, don't type one by
-hand: `python3 -c "import secrets; print(secrets.token_urlsafe(32))"`.
-This is a deliberate fail-closed design: if `ANTICASSIOPEIA_API_KEY` isn't set at all, **every**
-`/verify` request is rejected, not silently allowed through with no auth.
-`/health` and `/domains` stay open (no cost, nothing sensitive). `/verify`
-is also rate-limited, keyed on the validated API key (not client IP, which
-would collapse every caller behind a shared proxy into one bucket) — plus
-a separate, stricter per-IP throttle on repeated FAILED auth attempts, so
-key-guessing gets slowed down independently of the main limit. See
-`anticassiopeia/api/server.py`'s module docstring for the exact numbers
-and its one honest limitation: this state isn't shared across multiple
-worker processes.
+`POST /verify` needs an API key: set `ANTICASSIOPEIA_API_KEY` in `.env`
+before starting the server, and generate it with
+`python3 -c "import secrets; print(secrets.token_urlsafe(32))"`. If it
+isn't set, every `/verify` request is rejected. `/health` and `/domains`
+are open. `/verify` is rate-limited per API key (not per IP, which would
+merge callers behind a shared proxy), with a separate per-IP throttle on
+failed auth attempts. This state isn't shared across worker processes; the
+exact numbers are in `anticassiopeia/api/server.py`'s module docstring.
 
 ```bash
 uvicorn anticassiopeia.api.server:app --reload
@@ -550,35 +360,22 @@ curl -X POST localhost:8000/verify \
   -d '{"text": "Bar30 survives 500m depth", "domain": "substrate"}'
 ```
 
-**Deploying to Cloud Run (or any multi-instance platform): pin `--max-instances=1`.**
-The rate-limit buckets, `UploadStore`, and `GET /documents`/pooled-search
-ownership lookups are all per-process, in-memory state — stated plainly
-in each module's own docstring, not silently assumed away. A real shared
-store (Redis, Firestore, etc.) would be the correct fix for a genuinely
-multi-instance deployment, but it's out of scope for this project's
-timeline and budget. Without `--max-instances=1`, a document uploaded to
-instance A and then referenced (by `document_id`, or implicitly via
-pooled search) in a later call routed to instance B gives a false
-"Unknown or expired document_id" — or a pool that looks emptier than it
-really is — for a document that is actually still valid, just sitting in
-a different process's memory. If this project's real traffic volume
-needs `--concurrency` raised instead of scaling out, that's a one-line
-fix with no downside; auto-scaling past one instance is what actually
-breaks this design.
+**Cloud Run and other multi-instance hosts: use `--max-instances=1`.**
+Rate-limit state, `UploadStore` and document ownership live in each
+process's memory. Without a single instance, a document uploaded to one
+instance can come back as "Unknown or expired document_id" from another.
+If load is the problem, raise `--concurrency` instead. A shared store such
+as Redis is the proper fix and is out of scope here.
 
 ```bash
 gcloud run deploy anti-cassiopeia --max-instances=1 ...
 ```
 
-**Opt-in per-verdict summary.** Set `context.include_summary = true` on
-any `/verify` call to get a short, best-effort, plain-English gloss of
-the verdict that was *already computed* — commentary, not a new source
-of evidence (the model generating it is explicitly told never to
-introduce a fact not already present in the real evidence/reasoning).
-OFF by default, every domain, including `quant`/`silicon` (which
-otherwise make zero live LLM calls) — this is a real, additional LLM
-call that only ever runs, and only ever costs anything, when a caller
-explicitly asks for it:
+**Optional summary.** Set `context.include_summary = true` on `/verify` to
+get a one-sentence plain-English summary of the verdict. It is an extra LLM
+call, off by default in every domain, and it only restates the existing
+evidence. If it fails, the verdict is unaffected and the response carries a
+`summary_error` field.
 
 ```bash
 curl -X POST localhost:8000/verify -H "X-API-Key: $ANTICASSIOPEIA_API_KEY" \
@@ -587,35 +384,15 @@ curl -X POST localhost:8000/verify -H "X-API-Key: $ANTICASSIOPEIA_API_KEY" \
 # -> {..., "summary": "The Bar30's rated depth falls short of the 500m claimed, so this is contradicted."}
 ```
 
-A summary failure (client unavailable, a dead live call) never fails the
-real verdict — it's reported as a separate, named `summary_error` field
-alongside the (unaffected) `state`/`confidence`/`evidence`, the same
-"never let a secondary concern take down the primary result" discipline
-`/verify`'s own scratch-file cleanup already follows.
-
 ## Frontend
 
 **[cheran-eclipse.github.io/anti-cassiopeia](https://cheran-eclipse.github.io/anti-cassiopeia/)**
-— a single dependency-free static HTML+JS file (`docs/index.html`,
-served by GitHub Pages, no build step, no framework), pointed at the
-deployed engine by default. Covers the same surface as the API: a
-single-claim verify form (with live-loaded domains and quick-verify
-presets), a document uploader, and a project-verify panel for a bundle
-of claims each optionally tied to a different uploaded document, rolled
-up the same way the API itself does. The API key field is a plain
-password input stored only in that browser's `localStorage`, pre-filled
-with a dedicated, separately-rate-limited public demo key (never the
-primary one) so a first-time visitor can try it immediately.
-
-**Redeployed 2026-10-25** (confirmed live: `/openapi.json` now lists
-`/documents`, `/domains`, `/health`, `/upload`, `/verify`,
-`/verify/compound`, `/verify/project` — every endpoint this repo ships,
-and `/domains` returns the renamed `substrate`/`searchlight`/`quant`/
-`silicon`, matching the frontend). The gap this section used to describe
-(a stale backend missing `/upload`/`/verify/project`, then briefly a
-frontend/backend domain-name mismatch from the rename) is closed — the
-whole surface below works end to end against the live deployment, not
-just the single-claim flow.
+is one static HTML and JS file (`docs/index.html`, served by GitHub Pages,
+no build step). It has a single-claim form with domain presets, a document
+uploader, and a project panel for a bundle of claims. The API key field is
+stored in the browser's `localStorage` and pre-filled with a rate-limited
+public demo key. The deployed backend (redeployed 2026-10-25) serves every
+endpoint in this repo and the renamed domains.
 
 ## Docker
 
@@ -624,15 +401,10 @@ docker build -t anticassiopeia .
 docker run -p 8000:8000 anticassiopeia
 ```
 
-**Build-tested for real, with no secrets baked in**: `docker build`
-succeeds with zero API keys available at build time (`.env` is
-deliberately not copied into the image) — the in-build eval suite skips
-the 13 cases that genuinely need a live key rather than failing on them,
-and the resulting container actually serves `/health`, `/domains`, and a
-real `POST /verify` round trip. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-for how this was verified, and for a bug this re-verification found and
-fixed (the eval suite used to fail the build outright on those 13 cases,
-not skip them).
+The build needs no API keys (`.env` is not copied into the image) and
+skips the 14 key-dependent evals. The container serves `/health`,
+`/domains` and `POST /verify`. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+for how this was verified.
 
 ## Repo layout
 
@@ -640,41 +412,36 @@ not skip them).
 anticassiopeia/
   core/        verdict types, DomainAdapter interface, VerificationEngine,
                compound.py (LLM claim decomposition + AND-rollup)
-  domains/     substrate, quant, silicon, searchlight — all real
+  domains/     substrate, quant, silicon, searchlight
   retrieval/   shared chunk/BM25/propose/verify/stance pipeline,
                hybrid.py (BM25+vector fusion, ported from Constellation),
                document_ingest.py (.txt/.md/.csv/.rpt/.svd/.xml/.pdf/.docx)
-  llm/         Nebius Token Factory client (live-verified, see docstring),
-               now with embed() for the hybrid-retrieval path
+  llm/         Nebius Token Factory client, with embed() for hybrid retrieval
   api/         FastAPI surface — POST /verify, POST /upload, GET /documents,
                POST /verify/project, POST /verify/compound, GET /health, GET /domains
-evals/         31 real test cases + fixtures + the runner (run_evals.py);
-               evals/retrieval/ — the real (not stand-in) hybrid-retrieval eval
-scripts/       demo.py — judge-facing end-to-end demo
-docs/          index.html (the frontend, GitHub-Pages-served — see
-               "Frontend" above), architecture, design decisions,
+evals/         31 test cases + fixtures + the runner (run_evals.py);
+               evals/retrieval/ — the hybrid-retrieval eval
+scripts/       demo.py — end-to-end demo
+docs/          index.html (the frontend), architecture, design decisions,
                Constellation extraction provenance
-stress_test/   the competitive-benchmark protocol's own harness
-               (run_benchmark_round1.py + 5 reusable competitor variants),
-               plus this project's full stress-test history — every real
-               bug found, every report, indexed in results/INDEX.md
+stress_test/   benchmark harness (run_benchmark_round1.py + 5 competitor
+               variants) and the full stress-test history: every bug found,
+               every report, indexed in results/INDEX.md
 .github/workflows/evals.yml   CI: runs the eval suite on every push/PR
-Dockerfile     build-tested for real (see above)
+Dockerfile
 ```
 
 ## License
 
-MPL 2.0 — see LICENSE. Copyright (c) 2026 Cheran N K (Eclipse Hovering).
+MPL 2.0, see LICENSE. Copyright (c) 2026 Cheran N K (Eclipse Hovering).
 Commercial licensing available on request.
 
-**Scope, stated explicitly (external review):** this license covers the
-code in this repository only — `anticassiopeia/`, `evals/`, `scripts/`,
-`stress_test/`'s own scripts, and the docs. It does NOT cover third-party
-data files or vendor reports bundled or referenced alongside the code
-(e.g. the UCI datasets `quant` claims are checked against, fetched
-manufacturer datasheet excerpts, sample EDA/synthesis reports) — those
-keep whatever license their original source states, which varies by
-source and in some cases isn't stated by the source at all. See
-[`stress_test/PROVENANCE.md`](stress_test/PROVENANCE.md) for exactly
-which license applies to each bundled third-party file, stated plainly
-rather than assumed.
+**Scope:** the license covers the code in this repository only
+(`anticassiopeia/`, `evals/`, `scripts/`, `stress_test/`'s own scripts, and
+the docs). It does not cover third-party data files or vendor reports
+bundled or referenced alongside the code (for example the UCI datasets
+`quant` claims are checked against, fetched manufacturer datasheet
+excerpts, and sample EDA/synthesis reports). Those keep the license their
+source states, which varies and in some cases isn't stated. See
+[`stress_test/PROVENANCE.md`](stress_test/PROVENANCE.md) for the license of
+each bundled third-party file.

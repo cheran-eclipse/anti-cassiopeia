@@ -1,26 +1,23 @@
-# Data provenance — Stress Test #1
+# Data provenance: Stress Test #1
 
-All retrieval dates below: 2026-10-18. Nothing in this directory is
-synthetic unless explicitly marked SYNTHETIC — every other file was
-actually fetched from the URL given, verified to contain real content
-matching its expected shape, and saved verbatim.
+All retrieval dates below are 2026-10-18 unless stated. Every file in this
+directory was fetched from the URL given, checked to have the expected
+shape, and saved verbatim, except files marked SYNTHETIC.
 
 **Reproducibility (external review, item 14):** `stress_test/data/` is
 gitignored, so none of these files survive a fresh clone. Run
-`PYTHONPATH=. python stress_test/bootstrap_data.py` to re-fetch every
-file below from these exact URLs (plus regenerate the shard files and
-copy the two synthetic fixtures) — verified (2026-10-24) to reproduce
-all 33 files byte-identical to what this project's stress-test numbers
-were actually computed from, checked against the committed
+`PYTHONPATH=. python stress_test/bootstrap_data.py` to re-fetch every file
+below from these URLs, regenerate the shard files and copy the two synthetic
+fixtures. On 2026-10-24 it reproduced all 33 files byte-identical to the data
+the stress-test numbers were computed from, checked against the committed
 `stress_test/data_checksums.txt`.
 
 ## ml_data/ — UCI Machine Learning Repository (archive.ics.uci.edu)
 
-All 14 fetched via UCI's public dataset API (`https://archive.ics.uci.edu/api/dataset?id=<id>`,
-no auth needed) and its `data_url`. Per-dataset license is whatever UCI's
-API returned for that dataset (most UCI datasets: CC BY 4.0, confirmed per
-dataset below where the API stated it; several returned no explicit
-license string from the API — noted as such, not assumed).
+All 14 were fetched through UCI's public dataset API
+(`https://archive.ics.uci.edu/api/dataset?id=<id>`, no auth) and its
+`data_url`. Each dataset's license is whatever UCI's API returned. Most are
+CC BY 4.0; several returned no license string, and none is assumed.
 
 | File | UCI ID | Name | Rows | Numeric columns | Source |
 |---|---|---|---|---|---|
@@ -39,38 +36,37 @@ license string from the API — noted as such, not assumed).
 | superconductivity.csv | 464 | Superconductivity Data | 21263 | 81 | https://archive.ics.uci.edu/dataset/464/superconductivty+data |
 | parkinsons_telemonitoring.csv | 189 | Parkinsons Telemonitoring | 5875 | 21 (biomedical voice sensor measurements) | https://archive.ics.uci.edu/dataset/189/parkinsons+telemonitoring |
 
-Exact `data_url`s used (all `https://archive.ics.uci.edu/static/public/<id>/data.csv`)
-and raw API JSON responses are not re-included here to keep this file
-short; re-fetch `https://archive.ics.uci.edu/api/dataset?id=<ID>` for the
-exact metadata if needed — it is a stable, versioned public API.
+The `data_url`s are all `https://archive.ics.uci.edu/static/public/<id>/data.csv`.
+Raw API responses are not included; re-fetch
+`https://archive.ics.uci.edu/api/dataset?id=<ID>` for the metadata (a stable,
+versioned public API).
 
-**Phase B item 11 (held-out set, 2026-10-19):** one more real UCI
-dataset, fetched live specifically because it was never used anywhere in
-the main 3,383-claim manifest (the whole point of a held-out set):
+**Phase B item 11 (held-out set, 2026-10-19):** one more UCI dataset,
+fetched because the main 3,383-claim manifest never used it (the point of a
+held-out set):
 
 | File | UCI ID | Name | Rows | Numeric columns | Source |
 |---|---|---|---|---|---|
 | yacht_hydrodynamics.csv | 243 | Yacht Hydrodynamics | 308 | 7 (6 hull-geometry features + 1 target) | https://archive.ics.uci.edu/ml/machine-learning-databases/00243/yacht_hydrodynamics.data |
 
-Column names are this project's own labels derived directly from the
-dataset page's "Additional Variable Information" descriptions (the raw
-`.data` file has no header row) — not re-used from any other file in
-this project. Statistics over this file for the held-out claims were
-computed by hand-rolled arithmetic in `stress_test/claims/generate_heldout.py`
-itself, not by importing `stress_test/oracles/ml_data_oracle.py`.
+Column names are this project's own labels, taken from the dataset page's
+"Additional Variable Information" (the raw `.data` file has no header row),
+and are not reused from any other file here. Statistics for the held-out
+claims were computed with plain arithmetic in
+`stress_test/claims/generate_heldout.py`, not by importing
+`stress_test/oracles/ml_data_oracle.py`.
 
-## fpga_embedded/ — real, committed Vivado `report_timing_summary` output found via GitHub code search
+## fpga_embedded/: committed Vivado `report_timing_summary` output found via GitHub code search
 
-GitHub's code-search API requires authentication even for read access
-(returns 401 unauthenticated) — used the already-authenticated `gh` CLI
-(`gh auth status` confirmed `cheran-eclipse` logged in) rather than
-requesting/storing a new raw token, per the "use what's already safely
-available before adding a new credential" spirit of the task's rule 2.
+GitHub's code-search API requires authentication even for read access (401
+unauthenticated). The search used the already-authenticated `gh` CLI
+(`gh auth status` showed `cheran-eclipse` logged in) instead of requesting or
+storing a new token.
 
-As predicted by the task brief, this is genuinely scarce — most FPGA
-projects gitignore build artifacts. Found 9 distinct real files across 7
-repos (each file fetched via `gh api repos/<repo>/contents/<path>`,
-default branch HEAD as of 2026-10-18; local filename = `<repo, "/"→"__">__<basename>`):
+Such reports are scarce, since most FPGA projects gitignore build artifacts.
+The search found 9 distinct files across 7 repos, each fetched with
+`gh api repos/<repo>/contents/<path>` at the default branch HEAD as of
+2026-10-18. The local filename is `<repo, "/"→"__">__<basename>`:
 
 | Local file | Repo | Path | License | Notes |
 |---|---|---|---|---|
@@ -84,20 +80,19 @@ default branch HEAD as of 2026-10-18; local filename = `<repo, "/"→"__">__<bas
 | scarletnova20__...timing_impl.txt | scarletnova20/Vision-In-Memory-System-On-RISCV | reports/timing_impl.txt | MIT | Real, but the data row is literally `NA NA NA NA ...` (an incomplete/unclosed-timing run) — genuine real-world ADVERSARIAL edge case: correct behavior is "no numeric row matched, named gap", not a crash. Used for Tier 3. |
 | scarletnova20__...timing_synth.txt | scarletnova20/Vision-In-Memory-System-On-RISCV | reports/timing_synth.txt | MIT | Same NA-row situation as above (post-synthesis, pre-route) |
 
-**Phase B item 11 (held-out set, 2026-10-19):** one more real Vivado
-report from a project never used anywhere in the main manifest, found
-via the same `gh api search/code` method as above:
+**Phase B item 11 (held-out set, 2026-10-19):** one more Vivado report, from
+a project the main manifest never used, found with the same
+`gh api search/code` method:
 
 | Local file | Repo | Path | License | Notes |
 |---|---|---|---|---|
 | nethakah__nasdaq-pipeline__timing_route.rpt | nethakah/nasdaq-pipeline | fpga/results/timing_route.rpt | Apache-2.0 | Real, modern (Vivado v2024.1) routed report; two real clocks (core_clk 285.714MHz, dma_clk 100.000MHz); WNS(ns)=0.034, WHS(ns)=0.011, WPWS(ns)=1.218 — all read directly from the real file by eye for the held-out claims, quoted in `stress_test/claims/generate_heldout.py`'s own docstring, not parsed by a script sharing code with `fpga_embedded.py` |
 
-### Quantum-control/accelerator FPGA data (amendment, additive to the above)
+### Quantum-control and accelerator FPGA data (amendment, added to the above)
 
-Searched specifically for real, committed Vivado/EDA timing reports from
-FPGA-based quantum control/accelerator projects, per the amendment's
-instruction, as a layer ON TOP of the general-FPGA data above (nothing
-above was replaced):
+The search targeted committed Vivado and EDA timing reports from FPGA-based
+quantum control and accelerator projects, on top of the general FPGA data
+above (nothing above was replaced):
 
 - `org:m-labs` (ARTIQ) and `org:sinara-hw` (Sinara hardware: Kasli,
   Metlino, etc.) — code search for `"Design Timing Summary"` and
@@ -124,90 +119,75 @@ above was replaced):
   inspection showed generic unrelated FPGA/SDR/CPU projects incidentally
   matching those common words, not quantum error-correction decoders).
 
-**Honest result: this sub-population came up EMPTY after a real, multi-angle
-attempt.** Zero real quantum-control/accelerator FPGA timing reports were
-found and added. The general-FPGA data sourced earlier (9 real files + 2
-synthetic fixtures, listed above) is NOT relabeled as quantum to
-compensate — `manifest.jsonl`'s claims drawing on fpga_embedded data all
-cite the general-FPGA provenance already documented above, and no claim
-in this stress test is tagged as quantum-control-sourced, because none
-genuinely is.
+**Result: this sub-population came up empty after a multi-angle search.** No
+quantum-control or accelerator FPGA timing reports were found. The general
+FPGA data listed above (9 real files and 2 synthetic fixtures) is not
+relabeled as quantum. `manifest.jsonl`'s `fpga_embedded` claims cite the
+general FPGA provenance above, and no claim in this stress test is tagged as
+quantum-control-sourced.
 
-**Honest note on "multi-corner", refining §4.3's design:** none of the 9
-real files found contain the adapter's `Corner: <NAME>` label convention
-— that was always documented in `fpga_embedded.py`'s own module docstring
-as THIS ADAPTER'S OWN structuring convention, not a copied real format,
-specifically because no readable real multi-corner-labeled sample could
-be fetched then. That remains true now. The multi-corner claims in this
-stress test's manifest use the EXISTING already-committed, already
-explicitly-marked-synthetic fixtures
-(`evals/fixtures/vivado_timing_report.rpt`,
-`vivado_timing_report_single_corner.rpt` — copied into
-`stress_test/data/fpga_embedded/` unchanged, still carrying their own
-"synthetic fixture" header line) for exercising the `Corner:` parsing
-mechanism itself; they are kept in a clearly separate bucket from the 9
-real files above in `manifest.jsonl`'s `provenance` field and never
-described as "real" there.
+**Note on "multi-corner", refining §4.3's design.** None of the 9 real files
+contains the adapter's `Corner: <NAME>` label. `fpga_embedded.py`'s module
+docstring has always described that label as this adapter's own convention,
+not a copied real format, because no readable real multi-corner sample could
+be fetched. That is still true. The multi-corner claims in the manifest use
+the committed synthetic fixtures (`evals/fixtures/vivado_timing_report.rpt`
+and `vivado_timing_report_single_corner.rpt`, copied unchanged into
+`stress_test/data/fpga_embedded/` with their "synthetic fixture" header line)
+to exercise `Corner:` parsing. They sit in a separate bucket from the 9 real
+files in `manifest.jsonl`'s `provenance` field and are never described as
+real.
 
-## robotics/ — reused, not re-sourced (per task instruction)
+## robotics/: reused, not re-sourced
 
-No new sourcing. Claims reuse the existing corpus already in
-`anticassiopeia/corpus/` (`doc1_bluerov2_excerpt.txt`,
-`doc2_bluerov2_excerpt.txt`, `doc3_bar30_excerpt.txt`) and
-`docs/extracted/constellation-robotics-seed.md`, exactly as
-`anticassiopeia/domains/robotics.py` already retrieves against them. Did
-NOT pull additional material from the sibling `~/file/eclipse-constellation`
-folder beyond what's already used in production — the task said to
-confirm first whether more was wanted, and this run didn't pause to ask,
-so it stuck to the existing corpus only.
+No new sourcing. Claims reuse the corpus in `anticassiopeia/corpus/`
+(`doc1_bluerov2_excerpt.txt`, `doc2_bluerov2_excerpt.txt`,
+`doc3_bar30_excerpt.txt`) and `docs/extracted/constellation-robotics-seed.md`,
+the same material `anticassiopeia/domains/robotics.py` retrieves against. No
+additional material was taken from the sibling `~/file/eclipse-constellation`
+folder; the task said to confirm first whether more was wanted, and this run
+did not ask.
 
-**License, stated explicitly (this was previously an unstated gap —
-README.md's own "License" section already disclosed the general policy
-for third-party data, but this file never spelled it out for this
-specific corpus until now):** `doc1-4_*.txt` and the Bar100XT/QuSpin
-material in `constellation-robotics-seed.md` are short, factual, numeric
-excerpts (depth ratings, pressure ranges, dimensions) from Blue
-Robotics' and QuSpin's own publicly published product pages. Numeric
-specifications/facts are not independently copyrightable under US
-copyright law regardless of the source page's own terms; the excerpts
-kept here are deliberately the minimal factual statement, not the
-page's full expressive text, layout, or imagery. Neither vendor has
-published these specific pages under an open-source license — this
-content does NOT carry an MIT/Apache/CC license of its own, and is not
-claimed to. See README.md's "License" section for how this project
-scopes its own MPL-2.0 license to exclude bundled third-party data.
+**License.** The README's "License" section states the general policy for
+third-party data; this file states it for this corpus. `doc1-4_*.txt` and
+the Bar100XT and QuSpin material in `constellation-robotics-seed.md` are
+short, numeric excerpts (depth ratings, pressure ranges, dimensions) from
+Blue Robotics' and QuSpin's public product pages. Numeric specifications are
+not independently copyrightable under US copyright law, whatever the source
+page's terms say, and the excerpts are the minimal factual statement, not the
+page's text, layout or imagery. Neither vendor published these pages under
+an open-source license, so this content carries no MIT, Apache or CC license
+of its own and is not claimed to. The README's "License" section explains how
+this project's MPL-2.0 license excludes bundled third-party data.
 
-### v2 "bring your own evidence" stress-test material (2026-10-25) — genuinely open-source, MIT/Apache-2.0
+### v2 "bring your own evidence" stress-test material (2026-10-25): MIT and Apache-2.0
 
-New real-world robotics source material added specifically for the v2
-BYOE/upload stress test, chosen BECAUSE it carries a real, verified
-permissive open-source license (unlike the vendor-page excerpts above)
-— confirmed by fetching each repository's actual LICENSE file, not
-assumed from a GitHub sidebar badge alone:
+Robotics source material added for the v2 upload stress test. It was chosen
+because it carries a permissive open-source license, unlike the vendor-page
+excerpts above. Each license was confirmed by fetching the repository's
+LICENSE file, not from a GitHub sidebar badge:
 
 | Local file | Project | Source | License | Verified via |
 |---|---|---|---|---|
 | `odrive_v3_6_specifications_excerpt.txt` | ODrive v3.6 motor controller | https://github.com/odriverobotics/ODrive, `docs/specifications.rst` | MIT (Copyright (c) 2016-2018 ODrive Robotics) | Raw fetch of `https://raw.githubusercontent.com/odriverobotics/ODrive/master/LICENSE.md` (opens "MIT License") and `.../master/docs/specifications.rst`, 2026-10-25 |
 | `nasa_jpl_open_source_rover_readme_excerpt.txt` | NASA JPL Open Source Rover | https://github.com/nasa-jpl/open-source-rover | Apache License 2.0 (Copyright 2018 California Institute of Technology, Government Sponsorship Acknowledged) | Raw fetch of `https://raw.githubusercontent.com/nasa-jpl/open-source-rover/master/LICENSE.txt`, 2026-10-25 |
 
-Both excerpts are kept SHORT and verbatim (copied character-for-character
-from the real source, same "quote exactly, never paraphrase into a
-possibly-wrong number" discipline `retrieval/extract.py`'s own propose()
-prompt already enforces on the LLM side) with their real source URL kept
-in each file's own header comment. Apache-2.0's attribution/NOTICE
-obligations (see the license text itself) are satisfied by that header
-comment naming the real copyright holder and source — this project adds
-no NOTICE file of its own since neither source repository ships one.
-See `stress_test/results/V2_BYOE_STRESS_TEST_REPORT.md` for what these
-were actually tested against.
+Both excerpts are short and verbatim, copied character for character from
+the source (the quote-exactly rule `retrieval/extract.py`'s `propose()`
+prompt applies to the LLM), and each file's header comment keeps the source
+URL. Apache-2.0's attribution and NOTICE obligations are met by that header
+naming the copyright holder and source; no NOTICE file is added because
+neither source repository ships one. See
+`stress_test/results/V2_BYOE_STRESS_TEST_REPORT.md` for what these were
+tested against.
 
-## research_web/ — no local corpus (live search is the point); real facts confirmed for claim templating
+## research_web/: no local corpus; facts confirmed for claim templating
 
-Mode 2 does live search itself at claim-verification time — nothing to
-pre-fetch as a corpus. The real-world facts claims are TEMPLATED FROM
-(to generate true/negated/absent-detail variants) were each independently
-confirmed by fetching the real page (same method as the existing
-`live_multi_candidate_*` eval cases from §4.3/§4.4):
+Mode 2 searches live at verification time, so there is no corpus to
+pre-fetch. The facts that claims are templated from (to generate true,
+negated and absent-detail variants) were each confirmed by fetching the page,
+the same method as the `live_multi_candidate_*` eval cases from §4.3 and
+§4.4:
 
 | Topic | Source URL | Fetched | Anchor fact(s) used |
 |---|---|---|---|
@@ -220,16 +200,14 @@ confirmed by fetching the real page (same method as the existing
 | STM32 | https://en.wikipedia.org/wiki/STM32 | 2026-10-18 | manufacturer (STMicroelectronics), architecture (ARM Cortex-M) |
 | Xilinx | https://en.wikipedia.org/wiki/Xilinx | 2026-10-18 | entity type (American technology company) |
 
-**24 more topics added for Phase B item 9** (external review: research_web
-was the most under-tested domain at only 24 claims) — bringing the total
-source pages/topics to **32** (the original 8 above + these 24; a later
-external review mis-cited this total as 24, confusing it with the
-*topic* count added in this step or the pre-expansion *claim* count —
-neither of which is the source-page total). Each fetched LIVE
-via Wikipedia's REST summary API
-(`https://en.wikipedia.org/api/rest_v1/page/summary/<title>`, the same
-confirmed-working backend `research_web.py`'s own live tests use) on
-2026-10-19, before any claim was written:
+**24 more topics added for Phase B item 9** (external review: `research_web`
+was the most under-tested domain, at 24 claims). The total is **32** source
+pages (the original 8 plus these 24). A later external review cited the total
+as 24, confusing it with the topic count added in this step or the
+pre-expansion claim count. Each page was fetched on 2026-10-19, before any
+claim was written, through Wikipedia's REST summary API
+(`https://en.wikipedia.org/api/rest_v1/page/summary/<title>`, the backend
+`research_web.py`'s live tests use):
 
 | Topic | Source URL | Fetched | Anchor fact(s) used |
 |---|---|---|---|
@@ -258,12 +236,10 @@ confirmed-working backend `research_web.py`'s own live tests use) on
 | Bluetooth Low Energy | https://en.wikipedia.org/wiki/Bluetooth_Low_Energy | 2026-10-19 | steward (Bluetooth Special Interest Group) |
 | Modbus | https://en.wikipedia.org/wiki/Modbus | 2026-10-19 | original use case (programmable logic controllers) |
 
-Each topic's "absent" claim is a precise invented statistic not present
-in the fetched summary text (same convention the original 8 topics use);
-not independently verified against the full page beyond the fetched
-summary extract, carrying the same residual risk the original 8 topics
-already carry.
+Each topic's "absent" claim is an invented statistic that does not appear in
+the fetched summary text, the same convention as the original 8 topics. It
+was not checked against the full page beyond the summary extract, which is
+the same residual risk the original 8 carry.
 
-All Wikipedia content: CC BY-SA 4.0 (Wikipedia's standard license,
-confirmed per Wikipedia's own terms, not re-checked per-page since it's
-site-wide policy).
+All Wikipedia content is CC BY-SA 4.0 (Wikipedia's site-wide license,
+not re-checked per page).
