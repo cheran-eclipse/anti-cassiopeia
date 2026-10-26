@@ -111,9 +111,9 @@ Split into two tracks per the round-2 scoping decision:
   parked. These are closed-form control-theory/FPGA/math claims, not
   web-verifiable facts; see the section above. Not yet verified or run.
 
-### Verification result: 100/102 of the generators' own suggestions held up
+### Verification result: 100/102 of the generators' own suggestions held up at verification time
 
-Only **2 corrections** out of 102, both confirmed→contradicted:
+**2 corrections** at initial verification, both confirmed→contradicted:
 
 - `chatgpt-011` — Hesiod's *Theogony* claim that Athena emerges "fully
   armed" from Zeus's head. The head-birth itself is real (Theogony line
@@ -130,9 +130,23 @@ confirmed as genuinely unresolved in the historical literature — the
 generator already said so; verification agrees undetermined is the honest
 answer, not a guess either way.
 
-Final verdict distribution across all 102: confirmed 34, contradicted 53,
-undetermined 15 (14 calibration probes + the one genuinely open historical
-question above).
+**A third correction was found later**, during round 2's own benchmark
+review, not at initial verification: `gemini-012` (Newton/Leibniz "exact
+same time") was originally kept `confirmed` on the reasoning that "most
+popular accounts use similarly loose framing" — overridden after all six
+systems tested in round 2 independently predicted `contradicted` against
+that ground truth. See `stress_test/results/BENCHMARK_ROUND2_REPORT.md`'s
+Erratum 3 and `claude/ANTI_CASSIOPEIA_COMPETITIVE_BENCHMARK_PROTOCOL.md`
+§3's qualifier rule this prompted — a real lesson that initial
+verification can still be too lenient on a claim whose core relationship
+is true but whose specific added qualifier isn't, even when applying
+real scrutiny the first time around.
 
-Not yet done: running any of this through the real engine or any
-competitor.
+Final verdict distribution across all 102 (as of the original
+verification pass, before the later `gemini-012` correction): confirmed
+34, contradicted 53, undetermined 15 (14 calibration probes + the one
+genuinely open historical question above) — now confirmed 33,
+contradicted 54 after the correction above.
+
+Run through the real engine and all 5 competitors: see
+`stress_test/results/BENCHMARK_ROUND2_REPORT.md`.

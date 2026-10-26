@@ -175,9 +175,9 @@
       "gemini-012",
       "perplexity-027"
     ],
-    "verified_ground_truth": "confirmed",
-    "verification_confidence": "medium",
-    "verification_notes": "Modern consensus is that Newton (from the 1660s, unpublished) and Leibniz (from the mid-1670s, published 1684) developed calculus independently, and a real, bitter priority dispute followed (1699-1716+). 'Exact same time' overstates the synchrony somewhat -- Newton's unpublished work predates Leibniz's by roughly a decade -- but 'independently developed' and 'bitter priority dispute' are both accurate, and most popular accounts use similarly loose framing.",
+    "verified_ground_truth": "contradicted",
+    "verification_confidence": "high",
+    "verification_notes": "CORRECTED 2026-10-26 (see claude/ANTI_CASSIOPEIA_COMPETITIVE_BENCHMARK_PROTOCOL.md \u00a73's qualifier rule): Newton (1660s, unpublished) and Leibniz (mid-1670s, published 1684) developed calculus independently, and a real, bitter priority dispute followed -- but the claim's own specific, literal qualifier is 'at the EXACT SAME TIME', and Newton's unpublished work demonstrably predates Leibniz's by roughly a decade. That specific assertion is false, even though the general 'independently developed' relationship is true. Originally scored 'confirmed' on the reasoning that 'most popular accounts use similarly loose framing' -- that is evidence the popular framing is ALSO imprecise, not evidence the claim's specific qualifier is true. Scored 'contradicted' under the corrected rule: the claim as literally, specifically worded is false.",
     "verification_sources": [
       "https://en.wikipedia.org/wiki/Leibniz%E2%80%93Newton_calculus_controversy"
     ],

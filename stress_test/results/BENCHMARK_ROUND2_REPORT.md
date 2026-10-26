@@ -159,29 +159,56 @@ confusing `TypeError`) in both `instrumented_client.py` and the real
 calls across the three Nebius-billed competitor variants (~0.2%) — rare,
 not new, not investigated further.
 
+## Erratum 3 — FIXED: `gemini-012`'s ground truth was wrong, not six systems' verdict
+
+Added 2026-10-26. All 3 of Anti-Cassiopeia's "dangerous misses" below were
+root-caused individually (see that section, unchanged below) — but
+`gemini-012` (Newton/Leibniz) turned out not to be an engine miss at all.
+**Every single one of the six systems tested — Anti-Cassiopeia and all 5
+competitors — independently predicted `contradicted` for this claim**,
+against a stated ground truth of `confirmed`. Six architecturally
+different systems converging on the same verdict against the stated
+ground truth is far stronger evidence the ground truth was wrong than
+that six independent systems all failed identically. On review (prompted
+by explicit project-owner feedback): the claim's specific, literal
+qualifier — "at the EXACT SAME TIME" — is false (Newton's unpublished
+work predates Leibniz's by roughly a decade), even though the general
+"independently developed calculus" relationship and the priority dispute
+are both real. The original scoring reasoned "most popular accounts use
+similarly loose framing" to justify `confirmed` anyway — that's evidence
+the popular framing is ALSO imprecise, not evidence the claim's specific
+qualifier is true. **Re-scored `contradicted`.** This is now a
+locked-in ground-truth-sourcing rule for every future round, not a
+one-off exception — see
+`claude/ANTI_CASSIOPEIA_COMPETITIVE_BENCHMARK_PROTOCOL.md` §3's new
+qualifier paragraph. All tables below reflect the correction; the
+superseded pre-correction numbers are not repeated here, per this
+project's own "erratum, not silent rewrite" convention — the correction
+itself, and why, is the record.
+
 ## Scorecard — overall accuracy by system (102 claims; category 6's 14 calibration probes scored separately below, per protocol)
 
 | System | Scored (n=88) | Correct | Dangerous | Conservative miss | Crash/skip |
 |---|---|---|---|---|---|
-| **Anti-Cassiopeia** | 88 | 62 (70.5%) | 3 | 23 | 0 |
-| Bare model (no retrieval) | 88 | 79 (89.8%) | 9 | 0 | 0 |
-| Nebius-agent (*actually* full pipeline, single-model stance — see above) | 88 | 63 (71.6%) | 6 | 19 | 0 |
-| Generic RAG | 88 | 69 (78.4%) | 6 | 12 | 1 |
-| Perplexity | 88 | 79 (89.8%) | 7 | 2 | 0 |
-| Tavily+Gemini — fixed, full 102 (see Erratum 1) | 88 | 80 (90.9%) | 5 | 3 | 0 |
+| **Anti-Cassiopeia** | 88 | 63 (71.6%) | 2 | 23 | 0 |
+| Bare model (no retrieval) | 88 | 80 (90.9%) | 8 | 0 | 0 |
+| Nebius-agent (*actually* full pipeline, single-model stance — see above) | 88 | 64 (72.7%) | 5 | 19 | 0 |
+| Generic RAG | 88 | 70 (79.5%) | 5 | 12 | 1 |
+| Perplexity | 88 | 80 (90.9%) | 6 | 2 | 0 |
+| Tavily+Gemini — fixed, full 102 (see Erratum 1) | 88 | 81 (92.0%) | 4 | 3 | 0 |
 
-**Anti-Cassiopeia's raw accuracy (70.5%) is the lowest of the six on this
+**Anti-Cassiopeia's raw accuracy (71.6%) is the lowest of the six on this
 round's claim mix** — a real, honestly-reported result, not a win to
 spin. But its error *shape* is the thing this whole project is built to
-get right: only **3 dangerous (confidently wrong) answers out of 88**
-(3.4%), against 9 for the bare model, 6 each for nebius-agent and
-generic-RAG, and 5 for Tavily+Gemini — the rest of Anti-Cassiopeia's
+get right: only **2 dangerous (confidently wrong) answers out of 88**
+(2.3%), against 8 for the bare model, 5 each for nebius-agent and
+generic-RAG, and 4 for Tavily+Gemini — the rest of Anti-Cassiopeia's
 misses are **conservative**
 (23 `undetermined` where a confident answer existed and would have been
 correct), the safer failure direction this project explicitly prioritizes
 over confident wrongness. See the category breakdown below for exactly
-where that conservatism concentrates, and the three dangerous misses'
-own root-cause section for what actually went wrong on those.
+where that conservatism concentrates, and the two remaining dangerous
+misses' own root-cause section for what actually went wrong on those.
 
 ## Category 6 — calibration probes (14 claims, 7 traditions: Christian [resurrection, Marian apparition], Islamic [Gabriel/Quran, Night Journey], Buddhist [Nirvana, water-walking, food-multiplying], ancient Egyptian [Osiris ×2], Hindu [Govardhan Hill], Mormon [Moroni]) — NOT scored right/wrong; scored only on whether the system correctly refuses to confirm or contradict a matter of faith
 
@@ -244,7 +271,7 @@ at this specific job.
 
 | Cat | n | Anti-Cassiopeia | Bare model | Nebius-agent | Generic RAG | Perplexity | Tavily+Gemini (fixed) |
 |---|---|---|---|---|---|---|---|
-| 1 — causal/relational | 20 | 8/20 | 19/20 | 13/20 | 13/20 | 18/20 | 18/20 |
+| 1 — causal/relational | 20 | 9/20 | 20/20 | 14/20 | 14/20 | 19/20 | 19/20 |
 | 2 — obscure historical | 17 | 10/17 | 13/17 | 11/17 | 14/17 | 12/17 | 15/17 |
 | 3 — mythology (text-framed) | 14 | 11/14 | 12/14 | 9/14 | 11/14 | 13/14 | 13/14 |
 | 4 — well-documented conspiracy | 11 | 10/11 | 11/11 | 8/11 | 8/11 | 11/11 | 11/11 |
@@ -258,24 +285,43 @@ claims with abundant, unambiguous web coverage; its category-6 cost for
 that lack of safeguards is covered above.
 
 **Category 1 (causal/relational) is Anti-Cassiopeia's weakest category by
-raw score (40%), and it is almost entirely conservative, not dangerous**:
-11 conservative misses, 8 correct, only 1 dangerous, out of 20 (severity
-breakdown: `{conservative_miss: 11, correct: 8, dangerous: 1}`). This is
-the direct, visible cost of the causal-claim stance-judgment fix (added
-after round 1's Wiesner/BB84 finding): `judge_stance()`'s SECOND
-paragraph requires a passage to actually *state* a causal/dependency
-relationship, not just mention both things in the same breath — and for
-many of this round's category-1 claims (deliberately written to *sound*
-plausible, per the generation prompt), real web sources narrate the
-history without ever explicitly asserting or denying the specific
-causal claim being tested, so the honest, correct behavior is
-`undetermined`, not a guess. Competitors with no such safeguard (bare
-model 19/20, Perplexity 18/20) score far higher here precisely because
-they don't apply this check — and are *not* thereby shown to be "better":
-round 1's own category-1 finding (Darwin/Wallace) is exactly the case
-this fix exists to get right, and this round's data shows the fix is, if
-anything, more conservative than the ground-truth-optimal point on a
-20-claim sample, not that it's wrong to exist.
+raw score (45%), and it is almost entirely conservative, not dangerous**:
+11 conservative misses, 9 correct, 0 dangerous, out of 20 (severity
+breakdown: `{conservative_miss: 11, correct: 9, dangerous: 0}` — `gemini-012`
+moved from this category's one dangerous miss to correct under Erratum
+3's ground-truth correction above, since Anti-Cassiopeia's own
+`contradicted` verdict was right all along). This is the direct, visible
+cost of the causal-claim stance-judgment fix (added after round 1's
+Wiesner/BB84 finding): `judge_stance()`'s SECOND paragraph requires a
+passage to actually *state* a causal/dependency relationship, not just
+mention both things in the same breath — and for many of this round's
+category-1 claims (deliberately written to *sound* plausible, per the
+generation prompt), real web sources narrate the history without ever
+explicitly asserting or denying the specific causal claim being tested,
+so the honest, correct behavior is `undetermined`, not a guess.
+Competitors with no such safeguard (bare model 20/20, Perplexity 19/20)
+score far higher here precisely because they don't apply this check —
+and are *not* thereby shown to be "better": round 1's own category-1
+finding (Darwin/Wallace) is exactly the case this fix exists to get
+right, and this round's data shows the fix is, if anything, more
+conservative than the ground-truth-optimal point on a 20-claim sample,
+not that it's wrong to exist.
+
+**Addressed since this round's own full run** (not reflected in the
+table above, which predates it, and not re-measured at full 102-claim
+scale — see `COMPARATIVE_SYNTHESIS_FIX_NOTE.md` for the smaller,
+deliberate check that was actually run): investigating these 11
+conservative misses individually found that 9 of them had ZERO evidence
+gathered at all — real sources described a different, true account
+without ever explicitly rebutting the claim's specific invented detail,
+and the strict causal-claim check (correctly preventing false
+*confirmations*) was also blocking *contradictions* needing synthesis
+across sources. `judge_comparative_stance()` (new) recovers a
+contradiction from 2+ such sources; live-validated on the same 12 claims
+already investigated, it correctly recovered 2 of the 9 (`gemini-011`,
+`gemini-022`) with zero attributable regressions. A full round-2-scale
+re-measurement with this fix active was not done here (same small,
+deliberate-check discipline as `DECISION2_REMEASUREMENT_NOTE.md`).
 
 **Category 7 is Anti-Cassiopeia's strongest category: 12/12, matching
 every competitor.** These are the claims shaped like something a
@@ -285,31 +331,40 @@ where round 1's two category-7 claims struggled (zero-result searches).
 With Tavily active and a larger, more typical sample, this category is a
 clean strength, not a gap.
 
-## Anti-Cassiopeia's 3 dangerous misses — root-caused individually, not just tallied
+## Anti-Cassiopeia's 2 dangerous misses — root-caused individually, not just tallied
 
 A real gap in this round's own script: the final scorecard JSON only
 retained each claim's predicted verdict/severity/confidence, not the full
 evidence/reasoning Anti-Cassiopeia's run produced — a byproduct of
 condensing 102 claims into one summary row that should carry full detail
 in a future round's script. To root-cause honestly rather than guess, all
-3 dangerous misses were **re-run individually** post-hoc (cost above,
-$0.033481) to capture real evidence:
+3 originally-dangerous misses were **re-run individually** post-hoc (cost
+above, $0.033481) to capture real evidence — including `gemini-012`
+(Newton/Leibniz), discussed here for the record even though it is no
+longer one of the 2 dangerous misses this section's own heading counts:
+see Erratum 3 above — the project owner's own review of this exact
+re-run's finding (below) is what prompted the ground-truth correction,
+not a separate re-investigation.
 
 **`gemini-012` (Newton/Leibniz, predicted `contradicted`, ground truth
-`confirmed`) — likely not a clean miss at all.** On re-run, Anti-Cassiopeia
-found one real source (bhanzu.com) stating Leibniz developed calculus
-*from 1675, published first (1684)* while Newton's earlier, unpublished
-work dates to 1665-66 — a source that **directly contradicts the claim's
-own "exact same time" framing**. This round's own ground-truth
-verification note *already flags this exact tension* ("'Exact same time'
-overstates the synchrony somewhat... Newton's unpublished work predates
-Leibniz's by roughly a decade") but still called the claim `confirmed`
-because "most popular accounts use similarly loose framing." Anti-
-Cassiopeia's strict, literal reading of "exact same time" against a real
-source that states otherwise is defensible; the ground truth's own
-generosity toward loose popular framing is a judgment call, not a
-certainty. Flagged for the project owner's own review per the protocol's
-disagreement-handling convention, not written off as a clean loss.
+was `confirmed`, corrected to `contradicted` — see Erratum 3) — this was
+the ground truth's own error, not Anti-Cassiopeia's.** On re-run,
+Anti-Cassiopeia found one real source (bhanzu.com) stating Leibniz
+developed calculus *from 1675, published first (1684)* while Newton's
+earlier, unpublished work dates to 1665-66 — a source that **directly
+contradicts the claim's own "exact same time" framing**. This round's
+own ground-truth verification note *already flagged this exact tension*
+("'Exact same time' overstates the synchrony somewhat... Newton's
+unpublished work predates Leibniz's by roughly a decade") but still
+called the claim `confirmed` because "most popular accounts use
+similarly loose framing" — overridden on review: that reasoning is
+evidence the popular framing is ALSO imprecise, not evidence the claim's
+specific qualifier is true. Six independently-architected systems (every
+one tested this round) converged on `contradicted` against the old
+`confirmed` ground truth — strong, specific evidence the ground truth
+needed fixing, not that six systems failed identically. See
+`claude/ANTI_CASSIOPEIA_COMPETITIVE_BENCHMARK_PROTOCOL.md` §3 for the
+rule this is now locked in as, for every future round.
 
 **`chatgpt-011` (Theogony/Athena "fully armed", predicted `confirmed`,
 ground truth `contradicted`) — the one claim this round's own
@@ -362,7 +417,7 @@ in the main run, not just in a follow-up investigation).
 | Perplexity only | 17 | 14/17 (82.4%) | 16/17 (94.1%) | 12/17 (70.6%) | 12/17 (70.6%) | 15/17 (88.2%) | 16/17 (94.1%) |
 | ChatGPT + Gemini (converged) | 1 | — | — | — | — | — | 1/1 |
 | ChatGPT + Perplexity (converged) | 5 | 5/5 | 5/5 | 5/5 | 4/5 | 5/5 | 5/5 |
-| Gemini + Perplexity (converged) | 2 | 1/2 | 1/2 | 1/2 | 1/2 | 1/2 | 1/2 |
+| Gemini + Perplexity (converged) | 2 | 2/2 | 2/2 | 2/2 | 2/2 | 2/2 | 2/2 |
 | All 3 (converged) | 2 | 2/2 | 2/2 | 2/2 | 2/2 | 2/2 | 2/2 |
 
 (The "ChatGPT + Gemini" row — the Antikythera mechanism claim, the one
@@ -403,19 +458,24 @@ which this round exercises.
 
 ## Next round
 
-Per the protocol's own §5, the project owner's manual review should focus
-on: (a) `gemini-012`'s Newton/Leibniz ground-truth tension (is
-"confirmed" the right call for a loosely-worded claim with one precisely
-contradicting clause, or should the ground truth itself be split/
-qualified?); (b) whether category 1's conservative-miss rate (55%) is
-where this project wants the causal-claim fix's sensitivity to sit, now
-that it's measured on 20 claims instead of 1; (c) Track B's 69 parked
-category-8 claims, if a future round wants to test `substrate`'s
-adaptive-depth path once it exists; (d) ~~re-running Tavily+Gemini with
-a real per-minute backoff~~ — **done**, see Erratum 1's fix above; (e) a
-future round's script should persist full per-claim evidence for every
-claim in the main run, not just for follow-up investigations of
-individual misses — the Piltdown Man root-cause above hit a real dead
-end specifically because this round's script didn't.
+Per the protocol's own §5, items from this round the project owner
+reviewed and acted on: (a) ~~`gemini-012`'s Newton/Leibniz ground-truth
+tension~~ — **done**, re-scored `contradicted` and locked in as a
+standing ground-truth-sourcing rule, see Erratum 3 above; (b) category
+1's conservative-miss rate — **investigated, not blindly retuned**: 9 of
+11 misses had zero evidence (not a threshold problem at all), addressed
+with `judge_comparative_stance()` instead of a `DECISION_THRESHOLD`
+change, see `COMPARATIVE_SYNTHESIS_FIX_NOTE.md`; (c) Track B's 69 parked
+category-8 claims — **run**, see `TRACK_B_REPORT.md` (routed through
+plain `searchlight`, not a `substrate` adaptive-depth path, which turned
+out not to exist and not to be the right fit); (d) ~~re-running
+Tavily+Gemini with a real per-minute backoff~~ — **done**, see Erratum 1's
+fix above. Still open: (e) a future round's script should persist full
+per-claim evidence for every claim in the main run, not just for
+follow-up investigations of individual misses — the Piltdown Man
+root-cause above hit a real dead end specifically because this round's
+script didn't; (f) a full round-2-scale re-measurement with the
+comparative-synthesis fix active (validated so far only on the 12-claim
+subset that found it).
 
 **No round 3 has been started.** This stops here per §3.8.

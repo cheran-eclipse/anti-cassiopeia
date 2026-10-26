@@ -218,6 +218,29 @@ different one — there is no benchmark value worth that risk.
    truth IS the sourced fact-check's published verdict (see §0.5) —
    skip re-deriving it from scratch, but do sanity-check it isn't itself
    stale/retracted.
+
+   **Rule, found the hard way (round 2's `gemini-012`, Newton/Leibniz,
+   2026-10-26) — not a one-off exception, apply to every future round:**
+   a causal/priority claim can bundle a TRUE core relationship with a
+   FALSE specific qualifier in the same sentence ("X and Y independently
+   developed Z, at the EXACT SAME TIME" — the independent-development part
+   is true; "exact same time" is not, when one party's work demonstrably
+   predates the other's by a real margin). **Do not round this up to
+   "confirmed" because the core relationship is right and "most popular
+   accounts use similarly loose framing."** Popular looseness is not
+   evidence the specific qualifier is true — it's evidence the popular
+   framing is ALSO imprecise. Score the claim's qualifier as literally,
+   specifically worded: if a real, citable source states a fact
+   incompatible with that specific qualifier, the correct ground truth is
+   `contradicted` (the claim as actually written is false), not
+   `confirmed` with a caveat buried in the notes. This is the exact same
+   literal-reading standard `retrieval/stance.py`'s own causal-claim
+   paragraphs already hold the ENGINE to — ground truth sourcing must
+   hold itself to the same standard, or a correct, literal engine verdict
+   gets scored as a "dangerous miss" against ground truth that was
+   itself too lenient. (`gemini-012` was re-scored `contradicted` under
+   this rule — see `claims_round2_verified.json` and
+   `BENCHMARK_ROUND2_REPORT.md`'s own correction note.)
 5. **Score head-to-head** (right/wrong/undetermined against ground truth,
    for every system including Anti-Cassiopeia) EXCEPT category 6
    (calibration probes), which is scored separately as described in §1,

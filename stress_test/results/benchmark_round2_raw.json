@@ -359,36 +359,36 @@
         "perplexity"
       ],
       "claim_text": "Isaac Newton independently developed calculus at the exact same time as Gottfried Wilhelm Leibniz, leading to a bitter priority dispute over mathematical notation.",
-      "ground_truth": "confirmed",
-      "ground_truth_note": "Modern consensus is that Newton (from the 1660s, unpublished) and Leibniz (from the mid-1670s, published 1684) developed calculus independently, and a real, bitter priority dispute followed (1699-1716+). 'Exact same time' overstates the synchrony somewhat -- Newton's unpublished work predates Leibniz's by roughly a decade -- but 'independently developed' and 'bitter priority dispute' are both accurate, and most popular accounts use similarly loose framing.",
+      "ground_truth": "contradicted",
+      "ground_truth_note": "CORRECTED 2026-10-26: the claim's own specific qualifier ('at the EXACT SAME TIME') is false -- Newton's unpublished work demonstrably predates Leibniz's by roughly a decade, even though both independently developing calculus and the priority dispute are real. See claude/ANTI_CASSIOPEIA_COMPETITIVE_BENCHMARK_PROTOCOL.md's qualifier rule.",
       "ground_truth_sources": [
         "https://en.wikipedia.org/wiki/Leibniz%E2%80%93Newton_calculus_controversy"
       ],
       "anti_cassiopeia": {
         "predicted": "contradicted",
-        "severity": "dangerous",
+        "severity": "correct",
         "confidence": 0.9
       },
       "competitors": {
         "bare_model": {
           "predicted": "contradicted",
-          "severity": "dangerous"
+          "severity": "correct"
         },
         "nebius_agent": {
           "predicted": "contradicted",
-          "severity": "dangerous"
+          "severity": "correct"
         },
         "generic_rag": {
           "predicted": "contradicted",
-          "severity": "dangerous"
+          "severity": "correct"
         },
         "perplexity": {
           "predicted": "contradicted",
-          "severity": "dangerous"
+          "severity": "correct"
         },
         "tavily_gemini": {
           "predicted": "contradicted",
-          "severity": "dangerous"
+          "severity": "correct"
         }
       }
     },
