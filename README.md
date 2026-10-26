@@ -291,9 +291,22 @@ account, weighted below direct-evidence trust, never able to confirm —
 live-validated with 2 clean recoveries and zero attributable regressions.
 A 69-claim "Track B" of category-8 formal/technical claims (control
 theory, FPGA, statistics — parked at round 2) is now independently
-verified and run: even safer than the main set (1.4% dangerous), since
-most have no web page directly addressing them and the engine correctly
-stays undetermined rather than guessing. Full protocol: [`claude/ANTI_CASSIOPEIA_COMPETITIVE_BENCHMARK_PROTOCOL.md`](claude/ANTI_CASSIOPEIA_COMPETITIVE_BENCHMARK_PROTOCOL.md).
+verified and run through the real engine and all 5 competitors, and it
+surfaces a genuine, honest limitation rather than another win: a bare
+model with zero retrieval hits 95.7% correct here, far ahead of this
+project's own 37.7%, because these are well-established textbook facts a
+capable LLM already knows cold — live web retrieval mostly can't find a
+page directly discussing a Jacobian null-space proof, so it correctly,
+but unhelpfully, defaults to `undetermined`. The project's own
+dangerous-miss rate stays just as safe here (1.4%) as everywhere else —
+what changes is how much raw accuracy a retrieval-grounded design trades
+for that safety when the claim shape is "does the model already know
+this," not "does a live source need checking." Separately, an actual
+bug in the compound-claim decomposition path was found and fixed this
+same session: it could silently rewrite a false sub-claim into its own
+negation, verifying a different claim than the one submitted — caught
+with a deterministic fidelity check, regression-tested against the
+exact bad output that triggered it. Full protocol: [`claude/ANTI_CASSIOPEIA_COMPETITIVE_BENCHMARK_PROTOCOL.md`](claude/ANTI_CASSIOPEIA_COMPETITIVE_BENCHMARK_PROTOCOL.md).
 Full results: [`stress_test/results/BENCHMARK_ROUND1_REPORT.md`](stress_test/results/BENCHMARK_ROUND1_REPORT.md),
 [`stress_test/results/BENCHMARK_ROUND2_REPORT.md`](stress_test/results/BENCHMARK_ROUND2_REPORT.md),
 [`stress_test/results/COMPARATIVE_SYNTHESIS_FIX_NOTE.md`](stress_test/results/COMPARATIVE_SYNTHESIS_FIX_NOTE.md),
