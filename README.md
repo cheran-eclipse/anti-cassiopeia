@@ -277,9 +277,27 @@ the stance-judgment fix that made round 1's Darwin/Wallace-style claims
 work correctly. A pre-existing bug in the Tavily+Gemini competitor's
 rate-limit handling (it misdiagnosed an ordinary per-minute limit as
 permanent quota exhaustion, skipping most of the round) was found and
-fixed after the fact. Full protocol: [`claude/ANTI_CASSIOPEIA_COMPETITIVE_BENCHMARK_PROTOCOL.md`](claude/ANTI_CASSIOPEIA_COMPETITIVE_BENCHMARK_PROTOCOL.md).
+fixed after the fact.
+
+Round 2's own category-1 misses turned out not to be what they first
+looked like: 9 of 11 had ZERO evidence gathered, not a lone contradicting
+source trusted too fast — real sources described a different, true
+account without ever explicitly rebutting the claim's specific invented
+detail, and the strict causal-claim check (built to stop false
+*confirmations*) was also blocking *contradictions* that needed synthesis
+across sources. Fixed additively — `judge_comparative_stance()` recovers
+a contradiction from 2+ sources that together describe an incompatible
+account, weighted below direct-evidence trust, never able to confirm —
+live-validated with 2 clean recoveries and zero attributable regressions.
+A 69-claim "Track B" of category-8 formal/technical claims (control
+theory, FPGA, statistics — parked at round 2) is now independently
+verified and run: even safer than the main set (1.4% dangerous), since
+most have no web page directly addressing them and the engine correctly
+stays undetermined rather than guessing. Full protocol: [`claude/ANTI_CASSIOPEIA_COMPETITIVE_BENCHMARK_PROTOCOL.md`](claude/ANTI_CASSIOPEIA_COMPETITIVE_BENCHMARK_PROTOCOL.md).
 Full results: [`stress_test/results/BENCHMARK_ROUND1_REPORT.md`](stress_test/results/BENCHMARK_ROUND1_REPORT.md),
-[`stress_test/results/BENCHMARK_ROUND2_REPORT.md`](stress_test/results/BENCHMARK_ROUND2_REPORT.md).
+[`stress_test/results/BENCHMARK_ROUND2_REPORT.md`](stress_test/results/BENCHMARK_ROUND2_REPORT.md),
+[`stress_test/results/COMPARATIVE_SYNTHESIS_FIX_NOTE.md`](stress_test/results/COMPARATIVE_SYNTHESIS_FIX_NOTE.md),
+[`stress_test/results/TRACK_B_REPORT.md`](stress_test/results/TRACK_B_REPORT.md).
 
 ## Bring your own evidence (v2 + v3)
 
