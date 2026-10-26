@@ -1,0 +1,1624 @@
+{
+  "n_claims": 69,
+  "severity": {
+    "conservative_miss": 42,
+    "correct": 26,
+    "dangerous": 1
+  },
+  "cost_usd": 0.36143795000000023,
+  "scorecard": [
+    {
+      "claim_id": "chatgpt-025",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 3 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://news.mit.edu/2008/gathering-concrete-evidence: real verified quote found, but doesn't address this specific claim; https://www.ce.memphis.edu/1101/interesting_stuff/pyramids_in_concrete.html: cited quote not actually verbatim on the page (Quote not found verbatim (whitespace-normalized) in chunk 'https://www.ce.memphis.edu/1101/interesting_stuff/pyramids_in_concrete.html#5' (lines starting at 140). Proposer's quote: 'The wet \u201cconcrete\u201d would have been carried to the site and packed into wooden moulds where it would set hard in a few days.'.); https://www.youtube.com/watch?v=ccebzy8c6lE: model honestly reported the claim isn't stated here; Fetched 2 chunk(s) across 2 live candidate page(s), but none matched this claim's search terms at all (methods tried: ['bm25'])."
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-026",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "contradicted",
+      "severity": "correct",
+      "confidence": 1.0,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [
+        {
+          "source": "https://en.wikipedia.org/wiki/Event_Horizon_Telescope",
+          "stance": "contradicts",
+          "snippet": "The array made this observation at a wavelength of 1.3 \u00a0 mm and with a theoretical  diffraction-limited resolution  of  25  microarcseconds  . (value=1.3, unit='mm', kind=None)"
+        },
+        {
+          "source": "https://news.mit.edu/2019/mit-haystack-first-image-black-hole-0410",
+          "stance": "contradicts",
+          "snippet": "The images were taken by the Event Horizon Telescope, or EHT, a planet-scale array comprising eight radio telescopes, each in a remote, high-altitude environment, including the mountaintops of Hawaii, Spain\u2019s Sierra Nevada, the Chilean desert, and the Antarctic ice sheet."
+        }
+      ],
+      "reasoning": [
+        "Gathered 2 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 1.50.",
+        "Verdict: contradicted (confidence 1.00)."
+      ],
+      "missing": [],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-027",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "confirmed",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 3 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://www.scribd.com/document/851906312/GEE-1-The-Story-of-the-Flood-from-The-Epic-of-Gilgamesh: real verified quote found, but doesn't address this specific claim; https://en.wikipedia.org/wiki/Gilgamesh_flood_myth: model honestly reported the claim isn't stated here; https://pages.ucsd.edu/~dkjordan/arch/mesop/Gilgamesh.html: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-037",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "confirmed",
+      "severity": "correct",
+      "confidence": 0.9,
+      "ground_truth_verdict": "confirmed",
+      "evidence": [
+        {
+          "source": "https://en.wikipedia.org/wiki/Moon_landing_conspiracy_theories",
+          "stance": "supports",
+          "snippet": "The presence of  retroreflectors  (mirrors used as targets for Earth-based tracking lasers) from the  Laser Ranging Retroreflector Experiment  (LRRR) is evidence that there were landings."
+        }
+      ],
+      "reasoning": [
+        "Gathered 1 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.75, contradiction weight: 0.00.",
+        "Confidence capped at 0.90: only one source contributed to this verdict, and a lone source cannot alone justify full certainty.",
+        "Verdict: confirmed (confidence 0.90)."
+      ],
+      "missing": [],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-038",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "contradicted",
+      "severity": "correct",
+      "confidence": 1.0,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [
+        {
+          "source": "https://www.medmastery.com/guides/interpreting-medical-literature-mini-guide/what-makes-scientific-article-credible",
+          "stance": "contradicts",
+          "snippet": "But, remember that the peer-review process does not guarantee a journal article\u2019s validity."
+        },
+        {
+          "source": "https://www.azonano.com/article.aspx?ArticleID=6969",
+          "stance": "contradicts",
+          "snippet": "Nature Communications  and  Cell  faced criticism for publishing studies later shown to be statistically flawed or irreproducible."
+        }
+      ],
+      "reasoning": [
+        "Gathered 2 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 1.50.",
+        "Verdict: contradicted (confidence 1.00)."
+      ],
+      "missing": [],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-039",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "confirmed",
+      "severity": "correct",
+      "confidence": 0.9,
+      "ground_truth_verdict": "confirmed",
+      "evidence": [
+        {
+          "source": "https://christianquestions.com/bible-questions/is-there-any-external-source-of-evidence-for-the-exodus-from-egypt",
+          "stance": "supports",
+          "snippet": "To date, scholars cannot concretely prove that Moses existed, that Israel lived in Egypt, or that this group of Hebrews fled from Pharaoh. But neither can they disprove the historicity of the biblical narrative."
+        }
+      ],
+      "reasoning": [
+        "Gathered 1 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.75, contradiction weight: 0.00.",
+        "Confidence capped at 0.90: only one source contributed to this verdict, and a lone source cannot alone justify full certainty.",
+        "Verdict: confirmed (confidence 0.90)."
+      ],
+      "missing": [],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-041",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 5 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://www.history.com/articles/voynich-manuscript-mystery: model honestly reported the claim isn't stated here; https://pmc.ncbi.nlm.nih.gov/articles/PMC3971164: model honestly reported the claim isn't stated here; https://www.smithsonianmag.com/smart-news/this-mysterious-medieval-manuscript-has-stumped-scholars-for-well-over-a-century-could-its-pages-have-been-bound-out-of-order-this-whole-time-180989737: model honestly reported the claim isn't stated here; https://www.sciencedaily.com/releases/2026/08/260810015723.htm: model honestly reported the claim isn't stated here; https://en.wikipedia.org/wiki/List_of_dates_predicted_for_apocalyptic_events: real verified quote found, but doesn't address this specific claim"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-042",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 4 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://quantumzeitgeist.com/godfathers-of-quantum-cryptography: real verified quote found, but doesn't address this specific claim; https://qsnp.eu/from-thought-experiment-to-satellite-link-the-evolution-of-quantum-key-distribution: cited quote not actually verbatim on the page (Quote not found verbatim (whitespace-normalized) in chunk 'https://qsnp.eu/from-thought-experiment-to-satellite-link-the-evolution-of-quantum-key-distribution#3' (lines starting at 195). Proposer's quote: 'His paper, \u201cConjugate Coding,\u201d remained unpublished for over a decade, finally appearing in 1983.'.); https://www.mpiwg-berlin.mpg.de/research/projects/origin-and-development-quantum-cryptography: real verified quote found, but doesn't address this specific claim; https://en.wikipedia.org/wiki/Quantum_key_distribution: real verified quote found, but doesn't address this specific claim; compared 3 individually-unrelated verified quotes together -- still not a clear enough incompatible account to contradict, staying undetermined"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-043",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "contradicted",
+      "severity": "correct",
+      "confidence": 0.9,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [
+        {
+          "source": "https://arxiv.org/html/2407.12960v2",
+          "stance": "contradicts",
+          "snippet": "the invariance of the speed of light, which follows exclusively from the two postulates, is all that is needed, as we shall see, to provide an explanation of the null result of the     M  \u2212  M   M-M    experiment."
+        }
+      ],
+      "reasoning": [
+        "Gathered 1 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.75.",
+        "Confidence capped at 0.90: only one source contributed to this verdict, and a lone source cannot alone justify full certainty.",
+        "Verdict: contradicted (confidence 0.90)."
+      ],
+      "missing": [],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-044",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 3 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://www.bbc.com/reel/video/p0gkw3wb/watch: real verified quote found, but doesn't address this specific claim; https://kids.frontiersin.org/articles/10.3389/frym.2022.747040: real verified quote found, but doesn't address this specific claim; https://en.wikipedia.org/wiki/Eddington_experiment: real verified quote found, but doesn't address this specific claim; compared 3 individually-unrelated verified quotes together -- still not a clear enough incompatible account to contradict, staying undetermined"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-045",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 6 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://isthatinthebible.wordpress.com/2026/03/05/why-scholars-date-the-book-of-daniel-to-the-second-century-bce: model honestly reported the claim isn't stated here; https://popular-archaeology.com/article/unlocking-the-timecode-of-the-dead-sea-scrolls: LLM propose call failed: Nebius response had no usable content (got None, finish_reason='stop') \u2014 likely truncated by the token limit: {'id': 'chatcmpl-a400f3b7-a9e0-4619-9e27-5c39a77d4f59', 'choices': [{'finish_reason': 'stop', 'index': 0, 'logprobs': None, 'message': {'content': None, 'refusal': None, 'role': 'assistant', 'annotations': None, 'audio': None, 'function_call': None, 'tool_calls': [], 'reasoning': 'analysis<|message|><|start|>analysis<|message|>'}, 'stop_reason': 200012, 'token_ids': None, 'routed_experts': None}], 'created': 1792995499, 'model': 'openai/gpt-oss-120b', 'object': 'chat.completion', 'moderation': None, 'service_tier': None, 'system_fingerprint': 'vllm-v0.22.0-tp4-3e04bf1c', 'usage': {'completion_tokens': 9, 'prompt_tokens': 1403, 'total_tokens': 1412, 'completion_tokens_details': None, 'prompt_tokens_details': {'audio_tokens': None, 'cached_tokens': 656}}, 'prompt_logprobs': None, 'prompt_token_ids': None, 'prompt_text': None, 'kv_transfer_params': None}; https://armstronginstitute.org/955-can-we-trust-the-book-of-daniel: model cited an unknown chunk_id '17' \u2014 dropped; https://www.biblehub.com/q/why_were_biblical_prophecies_postdated.htm: real verified quote found, but doesn't address this specific claim; https://en.wikipedia.org/wiki/Day-year_principle: model honestly reported the claim isn't stated here; http://atheists.org/classic-resources/did-jesus-exist: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-046",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 4 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://tyndalehouse.com/2024/12/06/great-isaiah-scroll: LLM propose call failed: Nebius response had no usable content (got None, finish_reason='stop') \u2014 likely truncated by the token limit: {'id': 'chatcmpl-4b16a97b-68e6-4709-9ab1-c4c2a53d5696', 'choices': [{'finish_reason': 'stop', 'index': 0, 'logprobs': None, 'message': {'content': None, 'refusal': None, 'role': 'assistant', 'annotations': None, 'audio': None, 'function_call': None, 'tool_calls': [], 'reasoning': 'analysis<|message|><|message|><|message|>analysis<|message|><|message|><|message|>'}, 'stop_reason': 200012, 'token_ids': None, 'routed_experts': None}], 'created': 1792995535, 'model': 'openai/gpt-oss-120b', 'object': 'chat.completion', 'moderation': None, 'service_tier': None, 'system_fingerprint': 'vllm-v0.22.0-tp4-3e04bf1c', 'usage': {'completion_tokens': 12, 'prompt_tokens': 1695, 'total_tokens': 1707, 'completion_tokens_details': None, 'prompt_tokens_details': {'audio_tokens': None, 'cached_tokens': 576}}, 'prompt_logprobs': None, 'prompt_token_ids': None, 'prompt_text': None, 'kv_transfer_params': None}; https://textandcanon.org/how-much-can-the-most-famous-dead-sea-scroll-prove: model cited an unknown chunk_id '20' \u2014 dropped; https://www.logos.com/grow/nook-dead-sea-scrolls-modern-bible-impact: model honestly reported the claim isn't stated here; http://oldtestamenttextualcriticism.blogspot.com/2026/08/how-close-is-great-isaiah-scroll-to.html: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-047",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 5 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://humanorigins.si.edu/evidence/human-fossils/species/homo-sapiens: model honestly reported the claim isn't stated here; https://evolution.berkeley.edu/the-history-of-evolutionary-thought/1800s/fossil-hominids-human-evolution-thomas-huxley-eugene-dubois: model honestly reported the claim isn't stated here; https://theconversation.com/when-did-we-become-fully-human-what-fossils-and-dna-tell-us-about-the-evolution-of-modern-intelligence-143717: real verified quote found, but doesn't address this specific claim; https://www.nationalgeographic.com/history/article/morocco-early-human-fossils-anthropology-science: model cited an unknown chunk_id '#1' \u2014 dropped; https://www.nhm.ac.uk/discover/modern-humans-homo-sapiens-when-where-how-did-we-evolve.html: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-048",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "contradicted",
+      "severity": "correct",
+      "confidence": 1.0,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [
+        {
+          "source": "https://openpublichealthjournal.com/VOLUME/19/ELOCATOR/e187494451232/FULLTEXT",
+          "stance": "contradicts",
+          "snippet": "Association refers to a relationship between two variables in which a change in one tends to coincide with a change in the other. However, this association does not necessarily mean that one variable directly causes a change in the other [ 1 ]."
+        },
+        {
+          "source": "https://en.wikipedia.org/wiki/Confounding",
+          "stance": "contradicts",
+          "snippet": "The presence of confounders helps explain why  correlation does not imply causation , and why careful study design and analytical methods (such as  randomization , statistical adjustment, or causal diagrams) are required to distinguish causal effects from spurious associations."
+        }
+      ],
+      "reasoning": [
+        "Gathered 2 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 1.50.",
+        "Verdict: contradicted (confidence 1.00)."
+      ],
+      "missing": [],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-049",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 6 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://www.booksfact.com/history/gyanvapi-mosque-at-varanasi-was-originally-kasi-viswanath-temple.html: model honestly reported the claim isn't stated here; https://ummid.com/news/2019/september/01.09.2019/ram-temple-in-ayodhya-was-demolished-during-aurangzeb-reign.html: model honestly reported the claim isn't stated here; https://www.chinatravel.com/tianjin/attraction/dule-temple: model honestly reported the claim isn't stated here; https://armstronginstitute.org/194-jerusalems-temples-the-archaeological-evidence: model honestly reported the claim isn't stated here; https://www.biblicalarchaeology.org/daily/biblical-sites-places/biblical-archaeology-sites/searching-for-the-temple-of-king-solomon: model honestly reported the claim isn't stated here; https://en.wikipedia.org/wiki/Archaeological_remnants_of_the_Jerusalem_Temple: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-050",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 5 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://en.wikipedia.org/wiki/Measurement_in_quantum_mechanics: cited quote not actually verbatim on the page (Quote not found verbatim (whitespace-normalized) in chunk 'https://en.wikipedia.org/wiki/Measurement_in_quantum_mechanics#25' (lines starting at 1066). Proposer's quote: 'Assigning a pure state to a quantum system implies certainty about the outcome of some measurement on that system (i.e., P ( x ) = 1 for some outcome x ).'.); https://quantumopsschool.com/blog/quantum-measurement-and-probability-explained-for-quantum-computing-learners: cited quote not actually verbatim on the page (Quote not found verbatim (whitespace-normalized) in chunk 'https://quantumopsschool.com/blog/quantum-measurement-and-probability-explained-for-quantum-computing-learners#25' (lines starting at 1004). Proposer's quote: 'In quantum computing, measurement does not always reveal something that was already fixed.'.); https://syskool.com/measurement-and-collapse-in-quantum-mechanics: model honestly reported the claim isn't stated here; http://en.wikipedia.org/wiki/Quantum_measurement: model honestly reported the claim isn't stated here; https://en.wikipedia.org/wiki/Quantum_measurement: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-051",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 2 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://en.wikipedia.org/wiki/Bell%27s_theorem: real verified quote found, but doesn't address this specific claim; https://scottaaronson.blog?p=2464: model honestly reported the claim isn't stated here; Found 4 live candidate URL(s) but could not fetch any of them: https://www.mdpi.com/2624-960x/8/2/39: HTTP 403; https://link.springer.com/article/10.1140/epjd/s10053-022-00542-z: HTTP 406; https://physics.stackexchange.com/questions/76997/has-bell-really-demonstrated-that-no-local-hidden-variable-theory-can-exist-in-h: HTTP 403; https://plato.stanford.edu/entries/bell-theorem: looked like a block/proxy page"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-052",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "contradicted",
+      "severity": "correct",
+      "confidence": 0.9,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [
+        {
+          "source": "https://en.wikipedia.org/wiki/Accuracy_and_precision",
+          "stance": "contradicts",
+          "snippet": "In numerical analysis , accuracy is also the nearness of a calculation to the true value; while precision is the resolution of the representation, typically defined by the number of decimal or binary digits."
+        }
+      ],
+      "reasoning": [
+        "Gathered 1 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.75.",
+        "Confidence capped at 0.90: only one source contributed to this verdict, and a lone source cannot alone justify full certainty.",
+        "Verdict: contradicted (confidence 0.90)."
+      ],
+      "missing": [],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-053",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 6 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://www.nytimes.com/2026/10/25/crosswords/wordle-review-1955.html: model honestly reported the claim isn't stated here; https://chicago.suntimes.com/horoscopes/2026/10/25/horoscopes-today-sunday-october-25-2026: model honestly reported the claim isn't stated here; https://soaps.sheknows.com/general-hospital/spoilers/848152/general-hospital-spoilers-october-26-through-30-2026: model honestly reported the claim isn't stated here; https://en.wikipedia.org/wiki/Faith_healing: model honestly reported the claim isn't stated here; https://circulatingnow.nlm.nih.gov/2025/06/05/magical-medicine-in-medieval-manuscripts: model honestly reported the claim isn't stated here; https://www.stmarytx.edu/2014/ancient-manuscripts: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-054",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 3 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://americanaffairsjournal.org/2020/05/science-without-validation-in-a-world-without-meaning: model honestly reported the claim isn't stated here; https://en.wikipedia.org/wiki/Scientific_theory: model honestly reported the claim isn't stated here; https://www.thetransmitter.org/breakout-room/must-a-theory-be-falsifiable-to-contribute-to-good-science: model honestly reported the claim isn't stated here; Found 5 live candidate URL(s) but could not fetch any of them: https://cs.stanford.edu/people/zjl/pdf/science.pdf: fetch failed (ConnectError('All connection attempts failed')); https://www.quora.com/What-are-some-examples-of-mathematically-consistent-theories-that-failed-when-experimentally-tested: HTTP 403; https://brainly.com/question/36177711: HTTP 403; https://discovery.researcher.life/questions/what-scientific-evidence-exists-to-support-the-big-bang-theory/3b65bbf0882fe71d36594563b824a63ba43f1c9c: HTTP 433; https://brainly.com/question/62212908: HTTP 403"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-055",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 5 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://buildingjerusalem.blog/2026/05/27/can-we-be-sure-we-have-the-original-new-testament: model honestly reported the claim isn't stated here; https://www.textusreceptusbibles.com/Are_Older_Manuscripts_More_Reliable: real verified quote found, but doesn't address this specific claim; https://biblearchaeologyreport.com/2019/02/06/the-three-oldest-biblical-texts: model honestly reported the claim isn't stated here; https://ehrmanblog.org/famous-passages-that-are-not-original-how-do-modern-translators-deal-with-them: model honestly reported the claim isn't stated here; https://stpaulcenter.com/posts/old-testament-manuscripts: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-056",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 4 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://towardsdatascience.com/your-six-ai-models-are-really-two-the-math-of-correlated-mistakes: model honestly reported the claim isn't stated here; https://pmc.ncbi.nlm.nih.gov/articles/PMC9957691: model honestly reported the claim isn't stated here; https://arxiv.org/html/2602.02569v1: model honestly reported the claim isn't stated here; https://arxiv.org/html/2609.26550v3: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-057",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "contradicted",
+      "severity": "correct",
+      "confidence": 0.9,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [
+        {
+          "source": "https://physicalailab.io/en/motion-planning-vs-trajectory-optimization",
+          "stance": "contradicts",
+          "snippet": "Coarse edge checking can miss a thin obstacle even when sampled endpoints are valid."
+        }
+      ],
+      "reasoning": [
+        "Gathered 1 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.75.",
+        "Confidence capped at 0.90: only one source contributed to this verdict, and a lone source cannot alone justify full certainty.",
+        "Verdict: contradicted (confidence 0.90)."
+      ],
+      "missing": [],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-058",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 4 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: http://manipulation.csail.mit.edu/pick.html: real verified quote found, but doesn't address this specific claim; https://pmc.ncbi.nlm.nih.gov/articles/PMC8587006: model honestly reported the claim isn't stated here; https://jameshermus.github.io/assets/pdf/Hermus_2022.pdf: model honestly reported the claim isn't stated here; https://www.youtube.com/watch?v=GMnO6qntsYc: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-059",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 5 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://realitybytes.blog/2017/06/20/forward-and-inverse-kinematics-jacobians-and-differential-motion: real verified quote found, but doesn't address this specific claim; https://modernrobotics.northwestern.edu/nu-gm-book-resource/5-1-1-space-jacobian: model honestly reported the claim isn't stated here; https://github.com/madibabaiasl/modern-robotics-course/wiki/Lesson-9:-Robot-Velocity-Kinematics-Using-Screw-Theory-%E2%80%90-Jacobian-Matrix: model honestly reported the claim isn't stated here; https://www.roboticsproceedings.org/rss14/p43.pdf: model honestly reported the claim isn't stated here; http://bionics.seas.ucla.edu/education/MAE_263D/Robotics_04_Jacobian_02_Intro.pdf: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-060",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 4 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: http://manipulation.csail.mit.edu/trajectories.html: real verified quote found, but doesn't address this specific claim; https://arxiv.org/html/2605.31436v1: model honestly reported the claim isn't stated here; https://wendy.dev/blog/inverse-kinematics-robot-arms: model honestly reported the claim isn't stated here; http://manipulation.csail.mit.edu/force.html: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-061",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "contradicted",
+      "severity": "correct",
+      "confidence": 0.9,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [
+        {
+          "source": "https://arxiv.org/html/2601.18639v1",
+          "stance": "contradicts",
+          "snippet": "In embedded joint control, the sampling period is not a nuisance parameter: it directly shapes phase margin and can turn a seemingly benign continuous-time tuning into an unstable discrete-time loop."
+        }
+      ],
+      "reasoning": [
+        "Gathered 1 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.75.",
+        "Confidence capped at 0.90: only one source contributed to this verdict, and a lone source cannot alone justify full certainty.",
+        "Verdict: contradicted (confidence 0.90)."
+      ],
+      "missing": [],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-062",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 2 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://pmc.ncbi.nlm.nih.gov/articles/PMC12115900: real verified quote found, but doesn't address this specific claim; https://web2.qatar.cmu.edu/~gdicaro/16311-Fall17/slides/16311-4-Holonomy-WheeledRobots-Kinematics.pdf: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-063",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 4 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://www.allpcb.com/allelectrohub/metastability-and-synchronizers-in-chip-design: real verified quote found, but doesn't address this specific claim; https://hackaday.com/2017/10/25/fpga-metastability-solutions: model honestly reported the claim isn't stated here; https://hardwarebee.com/metastability-in-fpgas: model honestly reported the claim isn't stated here; https://www.fpgarelated.com/showthread/comp.arch.fpga/120041-1.php: cited quote not actually verbatim on the page (Quote not found verbatim (whitespace-normalized) in chunk 'https://www.fpgarelated.com/showthread/comp.arch.fpga/120041-1.php#31' (lines starting at 513). Proposer's quote: 'Generally, a two flip flop chain is all that is required to cross the clock domain and reduce metastability to an acceptably low number.'.)"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-064",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "contradicted",
+      "severity": "correct",
+      "confidence": 0.9,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [
+        {
+          "source": "https://zipcpu.com/blog/2017/10/20/cdc.html",
+          "stance": "contradicts",
+          "snippet": "You might deliver to a customer a design that passes all of your internal tests, only to have that (now) disgruntled customer tell you it doesn\u2019t work."
+        }
+      ],
+      "reasoning": [
+        "Gathered 1 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.75.",
+        "Confidence capped at 0.90: only one source contributed to this verdict, and a lone source cannot alone justify full certainty.",
+        "Verdict: contradicted (confidence 0.90)."
+      ],
+      "missing": [],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-065",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "contradicted",
+      "severity": "correct",
+      "confidence": 0.9,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [
+        {
+          "source": "https://easyfpga.blog/posts/critical-path-and-pipelining",
+          "stance": "contradicts",
+          "snippet": "The trade-off is latency: the result now takes 2 clock cycles instead of 1. Throughput, however, is unchanged \u2014 once the pipeline is full, a new result emerges every clock cycle. (value=2, unit='cycles', kind=None)"
+        }
+      ],
+      "reasoning": [
+        "Gathered 1 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.75.",
+        "Confidence capped at 0.90: only one source contributed to this verdict, and a lone source cannot alone justify full certainty.",
+        "Verdict: contradicted (confidence 0.90)."
+      ],
+      "missing": [],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-066",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "contradicted",
+      "severity": "correct",
+      "confidence": 0.9,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [
+        {
+          "source": "https://hardwaredescriptions.com/elementor-fixed-point-arithmetic-in-synthesizable-vhdl",
+          "stance": "contradicts",
+          "snippet": "an 1% between the fixed and real valued implementations and it works down to 24 bit word length using the implementation. (value=1, unit='%', kind='tested')"
+        }
+      ],
+      "reasoning": [
+        "Gathered 1 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.75.",
+        "Confidence capped at 0.90: only one source contributed to this verdict, and a lone source cannot alone justify full certainty.",
+        "Verdict: contradicted (confidence 0.90)."
+      ],
+      "missing": [],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-067",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 4 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://en.wikipedia.org/wiki/Fixed-point_arithmetic: real verified quote found, but doesn't address this specific claim; https://learn.microsoft.com/en-us/cpp/build/ieee-floating-point-representation?view=msvc-170: model honestly reported the claim isn't stated here; https://cs357.cs.illinois.edu/textbook/notes/fp.html: model honestly reported the claim isn't stated here; https://www.youtube.com/watch?v=bbkcEiUjehk: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-068",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 3 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://csrc.nist.rip/Projects/cryptographic-algorithm-validation-program: model honestly reported the claim isn't stated here; https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program/secure-hashing: model honestly reported the claim isn't stated here; https://www.cast-inc.com/security/crypto-hash-functions/sha-384512: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-069",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 4 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://en.wikipedia.org/wiki/Quantum_key_distribution: model honestly reported the claim isn't stated here; https://arxiv.org/html/2510.26320v1: model honestly reported the claim isn't stated here; https://processing.org/reference: model honestly reported the claim isn't stated here; https://security.apple.com/blog/apple-reference-image: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-070",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 3 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://safety2011.inrialpes.fr/contributions/index.html: model honestly reported the claim isn't stated here; https://arxiv.org/html/1912.09957v3: model honestly reported the claim isn't stated here; https://spectrum.ieee.org/motionplanning-chip-speeds-robots: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-071",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 6 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://www.01signal.com/verilog-design/clockdomains/crossing-basics: model honestly reported the claim isn't stated here; https://hardwarebee.com/metastability-in-fpgas: model honestly reported the claim isn't stated here; https://zipcpu.com/blog/2017/10/20/cdc.html: model honestly reported the claim isn't stated here; https://cds.cern.ch/record/436793/files/p489.pdf: model honestly reported the claim isn't stated here; https://nepp.nasa.gov/respace_mapld11/talks/thu/MAPLD_C/0915%20-%20Efram.pdf: model honestly reported the claim isn't stated here; https://safari.ethz.ch/digitaltechnik/spring2019/lib/exe/fetch.php?media=digitaltechnik_spring2019_lab_lab_4_lab4_manual.pdf: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-072",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "contradicted",
+      "severity": "correct",
+      "confidence": 0.9,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [
+        {
+          "source": "comparative synthesis across 2 sources (https://ecrionix.org/sta/day-01-what-is-sta, https://www.synopsys.com/glossary/what-is-static-timing-analysis.html)",
+          "stance": "contradicts",
+          "snippet": "Timing closure is the iterative process of fixing critical paths until all slacks are non-negative. | Static timing analysis (STA) is a method of validating the timing performance of a design by checking all possible paths for timing violations."
+        }
+      ],
+      "reasoning": [
+        "Gathered 1 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.60.",
+        "Confidence capped at 0.90: only one source contributed to this verdict, and a lone source cannot alone justify full certainty.",
+        "Verdict: contradicted (confidence 0.90)."
+      ],
+      "missing": [],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-073",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "contradicted",
+      "severity": "correct",
+      "confidence": 0.9,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [
+        {
+          "source": "https://www.01signal.com/verilog-design/clockdomains/introduction",
+          "stance": "contradicts",
+          "snippet": "And even the clk x1 isn&#39;t necessarily related to its reference clock, even though they have exactly the same frequency. Unless these clocks are mutually aligned deliberately, their phase relation is unknown."
+        }
+      ],
+      "reasoning": [
+        "Gathered 1 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.75.",
+        "Confidence capped at 0.90: only one source contributed to this verdict, and a lone source cannot alone justify full certainty.",
+        "Verdict: contradicted (confidence 0.90)."
+      ],
+      "missing": [],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-074",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 6 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://www.linkedin.com/posts/shivraj-dharne-345398b_a-compact-practical-field-guide-to-cdc-activity-7366191410657570816-0L6a: model honestly reported the claim isn't stated here; https://github.com/VLSI-Shubh/Asynchronous-FIFO: real verified quote found, but doesn't address this specific claim; https://finance.yahoo.com/news/gta-vi-delay-november-2026-125924387.html?fr=sycsrp_catchall: model honestly reported the claim isn't stated here; https://www.allpcb.com/allelectrohub/introduction-to-asynchronous-fifo-in-digital-ic-design: real verified quote found, but doesn't address this specific claim; https://www.scribd.com/presentation/441802763/Clock-Domain-Crossing-Asynchronous-FIFO-pptx: model honestly reported the claim isn't stated here; https://zipcpu.com/blog/2018/07/06/afifo.html: real verified quote found, but doesn't address this specific claim; compared 3 individually-unrelated verified quotes together -- still not a clear enough incompatible account to contradict, staying undetermined"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-075",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "contradicted",
+      "severity": "correct",
+      "confidence": 0.3333333333333333,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [
+        {
+          "source": "https://fpgacpu.ca/fpga/handshake.html",
+          "stance": "supports",
+          "snippet": "It is allowable to have data be a continuously changing value, synchronously to the clock, which will get sampled whenever a handshake completes."
+        },
+        {
+          "source": "https://sistenix.com/axi_sva.html",
+          "stance": "contradicts",
+          "snippet": "While VALID is asserted and READY is low (no handshake yet), all payload signals \u2014 address, data, WLAST, burst parameters \u2014 must remain stable."
+        },
+        {
+          "source": "https://www.scribd.com/document/769426646/AXI-BLOCK",
+          "stance": "contradicts",
+          "snippet": "The source rust keep its information stable until the transfer \u2018occurs at edge 3, when this assertion is recognized."
+        }
+      ],
+      "reasoning": [
+        "Gathered 3 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.75, contradiction weight: 1.50.",
+        "Verdict: contradicted (confidence 0.33)."
+      ],
+      "missing": [],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-076",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "contradicted",
+      "severity": "correct",
+      "confidence": 0.9,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [
+        {
+          "source": "https://thesiliconstack.blogspot.com/2026/08/axi-burst-transactions-explained-len.html",
+          "stance": "contradicts",
+          "snippet": "A burst must never cross a  4KB address boundary  &#8212; this is an AXI4 rule that exists because most interconnects and memory controllers are organized around 4KB pages."
+        }
+      ],
+      "reasoning": [
+        "Gathered 1 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.75.",
+        "Confidence capped at 0.90: only one source contributed to this verdict, and a lone source cannot alone justify full certainty.",
+        "Verdict: contradicted (confidence 0.90)."
+      ],
+      "missing": [],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-077",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 4 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://danstrother.com/2010/09/11/inferring-rams-in-fpgas: real verified quote found, but doesn't address this specific claim; https://fpgacpu.ca/fpga/RAM_True_Dual_Port.html: model honestly reported the claim isn't stated here; https://www.cnbc.com/2014/06/27/clock-winds-down-on-west-coast-port-talks.html: model honestly reported the claim isn't stated here; https://github.com/ghdl/ghdl/issues/1069: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-078",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "contradicted",
+      "severity": "correct",
+      "confidence": 0.9,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [
+        {
+          "source": "comparative synthesis across 2 sources (https://circt.llvm.org/docs/Tools/circt-bmc, http://esbmc.github.io)",
+          "stance": "contradicts",
+          "snippet": "Calling\n circt-bmc -b 10 --module MyModule --shared-libs=&lt;z3 library>  on this IR will\nemit  Bound reached with no violations! , as the property holds over the 10\ncycles checked. | ESBMC is a  bounded model checker : it symbolically executes a finite prefix of the program, encodes the resulting v"
+        }
+      ],
+      "reasoning": [
+        "Gathered 1 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.60.",
+        "Confidence capped at 0.90: only one source contributed to this verdict, and a lone source cannot alone justify full certainty.",
+        "Verdict: contradicted (confidence 0.90)."
+      ],
+      "missing": [],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-079",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "contradicted",
+      "severity": "correct",
+      "confidence": 0.9,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [
+        {
+          "source": "https://ecrionix.org/verification/04-sva-assertions",
+          "stance": "contradicts",
+          "snippet": "Vacuous pass:  If the antecedent of an implication never fires (e.g., req is never high), the property vacuously passes. Always add a cover property for the antecedent to confirm it was exercised at least once."
+        }
+      ],
+      "reasoning": [
+        "Gathered 1 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.75.",
+        "Confidence capped at 0.90: only one source contributed to this verdict, and a lone source cannot alone justify full certainty.",
+        "Verdict: contradicted (confidence 0.90)."
+      ],
+      "missing": [],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-080",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "contradicted",
+      "severity": "correct",
+      "confidence": 0.9,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [
+        {
+          "source": "comparative synthesis across 4 sources (https://www.starvlsi.com/logic-equivalence-check, https://www.logosresearch.ai/news/migrating-code-by-proof, https://chipverify.ai/learn/logical-equivalence-checking, https://www.starvlsi.com/formal-verification-flow-for-rtl-equivalence-using-open-source-tools-starvlsi)",
+          "stance": "contradicts",
+          "snippet": "LEC is a formal verification technique that mathematically proves two design representations \u2014 such as RTL and synthesized netlist \u2014 produce identical outputs for every possible input combination. | What we want to say is stronger:  the new program returns the same answer as the old one for  every p"
+        }
+      ],
+      "reasoning": [
+        "Gathered 1 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.60.",
+        "Confidence capped at 0.90: only one source contributed to this verdict, and a lone source cannot alone justify full certainty.",
+        "Verdict: contradicted (confidence 0.90)."
+      ],
+      "missing": [],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-081",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 5 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://chipverify.com/verilog/verilog-arithmetic-operators: model honestly reported the claim isn't stated here; http://www.deepchip.com/items/0466-05.html: model honestly reported the claim isn't stated here; https://www.fpgatutorial.com/systemverilog-operators: model honestly reported the claim isn't stated here; https://inskill.in/training/vlsi/signed-vs-unsigned-data-types-systemverilog-rtl: model honestly reported the claim isn't stated here; https://verificationacademy.com/forums/t/shifting-on-signed-arithmetic/39313: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-082",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 3 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://chipverify.com/verilog/verilog-arithmetic-operators: model honestly reported the claim isn't stated here; https://www.jameswhanlon.com/writing-synthesizable-verilog.html: model honestly reported the claim isn't stated here; https://www.dsprelated.com/showarticle/555.php: real verified quote found, but doesn't address this specific claim; Found 5 live candidate URL(s) but could not fetch any of them: https://stackoverflow.com/questions/22845801/32-bit-signed-multiplication-without-using-64-bit-data-type/22847373?lastactivity=: HTTP 403; https://stackoverflow.com/questions/22845801/32-bit-signed-integer-multiplication-without-using-64-bit-data-type?answertab=scoredesc: HTTP 403; https://stackoverflow.com/questions/22845801/32-bit-signed-multiplication-without-using-64-bit-data-type/22847373: HTTP 403; https://stackoverflow.com/questions/22845801/32-bit-signed-integer-multiplication-without-using-64-bit-data-type?noredirect=1: HTTP 403; https://stackoverflow.com/questions/22845801/32-bit-signed-integer-multiplication-without-using-64-bit-data-type: HTTP 403"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-083",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "contradicted",
+      "severity": "correct",
+      "confidence": 0.9,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [
+        {
+          "source": "https://24x7fpga.com/rtl_directory/2024_07_25_11_34_45_synchronous_and_asynchronous_reset",
+          "stance": "contradicts",
+          "snippet": "Reset assertion is not an issue as the flip-flop takes care of it, but during deassertion when the reset is released close to the active edge of the flip-flop, the flip-flop may go into the metastable stage."
+        }
+      ],
+      "reasoning": [
+        "Gathered 1 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.75.",
+        "Confidence capped at 0.90: only one source contributed to this verdict, and a lone source cannot alone justify full certainty.",
+        "Verdict: contradicted (confidence 0.90)."
+      ],
+      "missing": [],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-084",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 4 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://coogan.ece.gatech.edu/papers/pdf/amesecc19.pdf: model honestly reported the claim isn't stated here; https://proceedings.mlr.press/v155/lindemann21a/lindemann21a.pdf: model honestly reported the claim isn't stated here; https://www.roboticsproceedings.org/rss13/p73.pdf: model honestly reported the claim isn't stated here; https://dev10110.github.io/tech-notes/research/cbfs-simple.html: cited quote not actually verbatim on the page (Quote not found verbatim (whitespace-normalized) in chunk 'https://dev10110.github.io/tech-notes/research/cbfs-simple.html#14' (lines starting at 28). Proposer's quote: 'Notice that when \\\\(h = 0\\\\), we have \\\\(\\\\dot h \\\\geq 0\\\\), and so it is mathematically impossible for \\\\(h < 0\\\\), and therefore the system will remain safe!!'.)"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-085",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "confirmed",
+      "severity": "correct",
+      "confidence": 0.9,
+      "ground_truth_verdict": "confirmed",
+      "evidence": [
+        {
+          "source": "https://kalman-filter.com/extended-kalman-filter",
+          "stance": "supports",
+          "snippet": "In coupled, partially observed systems (e.g., SLAM), evaluating Jacobians at the latest estimate can  change the observable subspace  of the linearized system, producing mathematically inconsistent updates (the filter appears confident while being wrong). Observability-based analyses pin this down a"
+        }
+      ],
+      "reasoning": [
+        "Gathered 1 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.75, contradiction weight: 0.00.",
+        "Confidence capped at 0.90: only one source contributed to this verdict, and a lone source cannot alone justify full certainty.",
+        "Verdict: confirmed (confidence 0.90)."
+      ],
+      "missing": [],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-086",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "confirmed",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 5 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://www.emergentmind.com/topics/sim-3-pose-graph: model honestly reported the claim isn't stated here; https://arxiv.org/html/2610.14090v1: model honestly reported the claim isn't stated here; https://www.cis.upenn.edu/~kostas/mypub.dir/tron15icra.pdf: model honestly reported the claim isn't stated here; https://publications.ri.cmu.edu/storage/publications/pub_files/2010/5/Kim10icra.pdf: model honestly reported the claim isn't stated here; https://dellaert.github.io/files/Carlone16tro.pdf: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-087",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 6 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://pmc.ncbi.nlm.nih.gov/articles/PMC12322225: model honestly reported the claim isn't stated here; https://arxiv.org/html/2505.10542v1: model honestly reported the claim isn't stated here; https://github.com/w0lzard/RRT-Path-Planning: model honestly reported the claim isn't stated here; https://www.emergentmind.com/topics/sampling-based-path-generation: model honestly reported the claim isn't stated here; https://tech-champion.com/robotics/global-path-planning-complexity-in-rrt-for-high-dof-arms: model honestly reported the claim isn't stated here; https://edukatesengkang.com/2026/08/30/how-to-learn-rrt-and-rrt-configuration-spaces-voronoi-bias-rewiring-and-asymptotically-optimal-motion-planning: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-089",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 3 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://industrialmonitordirect.com/blogs/knowledgebase/monocular-slam-needs-observable-scale-for-metric-pose: model cited an unknown chunk_id '#56' \u2014 dropped; https://pmc.ncbi.nlm.nih.gov/articles/PMC10508886: model honestly reported the claim isn't stated here; https://arxiv.org/html/2503.00027v1: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-090",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 3 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://modernrobotics.northwestern.edu/nu-gm-book-resource/5-3-singularities: model honestly reported the claim isn't stated here; https://arxiv.org/html/2505.00306v1: model honestly reported the claim isn't stated here; https://pmc.ncbi.nlm.nih.gov/articles/PMC6287617: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-091",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 2 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://www.frontiersin.org/journals/neurorobotics/articles/10.3389/fnbot.2021.724116/full: model honestly reported the claim isn't stated here; https://github.com/AshishRamesh/10x_Assignment: real verified quote found, but doesn't address this specific claim"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-092",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 3 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://ahrs.readthedocs.io/en/latest/filters/angular.html: model honestly reported the claim isn't stated here; https://ashwinnarayan.com/post/how-to-integrate-quaternions: model honestly reported the claim isn't stated here; https://www.steppeschool.com/blog/attitude-estimation-rotation-matrices-quaternions-sensor-fusion: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-093",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 2 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://www.anuncommonlab.com/articles/how-kalman-filters-work/part2.html: real verified quote found, but doesn't address this specific claim; https://github.com/petercorke/robotics-toolbox-matlab/blob/master/EKF.m: model honestly reported the claim isn't stated here; Found 3 live candidate URL(s) but could not fetch any of them: https://robotics.stackexchange.com/questions/21200/is-the-covariance-matrix-in-the-extended-kalman-filter-guaranteed-to-be-positive: HTTP 403; https://www.mdpi.com/1424-8220/22/12/4563: HTTP 403; https://robotics.ucmerced.edu/sites/g/files/ufvvjh1576/f/page/documents/ar2012.pdf: HTTP 403"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-094",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 3 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://modernrobotics.northwestern.edu/nu-gm-book-resource/8-3-newton-euler-inverse-dynamics: model honestly reported the claim isn't stated here; http://manipulation.csail.mit.edu/force.html: model honestly reported the claim isn't stated here; https://arxiv.org/html/1608.06767v2: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-095",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 3 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://faculty.sites.iastate.edu/jia/files/inline-files/robot%20control%20III.pdf: model honestly reported the claim isn't stated here; https://elib.dlr.de/101443/2/NullspaceSurvey.pdf: model honestly reported the claim isn't stated here; https://jameshermus.github.io/assets/pdf/Hermus_2022.pdf: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "chatgpt-096",
+      "category": 8,
+      "generated_by": [
+        "chatgpt"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 3 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://arxiv.org/html/2604.23039v1: real verified quote found, but doesn't address this specific claim; http://terrano.ucsd.edu/jorge/publications/data/2021_OnCaSaCo-auto.pdf: model honestly reported the claim isn't stated here; https://hybrid-robotics.berkeley.edu/publications/Dissertation2022_Jun_Zeng.pdf: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "gemini-010",
+      "category": 8,
+      "generated_by": [
+        "gemini"
+      ],
+      "predicted_verdict": "contradicted",
+      "severity": "correct",
+      "confidence": 1.0,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [
+        {
+          "source": "https://www.aliroquantum.com/blog/quantum-entanglement-communication",
+          "stance": "contradicts",
+          "snippet": "No. While quantum entanglement can cause particles to collapse instantaneously over long distances, we can't use that to transport information faster than the speed of light."
+        },
+        {
+          "source": "https://en.wikipedia.org/wiki/Faster-than-light_communication",
+          "stance": "contradicts",
+          "snippet": "No, We Still Can't Use Quantum Entanglement To Communicate Faster Than Light"
+        }
+      ],
+      "reasoning": [
+        "Gathered 2 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 1.50.",
+        "Verdict: contradicted (confidence 1.00)."
+      ],
+      "missing": [],
+      "error": null
+    },
+    {
+      "claim_id": "gemini-021",
+      "category": 8,
+      "generated_by": [
+        "gemini"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 4 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://www.italyonthisday.com/2023/10/eugenio-barsanti-engineer.html: model honestly reported the claim isn't stated here; https://nicofranz.art/en/leonardo-da-vinci/inventions: model honestly reported the claim isn't stated here; https://www.youtube.com/watch?v=3eRzMZeAqdM: model honestly reported the claim isn't stated here; https://rense.com/general57/davinci.htm: model honestly reported the claim isn't stated here"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "gemini-042",
+      "category": 8,
+      "generated_by": [
+        "gemini"
+      ],
+      "predicted_verdict": "contradicted",
+      "severity": "correct",
+      "confidence": 0.9,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [
+        {
+          "source": "comparative synthesis across 3 sources (https://plato.stanford.edu/archives/sum2011/entries/socrates, https://www.thehistoryreader.com/historical-figures/who-was-the-real-socrates, https://www.history.com/articles/socrates)",
+          "stance": "contradicts",
+          "snippet": "Both Socrates and Alcibiades were posted that summer, 432, to Potidaea to put down a revolt, Socrates as a footsoldier ( hoplite ). | He was an Athenian citizen and served as a hoplite, or heavy infantryman, in several major battles of the Peloponnesian War. | His family apparently had the moderate "
+        }
+      ],
+      "reasoning": [
+        "Gathered 1 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.60.",
+        "Confidence capped at 0.90: only one source contributed to this verdict, and a lone source cannot alone justify full certainty.",
+        "Verdict: contradicted (confidence 0.90)."
+      ],
+      "missing": [],
+      "error": null
+    },
+    {
+      "claim_id": "gemini-050",
+      "category": 8,
+      "generated_by": [
+        "gemini"
+      ],
+      "predicted_verdict": "undetermined",
+      "severity": "conservative_miss",
+      "confidence": null,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [],
+      "reasoning": [
+        "Gathered 0 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.00.",
+        "Total evidence weight below the decision threshold \u2014 refusing to render a confident verdict."
+      ],
+      "missing": [
+        "Checked 5 distinct live source(s) with matching passages, but this claim's specific assertion hasn't been conclusively resolved from what they say: https://www.sciencemuseum.org.uk/objects-and-stories/how-does-space-weather-affect-earth: real verified quote found, but doesn't address this specific claim; https://www.facebook.com/NatGeoTV/videos/the-carrington-event-in-1859-national-geographic/1030409469229806: model honestly reported the claim isn't stated here; https://pmc.ncbi.nlm.nih.gov/articles/PMC5215858: model honestly reported the claim isn't stated here; https://www.space.com/the-carrington-event: real verified quote found, but doesn't address this specific claim; https://www.history.com/articles/a-perfect-solar-superstorm-the-1859-carrington-event: real verified quote found, but doesn't address this specific claim; compared 3 individually-unrelated verified quotes together -- still not a clear enough incompatible account to contradict, staying undetermined"
+      ],
+      "error": null
+    },
+    {
+      "claim_id": "gemini-056",
+      "category": 8,
+      "generated_by": [
+        "gemini"
+      ],
+      "predicted_verdict": "contradicted",
+      "severity": "correct",
+      "confidence": 0.9,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [
+        {
+          "source": "https://www.history.com/articles/9-things-you-may-not-know-about-the-declaration-of-independence",
+          "stance": "contradicts",
+          "snippet": "The Declaration of Independence wasn\u2019t signed on July 4, 1776."
+        }
+      ],
+      "reasoning": [
+        "Gathered 1 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.75.",
+        "Confidence capped at 0.90: only one source contributed to this verdict, and a lone source cannot alone justify full certainty.",
+        "Verdict: contradicted (confidence 0.90)."
+      ],
+      "missing": [],
+      "error": null
+    },
+    {
+      "claim_id": "perplexity-016",
+      "category": 8,
+      "generated_by": [
+        "perplexity"
+      ],
+      "predicted_verdict": "contradicted",
+      "severity": "correct",
+      "confidence": 0.9,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [
+        {
+          "source": "https://textualia.com/en/blog/house-of-wisdom-baghdad-translation",
+          "stance": "contradicts",
+          "snippet": "Historians doubt that image \u2014 it was more likely a palace library, with most translation work done by a wider network of private patrons across the city."
+        }
+      ],
+      "reasoning": [
+        "Gathered 1 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.00, contradiction weight: 0.75.",
+        "Confidence capped at 0.90: only one source contributed to this verdict, and a lone source cannot alone justify full certainty.",
+        "Verdict: contradicted (confidence 0.90)."
+      ],
+      "missing": [],
+      "error": null
+    },
+    {
+      "claim_id": "perplexity-025",
+      "category": 8,
+      "generated_by": [
+        "perplexity"
+      ],
+      "predicted_verdict": "confirmed",
+      "severity": "dangerous",
+      "confidence": 1.0,
+      "ground_truth_verdict": "contradicted",
+      "evidence": [
+        {
+          "source": "https://airandspace.si.edu/collection-objects/1903-wright-flyer/nasm_A19610048000",
+          "stance": "supports",
+          "snippet": "It first flew at Kitty Hawk, North Carolina, on December 17, 1903, with Orville at the controls."
+        },
+        {
+          "source": "https://en.wikipedia.org/wiki/Wright_Flyer",
+          "stance": "supports",
+          "snippet": "First airplane flight, taking off from rail, near  Kitty Hawk, North Carolina , on December 17, 1903"
+        }
+      ],
+      "reasoning": [
+        "Gathered 2 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 1.50, contradiction weight: 0.00.",
+        "Verdict: confirmed (confidence 1.00)."
+      ],
+      "missing": [],
+      "error": null
+    },
+    {
+      "claim_id": "perplexity-033",
+      "category": 8,
+      "generated_by": [
+        "perplexity"
+      ],
+      "predicted_verdict": "confirmed",
+      "severity": "correct",
+      "confidence": 0.9,
+      "ground_truth_verdict": "confirmed",
+      "evidence": [
+        {
+          "source": "https://en.wikipedia.org/wiki/On_the_Origin_of_Species",
+          "stance": "supports",
+          "snippet": "The fifth edition, published on 10 February 1869, incorporated more changes and for the first time included the phrase \" survival of the fittest \", which had been coined by the philosopher  Herbert Spencer  in his  Principles of Biology  (1864)."
+        }
+      ],
+      "reasoning": [
+        "Gathered 1 piece(s) of evidence from domain 'searchlight'.",
+        "Support weight: 0.75, contradiction weight: 0.00.",
+        "Confidence capped at 0.90: only one source contributed to this verdict, and a lone source cannot alone justify full certainty.",
+        "Verdict: confirmed (confidence 0.90)."
+      ],
+      "missing": [],
+      "error": null
+    }
+  ]
+}
