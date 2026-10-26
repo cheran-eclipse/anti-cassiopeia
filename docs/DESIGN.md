@@ -175,12 +175,6 @@ a claim needs to reference, THAT specific sub-problem might reasonably use
 `retrieval/` — but that's a new, narrow extension if/when it's needed, not
 a reason to route the existing structured-metric lookups through it now.
 
-## Not decided here
-
-Team-coordination/build-split questions (which of the parallel Claude
-accounts builds which domain) belong in planning, not in this file — this
-file is architecture only.
-
 ## Related work
 
 Named explicitly rather than left implicit (external review): where this
