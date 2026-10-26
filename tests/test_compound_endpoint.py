@@ -16,6 +16,7 @@ from fastapi.testclient import TestClient
 
 import anticassiopeia.api.server as server_mod
 from anticassiopeia.api.server import app
+from anticassiopeia.core.compound import _FIDELITY_CHECK_SYSTEM_PROMPT
 from anticassiopeia.core.domain import DomainAdapter
 from anticassiopeia.core.verdict import Claim, Evidence
 
@@ -39,10 +40,18 @@ def _no_api_key_by_default(monkeypatch):
 
 
 class _FakeDecomposeClient:
-    def __init__(self, response: str | Exception):
+    """Same dual-call dispatch as test_compound.py's own fake of the same
+    name — decompose_claim() makes a second (fidelity-check) call for any
+    multi-part response; defaults to "faithful" so existing single-response
+    call sites keep passing unchanged."""
+
+    def __init__(self, response: str | Exception, fidelity_response: str = "faithful"):
         self._response = response
+        self._fidelity_response = fidelity_response
 
     async def complete(self, prompt: str, *, system: str | None = None, temperature: float = 0.0) -> str:
+        if system == _FIDELITY_CHECK_SYSTEM_PROMPT:
+            return self._fidelity_response
         if isinstance(self._response, Exception):
             raise self._response
         return self._response

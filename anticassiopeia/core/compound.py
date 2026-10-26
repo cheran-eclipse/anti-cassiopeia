@@ -74,8 +74,55 @@ part), and must be classified into EXACTLY ONE of these domains:
 FPGA timing/register report to check — do not guess a file path or a number; just \
 classify it "unsupported" and leave "text" as the original wording.
 
+CRITICAL: extract each part EXACTLY as the original claim asserts it, preserving its \
+stated polarity and qualifiers — do NOT "correct" a part that sounds factually wrong into \
+its true negation. If the original claim says "X caused Y", the correct part is "X caused \
+Y", never "X did not cause Y", even if you believe X did not actually cause Y. Whether each \
+part is actually true is decided in a LATER, separate step — your only job here is to split \
+the claim faithfully, not to fix it.
+
 Respond with ONLY this JSON shape, no other text, no markdown fences:
 {"parts": [{"text": "...", "domain": "substrate"|"searchlight"|"unsupported"}, ...]}"""
+
+# FOUND (live, 2026-10-26, testing category-8 claims against this module): for
+# "X; therefore Y1, Y2, Y3" fallacy-chain claims (e.g. "a significant
+# association was found; therefore it caused the outcome, it must replicate
+# everywhere, and no confounder explains it" -- a classic correlation/
+# causation fallacy chain), decompose_claim() sometimes silently REWROTE each
+# false sub-assertion into its own negation ("...does not necessarily imply
+# causation") instead of extracting it as actually asserted -- turning an
+# obviously-false compound claim into three true statements and a false
+# CONFIRMED verdict. Confirmed NON-DETERMINISTIC on live re-test (the same
+# claim decomposed faithfully on a later call) -- a prompt instruction alone
+# can reduce but not guarantee against this, so a deterministic check is
+# added below rather than trusting the prompt fix alone. See
+# stress_test/test_compound_on_cat8.py for the original finding and
+# tests/test_compound.py for the regression tests this prompted.
+_FIDELITY_CHECK_SYSTEM_PROMPT = """You will be given an ORIGINAL CLAIM and a list of PARTS \
+a different process extracted from it. Check whether every part faithfully represents \
+something the ORIGINAL CLAIM actually asserts -- same polarity, same qualifiers -- rather \
+than a "corrected" or negated version of it.
+
+Answer "unfaithful" if ANY part asserts something the original claim does NOT actually say \
+(most commonly: a part is the LOGICAL NEGATION or an otherwise-corrected version of what the \
+original claims, even if that corrected version happens to be more factually accurate).
+Answer "faithful" only if every part is a genuine, uncorrected piece of what the original \
+claim itself asserts.
+
+Reply with EXACTLY one word: faithful or unfaithful."""
+
+
+async def _check_decomposition_fidelity(client, claim_text: str, parts: list[dict]) -> bool:
+    """Returns True ("faithful") or False ("unfaithful"/anything ambiguous --
+    same fail-safe convention as retrieval/stance.py's judge_stance(): an
+    unclear reply must never be silently treated as a pass). One extra LLM
+    call per decomposition, deterministic safety net alongside the prompt's
+    own CRITICAL instruction above -- see this module's FOUND comment for
+    why the prompt alone isn't trusted to be sufficient."""
+    parts_text = "\n".join(f"PART: {p['text']}" for p in parts)
+    prompt = f"ORIGINAL CLAIM: {claim_text}\n\n{parts_text}"
+    raw = await client.complete(prompt, system=_FIDELITY_CHECK_SYSTEM_PROMPT, temperature=0.0)
+    return raw.strip().lower().startswith("faithful")
 
 
 @dataclass(frozen=True)
@@ -144,15 +191,34 @@ async def decompose_claim(client, claim_text: str) -> list[dict]:
     same pattern retrieval/extract.py's propose() already uses.
 
     Raises DecompositionError on any failure (network, malformed JSON,
-    missing fields) — the caller (verify_compound) turns that into an
-    honest UNDETERMINED verdict, never a guessed split."""
+    missing fields, OR a failed fidelity check — see
+    _check_decomposition_fidelity's own docstring) — the caller
+    (verify_compound) turns that into an honest UNDETERMINED verdict,
+    never a guessed split, and never a decomposition that silently
+    verifies a different claim than the one actually submitted."""
     try:
         raw = await client.complete(claim_text, system=_DECOMPOSE_SYSTEM_PROMPT, temperature=0.0)
     except DecompositionError:
         raise
     except Exception as exc:  # noqa: BLE001 -- any client failure (network, auth, ...) is an honest gap, not a crash
         raise DecompositionError(f"LLM call failed: {type(exc).__name__}: {exc}") from exc
-    return _parse_decomposition(raw)
+    parts = _parse_decomposition(raw)
+
+    if len(parts) > 1:
+        # Fidelity check only matters once there's something to distort —
+        # a single part is always "the claim as-is" (see the module prompt's
+        # own fallback instruction), nothing to negate relative to itself.
+        try:
+            faithful = await _check_decomposition_fidelity(client, claim_text, parts)
+        except Exception as exc:  # noqa: BLE001 -- same honest-gap handling as the decompose call itself
+            raise DecompositionError(f"Fidelity check call failed: {type(exc).__name__}: {exc}") from exc
+        if not faithful:
+            raise DecompositionError(
+                f"Decomposition failed a fidelity check: the extracted parts {parts!r} may not "
+                f"faithfully represent what the original claim {claim_text!r} actually asserts "
+                "(e.g. a part may be a corrected negation instead of the claim's own wording)."
+            )
+    return parts
 
 
 def rollup(sub_results: list[SubClaimResult]) -> tuple[VerdictState, float | None, list[str]]:

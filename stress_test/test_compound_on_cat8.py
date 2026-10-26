@@ -1,7 +1,19 @@
 """Quick live test: does core/compound.py's decompose_claim() + verify_compound()
 handle category-8's 'true premise; therefore false conclusion' claims better
 than a single atomic searchlight call? Not a permanent script -- throwaway
-investigation before deciding Track B's real execution path."""
+investigation before deciding Track B's real execution path.
+
+FOUND here (kept for the record, not re-run): for the "peer-reviewed
+association; therefore caused/replicates/no-confounder" claim below,
+decompose_claim() silently rewrote each false sub-assertion into its own
+negation, turning an obviously-false compound claim into a false
+CONFIRMED. FIXED 2026-10-26 in core/compound.py -- a fidelity-check safety
+net (_check_decomposition_fidelity) now catches exactly this and raises
+DecompositionError instead, with regression tests in tests/test_compound.py
+using the EXACT bad JSON this run produced. See that file and
+core/compound.py's own module-level comment for the fix; this script is
+not re-run to re-verify the fix (the bug was non-deterministic on live
+re-test anyway -- the offline regression tests are the real proof)."""
 
 from __future__ import annotations
 
