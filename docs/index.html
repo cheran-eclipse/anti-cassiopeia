@@ -130,6 +130,14 @@
     .topbar .subtitle { display: inline; }
   }
 
+  .intro {
+    margin: 0 0 22px;
+    max-width: 62ch;
+    font-size: 0.92rem;
+    line-height: 1.55;
+    color: var(--text-muted);
+  }
+
   .status-pill {
     display: inline-flex;
     align-items: center;
@@ -700,6 +708,81 @@
     color: var(--text-faint);
   }
   footer a { color: var(--text-faint); }
+
+  /* ---------- how it works ---------- */
+  .howto {
+    margin: 0 0 26px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0;
+  }
+  .howto summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 14px 18px;
+  }
+  .howto summary::-webkit-details-marker { display: none; }
+  .howto-title { font-size: 0.95rem; font-weight: 700; }
+  .howto-sub { font-size: 0.8rem; color: var(--text-muted); }
+  .howto-body { padding: 0 18px 18px; }
+  .steps {
+    list-style: none;
+    margin: 0 0 16px;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    counter-reset: step;
+  }
+  @media (max-width: 860px) { .steps { grid-template-columns: 1fr; } }
+  .steps li {
+    counter-increment: step;
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+  .steps li b { display: block; color: var(--text); font-size: 0.86rem; margin-bottom: 4px; }
+  .steps li b::before { content: counter(step) ". "; color: var(--lime); }
+  .tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    padding: 1px 7px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .tag.nvidia { border-color: var(--lime-dim); color: var(--lime); }
+  .tag.nebius { border-color: var(--cyan-dim); color: var(--cyan); }
+  .models { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-bottom: 10px; }
+  .models th, .models td { text-align: left; padding: 7px 10px; border-top: 1px solid var(--border); vertical-align: top; }
+  .models th { color: var(--text-faint); font-weight: 600; border-top: none; }
+  .models td:first-child { font-family: var(--mono); font-size: 0.74rem; color: var(--text); white-space: nowrap; }
+  .models td { color: var(--text-muted); }
+  .howto-note { margin: 0; font-size: 0.78rem; color: var(--text-faint); }
+  .models-used {
+    margin: 12px 0 0;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--cyan-dim);
+    border-radius: var(--radius-sm);
+    background: var(--card);
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+  .models-used b { color: var(--text); }
 </style>
 </head>
 <body>
@@ -718,6 +801,38 @@
       </div>
     </div>
   </div>
+
+  <p class="intro">
+    Checks a claim against a source you can inspect (a document, a dataset, a
+    report or the open web) and answers <strong>confirmed</strong>,
+    <strong>contradicted</strong> or <strong>clouded</strong> when it can't
+    tell, with the quote or recomputation behind the answer. Pick an example
+    below, or upload your own file.
+  </p>
+
+  <details class="howto" open>
+    <summary>
+      <span class="howto-title">How a claim is checked</span>
+      <span class="howto-sub">Model calls run on Nebius Token Factory</span>
+    </summary>
+    <div class="howto-body">
+      <ol class="steps">
+        <li><b>Route</b>The claim goes to one of four domains: substrate (datasheets), searchlight (the web), quant (datasets) or silicon (timing reports). No model call.</li>
+        <li><b>Find evidence</b>searchlight searches with Tavily and fetches the pages. substrate reads the datasheet corpus or your upload. quant and silicon open the file.</li>
+        <li><b>Rank passages</b>BM25 keyword search fused with vector search, using <span class="tag nebius">Qwen3-Embedding-8B</span>.</li>
+        <li><b>Propose</b>A model reads the top passages and returns the exact quote and value: <span class="tag nvidia">Nemotron Ultra</span> for substrate, <span class="tag nebius">gpt-oss-120b</span> for searchlight.</li>
+        <li><b>Verify in code</b>The quote must appear word for word in the source, and numbers are recomputed. A model's answer is never trusted on its own.</li>
+        <li><b>Judge and score</b><span class="tag nvidia">Nemotron Ultra</span> judges whether the quote supports or contradicts the claim. A scoring rule then gives confirmed, contradicted or clouded, and names what is missing.</li>
+      </ol>
+      <table class="models">
+        <tr><th>Model on Nebius Token Factory</th><th>Used for</th></tr>
+        <tr><td>nvidia/Nemotron-3-Ultra-550b-a55b</td><td>NVIDIA open model. substrate: reads the datasheet or your document and proposes the figure. searchlight: judges whether a quote supports or contradicts the claim.</td></tr>
+        <tr><td>openai/gpt-oss-120b</td><td>searchlight: reads fetched pages and proposes the quote.</td></tr>
+        <tr><td>Qwen/Qwen3-Embedding-8B</td><td>Ranks passages by meaning, alongside BM25.</td></tr>
+      </table>
+      <p class="howto-note">quant and silicon make no model call: statistics and timing figures are computed from the file. Endpoint: api.tokenfactory.nebius.com/v1 (OpenAI-compatible).</p>
+    </div>
+  </details>
 
   <!-- Quick verify -->
   <div class="section">
@@ -806,6 +921,8 @@
   <footer>
     <a href="https://anti-cassiopeia-221333847588.asia-south1.run.app/docs" target="_blank" rel="noopener noreferrer">API reference</a>
     &nbsp;·&nbsp; anti-cassiopeia-221333847588.asia-south1.run.app
+    <br>Model calls: Nebius Token Factory (NVIDIA Nemotron Ultra, gpt-oss-120b, Qwen3-Embedding-8B). Hosted on Google Cloud Run.
+    &nbsp;·&nbsp; <a href="https://github.com/cheran-eclipse/anti-cassiopeia" target="_blank" rel="noopener noreferrer">Source on GitHub</a>
   </footer>
 </div>
 
@@ -825,7 +942,10 @@
     { label: "Z-Wave frequency", text: "The Z-Wave protocol operates in the 2.4GHz ISM band.", domain: "searchlight" },
     { label: "Dataset mean, no context", text: "The dataset's average column value is 5.0.", domain: "quant" },
     { label: "clk_main meets 100 MHz", text: "design's clk_main meets 100 MHz timing", domain: "silicon",
-      context: { report_path: "evals/fixtures/vivado_timing_report_single_corner.rpt", metric: "frequency_mhz", clock: "clk_main", comparator: ">=", expected_value: 100 } }
+      context: { report_path: "evals/fixtures/vivado_timing_report_single_corner.rpt", metric: "frequency_mhz", clock: "clk_main", comparator: ">=", expected_value: 100 } },
+    { label: "Voltage mean is 5.0 (sample CSV)", text: "The mean of the voltage column is 5.0 V.", domain: "quant",
+      context: { dataset_path: "evals/fixtures/sample_measurements.csv", column: "voltage", stat: "mean", expected_value: 5.0, tolerance: 0.01 } },
+    { label: "Red Sea (faith claim)", text: "Moses parted the Red Sea through divine intervention, allowing the Israelites to walk across on dry ground before the waters collapsed upon the pursuing Egyptian army.", domain: "searchlight" }
   ];
 
   var EXT_DOMAIN_HINT = { ".csv": "quant", ".svd": "silicon", ".rpt": "silicon (likely)", ".xml": "silicon (if SVD)" };
@@ -1359,9 +1479,26 @@
     return verdictCard;
   }
 
+  var MODELS_USED = {
+    substrate: "<b>Nemotron Ultra</b> (NVIDIA, on Nebius Token Factory) read the datasheet or uploaded passage and proposed the figure. Code re-checked the quote and compared it with the claim. Uploads also use Qwen3-Embedding-8B to rank passages and Nemotron Ultra to judge support.",
+    searchlight: "Tavily found the pages. <b>Qwen3-Embedding-8B</b> and BM25 ranked the passages, <b>gpt-oss-120b</b> proposed the quote, code checked it word for word, and <b>Nemotron Ultra</b> judged whether it supports the claim. All model calls ran on Nebius Token Factory.",
+    quant: "<b>No model call.</b> The statistic was recomputed from the file in code.",
+    silicon: "<b>No model call.</b> The figure was parsed from the report in code."
+  };
+
+  function buildModelsUsed(domain) {
+    var html = MODELS_USED[domain];
+    if (!html) return document.createDocumentFragment();
+    var box = document.createElement("div");
+    box.className = "models-used";
+    box.innerHTML = "<b>How this answer was produced.</b> " + html;
+    return box;
+  }
+
   function renderResult(data) {
     clearChildren(resultArea);
     resultArea.appendChild(buildVerdictCard(data));
+    resultArea.appendChild(buildModelsUsed((data.claim && data.claim.domain) || (lastSubmission && lastSubmission.domain)));
     resultArea.appendChild(buildMissingCallout(data.missing));
     resultArea.appendChild(buildEvidenceSection(data.evidence));
     resultArea.appendChild(buildReasoningBlock(data.reasoning));
